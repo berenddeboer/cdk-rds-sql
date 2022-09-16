@@ -19,6 +19,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Change permissions on /var/run/docker.sock
+        run: sudo chown superchain /var/run/docker.sock
       - name: Install dependencies
         run: yarn install --check-files
       - name: build
@@ -47,6 +49,7 @@ jobs:
           path: dist
     container:
       image: jsii/superchain:1-buster-slim-node14
+      options: --group-add sudo
   self-mutation:
     needs: build
     runs-on: ubuntu-latest

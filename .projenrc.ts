@@ -1,4 +1,4 @@
-import { awscdk } from "projen"
+import { awscdk, JsonPatch } from "projen"
 
 const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
 
@@ -37,6 +37,12 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "source-map-support",
   ],
   devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers", "esbuild"],
+  workflowBootstrapSteps: [
+    {
+      name: "Change permissions on /var/run/docker.sock",
+      run: "sudo chown superchain /var/run/docker.sock",
+    },
+  ],
 })
 project.addGitIgnore("*~")
 if (project.eslint) {
@@ -44,5 +50,9 @@ if (project.eslint) {
     semi: ["off"],
     quotes: ["error", "double"],
   })
+}
+const buildWorkflow = project.tryFindObjectFile(".github/workflows/build.yml")
+if (buildWorkflow && buildWorkflow.patch) {
+  buildWorkflow.patch(JsonPatch.add("/jobs/build/container/options", "--group-add sudo"))
 }
 project.synth()
