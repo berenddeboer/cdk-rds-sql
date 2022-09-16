@@ -44,6 +44,14 @@ repos:
         files: (bin|src)/.*\.ts$
   - repo: local
     hooks:
+      - id: compile-project
+        exclude: .projenrc.ts
+        name: compile-project
+        language: system
+        entry: sh -c 'npx projen compile'
+        files: \.ts$
+  - repo: local
+    hooks:
       - id: test
         exclude: .projenrc.ts
         name: test
