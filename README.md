@@ -7,6 +7,10 @@ stack.
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
 
+[![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
+
+![build](https://github.com/berenddeboer/cdk-rds-sql/actions/workflows/release.yml/badge.svg)
+
 # Requirements
 
 - CDK v2.
