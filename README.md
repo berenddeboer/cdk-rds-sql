@@ -22,7 +22,9 @@ environments, and works in isolated subnets.
 First setup your VPC and create your cluster:
 
 ```ts
-import { Provider } from "cdk-rds-sql"
+import { Duration, RemovalPolicy } from "aws-cdk-lib"
+import * as ec2 from "aws-cdk-lib/aws-ec2"
+import * as rds from "aws-cdk-lib/aws-rds"
 
 const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
   vpcId: this.node.tryGetContext("vpc-id"),
@@ -51,6 +53,8 @@ const cluster = new rds.ServerlessCluster(this, "Cluster", {
 Then create a provider which will connect to your database:
 
 ```ts
+import { Provider } from "cdk-rds-sql"
+
 const provider = new Provider(this, "Provider", {
   vpc: vpc,
   cluster: cluster,
@@ -67,6 +71,8 @@ will automatically setup a connection to the given cluster.
 Create a postgres role (user) as follows:
 
 ```ts
+import { Role } from "cdk-rds-sql"
+
 const role = new Role(this, "Role", {
   provider: provider,
   roleName: "myrole",
@@ -92,9 +98,11 @@ does, with all the connection info needed for this user. It's secret value is a 
 
 # Database
 
-Create a datdabse as followS:
+Create a datdabse as follows:
 
 ```ts
+import { Database } from "cdk-rds-sql"
+
 const database = new Database(this, "Database", {
   provider: provider,
   databaseName: "mydb",
@@ -109,6 +117,34 @@ const database = new Database(this, "Database", {
   provider: provider,
   databaseName: "mydb",
   owner: role,
+})
+```
+
+# Schema
+
+Create a schema in the default database as follows:
+
+```ts
+import { Schema } from "cdk-rds-sql"
+
+new Schema(this, "Schema", {
+  provider: provider,
+  schemaName: "myschema",
+})
+```
+
+Or in another database:
+
+```ts
+const database = new Database(this, "Database", {
+  provider: provider,
+  databaseName: "mydb",
+})
+
+new Schema(this, "Schema", {
+  provider: provider,
+  schemaName: "myschema",
+  databaseName: database.databaseName,
 })
 ```
 
