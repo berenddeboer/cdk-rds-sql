@@ -36,7 +36,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "ms",
     "source-map-support",
   ],
-  devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers"],
+  devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers", "esbuild"],
 })
 project.addGitIgnore("*~")
 if (project.eslint) {
