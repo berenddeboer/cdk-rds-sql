@@ -1,3 +1,4 @@
+import { existsSync } from "fs"
 import { Duration, Stack } from "aws-cdk-lib"
 import { IVpc } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
@@ -41,9 +42,11 @@ export class Provider extends Construct {
     id: string,
     props: RdsSqlProps
   ): lambda.NodejsFunction {
+    const ts_filename = `${__dirname}/handler.ts`
+    const entry = existsSync(ts_filename) ? ts_filename : `${__dirname}/handler.js`
     const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
-      entry: `${__dirname}/handler.ts`,
+      entry: entry,
       runtime: Runtime.NODEJS_14_X,
       timeout: Duration.seconds(300),
       bundling: {
