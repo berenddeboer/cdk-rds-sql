@@ -27,6 +27,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   },
   gitignore: tmpDirectories,
   npmignore: tmpDirectories,
+  docgen: false,
   deps: [],
   bundledDeps: [
     "aws-lambda",

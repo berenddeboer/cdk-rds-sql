@@ -3909,19 +3909,12 @@ glob-parent@^6.0.1:
   dependencies:
     is-glob "^4.0.3"
 
-glob-promise@^3.4.0:
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/glob-promise/-/glob-promise-3.4.0.tgz#b6b8f084504216f702dc2ce8c9bc9ac8866fdb20"
-  integrity sha512-q08RJ6O+eJn+dVanerAndJwIcumgbDdYiUT7zFQl3Wm1xD6fBKtah7H8ZJChj4wP+8C+QfeVy8xautR7rdmKEw==
-  dependencies:
-    "@types/glob" "*"
-
 glob-to-regexp@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/glob-to-regexp/-/glob-to-regexp-0.4.1.tgz#c75297087c851b9a578bd217dd59a92f59fe546e"
   integrity sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==
 
-glob@^7, glob@^7.0.0, glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4, glob@^7.2.3:
+glob@^7, glob@^7.0.0, glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4:
   version "7.2.3"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.3.tgz#b8df0fb802bbfa8e89bd1d938b4e16578ed44f2b"
   integrity sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==
@@ -5066,21 +5059,6 @@ jsii-diff@^1.67.0:
     fs-extra "^10.1.0"
     jsii-reflect "^1.67.0"
     log4js "^6.6.1"
-    yargs "^16.2.0"
-
-jsii-docgen@^7.0.86:
-  version "7.0.86"
-  resolved "https://registry.yarnpkg.com/jsii-docgen/-/jsii-docgen-7.0.86.tgz#0b9702be02756154d8bf0e4cb90585ef5f8ee640"
-  integrity sha512-3ERPfwj8U4Dm5t9Da+oTBC6i3Ju5jz2Ombg6CtpAd1L/UkKLs31GWPcJQOEcqAckK57qyYPpicP+jYIWg8TANA==
-  dependencies:
-    "@jsii/spec" "^1.67.0"
-    case "^1.6.3"
-    fs-extra "^10.1.0"
-    glob "^7.2.3"
-    glob-promise "^3.4.0"
-    jsii-reflect "^1.67.0"
-    jsii-rosetta "^1.67.0"
-    semver "^7.3.7"
     yargs "^16.2.0"
 
 jsii-pacmak@^1.67.0:
