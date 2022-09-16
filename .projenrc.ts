@@ -55,4 +55,10 @@ const buildWorkflow = project.tryFindObjectFile(".github/workflows/build.yml")
 if (buildWorkflow && buildWorkflow.patch) {
   buildWorkflow.patch(JsonPatch.add("/jobs/build/container/options", "--group-add sudo"))
 }
+const releaseWorkflow = project.tryFindObjectFile(".github/workflows/release.yml")
+if (releaseWorkflow && releaseWorkflow.patch) {
+  releaseWorkflow.patch(
+    JsonPatch.add("/jobs/release/container/options", "--group-add sudo")
+  )
+}
 project.synth()
