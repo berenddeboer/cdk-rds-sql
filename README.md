@@ -66,7 +66,7 @@ The provider will setup a lambda, which will live in the same VPC, or
 at minimum in a VPC that can get access to the database. The provider
 will automatically setup a connection to the given cluster.
 
-# Roles
+## Roles
 
 Create a postgres role (user) as follows:
 
@@ -96,7 +96,7 @@ does, with all the connection info needed for this user. It's secret value is a 
 }
 ```
 
-# Database
+## Database
 
 Create a datdabse as follows:
 
@@ -120,7 +120,7 @@ const database = new Database(this, "Database", {
 })
 ```
 
-# Schema
+## Schema
 
 Create a schema in the default database as follows:
 
@@ -148,23 +148,66 @@ new Schema(this, "Schema", {
 })
 ```
 
+## Sql
+
+You can insert arbitrary SQL into your database with the `Sql` construct:
+
+```ts
+import { Sql } from "cdk-rds-sql"
+
+const sql = new Sql(this, "Sql", {
+  provider: provider,
+  databaseName: database.databaseName,
+  statement: "create table t (i int)",
+})
+```
+
+Note that there is no synchronisation between various `Sql`
+constructs, in particular the order in your code does not determine
+the order in which your SQL is executed. This happens in parallel,
+unless you specify an explicit dependency via `sql.node.addDepency()`.
+
+There are a lot of concerns when using `Sql`:
+
+- When you update your Sql, your previous Sql is not "rolled back",
+  the new Sql is simply executed again.
+- The same when you delete your `Sql` construct: nothing is rolled
+  back in the database.
+- Currently the `Sql` constructs has less than 5 minutes to execute
+  its work.
+- It is unknown how large your SQL can be.
+
+## Dependencies
+
+This library manages dependencies, there is no need to specify
+dependencies except possibly for `Sql` constructs.
+
+# Working on this code
+
+This code is managed by
+[projen](https://github.com/projen/projen/blob/main/README.md). In
+addition [pre-commit](https://pre-commit.com/) is used.
+
+So after git clone and `npm ci` you would do:
+
+```
+pre-commit install --install-hooks --hook-type commit-msg --hook-type pre-commit
+```
+
+to install the pre-commit hooks.
+
+## Testing
+
+Test code via projen with:
+
+    npx projen test
+
+You can run the sample stack with:
+
+    npx cdk synth --context vpc-id=vpc-0123456789
+
 # To do
 
 - Add `.from()` functions to make everything more type-safe, and make
   it impossible to import database from other stacks or created
   outside the stack.
-
-# Notes
-
-- Lambda times out after 5 minutes, so any SQL needs to finish in less
-  than 5 minutes.
-
-- It is unknown how large any SQL can be.
-
-- Note that your SQL will execute randomly unless you specify dependencies.
-
-# Test
-
-You can run the sample stack with:
-
-    npx cdk synth --context vpc-id=vpc-0123456789
