@@ -1,22 +1,42 @@
 import { awscdk } from "projen"
+
+const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
+
 const project = new awscdk.AwsCdkConstructLibrary({
-  projenrcTs: true,
   author: "Berend de Boer",
   authorAddress: "berend@pobox.com",
   authorEmail: "berend@pobox.com",
-  cdkVersion: "2.41.0",
-  constructsVersion: "10.1.101",
+  name: "cdk-rds-sql",
+  description:
+    "A CDK construct that allows creating roles and databases an on Aurora Serverless Postgresql cluster.",
   defaultReleaseBranch: "main",
-  name: "ts-test",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
-  eslint: true,
-  jestOptions: {
-    jestVersion: "28",
+  projenrcTs: true,
+  constructsVersion: "10.1.104",
+  cdkVersion: "2.41.0",
+  disableTsconfig: true,
+  tsconfigDev: {
+    compilerOptions: {
+      esModuleInterop: true,
+    },
   },
+  eslint: true,
+  eslintOptions: {
+    dirs: ["src"],
+    prettier: true,
+  },
+  gitignore: tmpDirectories,
+  npmignore: tmpDirectories,
   deps: [],
-  // description: undefined,  /* The description is just a string that helps people understand the purpose of the package. */
-  devDeps: [],
-  // packageName: undefined,  /* The "name" in package.json. */
+  bundledDeps: [
+    "aws-lambda",
+    "@aws-sdk/client-secrets-manager",
+    "pg",
+    "node-pg-format",
+    "ms",
+    "source-map-support",
+  ],
+  devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers"],
 })
 project.addGitIgnore("*~")
 if (project.eslint) {

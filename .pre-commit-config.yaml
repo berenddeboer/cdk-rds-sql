@@ -30,6 +30,7 @@ repos:
   - repo: local
     hooks:
       - id: build-typescript
+        exclude: .projenrc.ts
         name: build-typescript
         language: system
         entry: sh -c 'npx tsc --noEmit'
@@ -40,10 +41,11 @@ repos:
         name: synth
         language: system
         entry: sh -c 'npx cdk synth --quiet'
-        files: (bin|lib)/.*\.ts$
+        files: (bin|src)/.*\.ts$
   - repo: local
     hooks:
       - id: test
+        exclude: .projenrc.ts
         name: test
         language: system
         entry: sh -c 'npx projen test'

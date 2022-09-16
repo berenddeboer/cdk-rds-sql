@@ -1,13 +1,25 @@
 {
   "dependencies": [
     {
+      "name": "@types/aws-lambda",
+      "type": "build"
+    },
+    {
       "name": "@types/jest",
-      "version": "28",
+      "version": "^27",
+      "type": "build"
+    },
+    {
+      "name": "@types/ms",
       "type": "build"
     },
     {
       "name": "@types/node",
       "version": "^14",
+      "type": "build"
+    },
+    {
+      "name": "@types/pg",
       "type": "build"
     },
     {
@@ -27,7 +39,11 @@
     },
     {
       "name": "constructs",
-      "version": "10.1.101",
+      "version": "10.1.104",
+      "type": "build"
+    },
+    {
+      "name": "eslint-config-prettier",
       "type": "build"
     },
     {
@@ -43,6 +59,10 @@
       "type": "build"
     },
     {
+      "name": "eslint-plugin-prettier",
+      "type": "build"
+    },
+    {
       "name": "eslint",
       "version": "^8",
       "type": "build"
@@ -54,7 +74,7 @@
     },
     {
       "name": "jest",
-      "version": "28",
+      "version": "^27",
       "type": "build"
     },
     {
@@ -83,6 +103,10 @@
       "type": "build"
     },
     {
+      "name": "prettier",
+      "type": "build"
+    },
+    {
       "name": "projen",
       "type": "build"
     },
@@ -92,8 +116,12 @@
       "type": "build"
     },
     {
+      "name": "testcontainers",
+      "type": "build"
+    },
+    {
       "name": "ts-jest",
-      "version": "28",
+      "version": "^27",
       "type": "build"
     },
     {
@@ -105,13 +133,37 @@
       "type": "build"
     },
     {
+      "name": "@aws-sdk/client-secrets-manager",
+      "type": "bundled"
+    },
+    {
+      "name": "aws-lambda",
+      "type": "bundled"
+    },
+    {
+      "name": "ms",
+      "type": "bundled"
+    },
+    {
+      "name": "node-pg-format",
+      "type": "bundled"
+    },
+    {
+      "name": "pg",
+      "type": "bundled"
+    },
+    {
+      "name": "source-map-support",
+      "type": "bundled"
+    },
+    {
       "name": "aws-cdk-lib",
       "version": "^2.41.0",
       "type": "peer"
     },
     {
       "name": "constructs",
-      "version": "^10.1.101",
+      "version": "^10.1.104",
       "type": "peer"
     }
   ],
