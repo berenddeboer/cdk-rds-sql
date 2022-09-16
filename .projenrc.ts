@@ -43,6 +43,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
       run: "sudo chown superchain /var/run/docker.sock",
     },
   ],
+  keywords: ["aws", "aws-cdk", "rds", "aurora"],
 })
 project.addGitIgnore("*~")
 if (project.eslint) {
