@@ -52,10 +52,7 @@
     ],
     "quotes": [
       "error",
-      "single",
-      {
-        "avoidEscape": true
-      }
+      "double"
     ],
     "comma-dangle": [
       "error",
@@ -121,8 +118,7 @@
       "error"
     ],
     "semi": [
-      "error",
-      "always"
+      "off"
     ],
     "max-len": [
       "error",

@@ -2,7 +2,7 @@
   "dependencies": [
     {
       "name": "@types/jest",
-      "version": "^27",
+      "version": "28",
       "type": "build"
     },
     {
@@ -54,7 +54,7 @@
     },
     {
       "name": "jest",
-      "version": "^27",
+      "version": "28",
       "type": "build"
     },
     {
@@ -93,7 +93,7 @@
     },
     {
       "name": "ts-jest",
-      "version": "^27",
+      "version": "28",
       "type": "build"
     },
     {

@@ -1,0 +1,12 @@
+node_modules
+build
+dist
+res
+coverage
+cdk.json
+jest.config.js
+tsconfig.json
+.github
+.projen/
+.eslintrc.json
+API.md

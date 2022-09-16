@@ -1,0 +1,50 @@
+default_stages: [commit]
+default_language_version:
+  node: system
+fail_fast: true
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: (API.md|.mergify.yml|.projen/|.github|tsconfig.dev.json|.gitignore|LICENSE|.gitattributes|.eslintrc.json)
+      - id: trailing-whitespace
+      - id: check-json
+        exclude: tsconfig.json
+      - id: detect-aws-credentials
+      - id: detect-private-key
+  - repo: https://github.com/talos-systems/conform
+    rev: v0.1.0-alpha.26
+    hooks:
+      - id: conform
+        stages:
+          - commit-msg
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v2.7.1"
+    hooks:
+      - id: prettier
+        exclude: (.mergify.yml|.projen/|.github|tsconfig.dev.json|.gitignore|LICENSE|.gitattributes|.eslintrc.json)
+        stages:
+          - commit
+  - repo: local
+    hooks:
+      - id: build-typescript
+        name: build-typescript
+        language: system
+        entry: sh -c 'npx tsc --noEmit'
+        files: \.ts$
+  - repo: local
+    hooks:
+      - id: synth
+        name: synth
+        language: system
+        entry: sh -c 'npx cdk synth --quiet'
+        files: (bin|lib)/.*\.ts$
+  - repo: local
+    hooks:
+      - id: test
+        name: test
+        language: system
+        entry: sh -c 'npx projen test'
+        files: \.ts$

@@ -1,0 +1,40 @@
+policies:
+  - type: commit
+    spec:
+      header:
+        length: 140
+        imperative: true
+        case: lower
+        invalidLastCharacters: .
+      body:
+        required: false
+      dco: false
+      gpg: false
+      spellcheck:
+        locale: US_nz
+      maximumOfOneCommit: false
+      conventional:
+        types:
+          - "build"
+          - "chore"
+          - "ci"
+          - "debug"
+          - "docs"
+          - "refactor"
+          - "test"
+          - "vendor"
+        scopes:
+          - "docker"
+          - "meltano"
+        descriptionLength: 160
+  - type: license
+    spec:
+      skipPaths:
+        - .git/
+        - .build*/
+      includeSuffixes:
+        - .ext
+      excludeSuffixes:
+        - .exclude-ext-prefix.ext
+      header: |
+        This is the contents of a license header.
