@@ -1,7 +1,7 @@
 import { RemovalPolicy } from "aws-cdk-lib"
 import * as kms from "aws-cdk-lib/aws-kms"
 import { ServerlessCluster } from "aws-cdk-lib/aws-rds"
-import { Secret } from "aws-cdk-lib/aws-secretsmanager"
+import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
 import { Provider } from "./provider"
 import { Role as CustomResourceRole } from "./role.custom-resource"
@@ -36,11 +36,19 @@ export interface RoleProps {
 }
 
 export class Role extends Construct {
+  /**
+   * The role name.
+   */
   public readonly roleName: string
+
+  /**
+   * The generated secret.
+   */
+  public readonly secret: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
     super(scope, id)
-    const secret = new Secret(this, "Secret", {
+    this.secret = new Secret(this, "Secret", {
       encryptionKey: props.encryptionKey,
       description: `Generated secret for postgres role ${props.roleName}`,
       generateSecretString: {
@@ -61,10 +69,10 @@ export class Role extends Construct {
     const role = new CustomResourceRole(this, "PostgresRole", {
       provider: props.provider,
       roleName: props.roleName,
-      passwordArn: secret.secretArn,
+      passwordArn: this.secret.secretArn,
     })
-    role.node.addDependency(secret)
+    role.node.addDependency(this.secret)
     this.roleName = props.roleName
-    secret.grantRead(props.provider.handler)
+    this.secret.grantRead(props.provider.handler)
   }
 }

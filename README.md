@@ -102,6 +102,8 @@ does, with all the connection info needed for this user. It's secret value is a 
 }
 ```
 
+You can access the secret via `role.secret`.
+
 ## Database
 
 Create a datdabse as follows:
