@@ -52,10 +52,11 @@ export class TestStack extends Stack {
       databaseName: "mydb2",
       owner: role,
     })
-    new Sql(this, "Sql", {
+    const sql = new Sql(this, "Sql", {
       provider: provider,
       databaseName: database.databaseName,
       statement: "create table t (i int)",
     })
+    sql.node.addDependency(database)
   }
 }
