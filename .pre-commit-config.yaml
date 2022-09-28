@@ -41,7 +41,7 @@ repos:
         name: synth
         language: system
         entry: sh -c 'npx cdk synth --quiet'
-        files: (bin|src)/.*\.ts$
+        files: src/.*\.ts$
   - repo: local
     hooks:
       - id: compile-project
