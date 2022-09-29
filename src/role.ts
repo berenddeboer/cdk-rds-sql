@@ -21,6 +21,8 @@ export interface RoleProps {
   /**
    * Optional database this user is expected to use.
    *
+   * If the database exists, connect privileges are granted.
+   *
    * Specify none of `database` or `databaseName` or only one of them.
    *
    * @default no connection to any database is granted
@@ -28,7 +30,9 @@ export interface RoleProps {
   readonly database?: IDatabase
 
   /**
-   * Ootional database name this user is expected to use.
+   * Optional database name this user is expected to use.
+   *
+   * If the database exists, connect privileges are granted.
    *
    * Specify none of `database` or `databaseName` or only one of them.
    *

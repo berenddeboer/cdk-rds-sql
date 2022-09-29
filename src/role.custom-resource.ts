@@ -32,7 +32,7 @@ export interface RoleProps {
   readonly database?: IDatabase
 
   /**
-   * Ootional database name this user is expected to use.
+   * Optional database name this user is expected to use.
    *
    * Specify none of `database` or `databaseName` or only one of them.
    *
