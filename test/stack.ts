@@ -39,6 +39,7 @@ export class TestStack extends Stack {
       cluster: cluster,
       secret: cluster.secret!,
     })
+    Database.fromDatabaseName(this, "DefaultDatabase", "postgres")
 
     new Schema(this, "Schema", {
       provider: provider,
