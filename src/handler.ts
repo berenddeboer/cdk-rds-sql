@@ -82,7 +82,9 @@ const jumpTable: JumpTable = {
       if (!props.PasswordArn) throw "No PasswordArn provided"
       const password = await getPassword(props.PasswordArn)
       if (password) {
-        const sql = [format("create role %I with password %L", resourceId, password)]
+        const sql = [
+          format("create role %I with login password %L", resourceId, password),
+        ]
         if (props.DatabaseName) {
           sql.push(
             format("grant connect on database %I to %I", props.DatabaseName, resourceId)
@@ -124,7 +126,15 @@ const jumpTable: JumpTable = {
       }
     },
     Delete: (resourceId: string) => {
-      return format("drop role if exists %I", resourceId)
+      // TODO: if user is owner of a database, assign ownership to master user?
+      return [
+        format(
+          "DO $$BEGIN\nIF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database postgres from %I; END IF;\nEND$$;",
+          resourceId,
+          resourceId
+        ),
+        format("drop role if exists %I", resourceId),
+      ]
     },
   },
   database: {
