@@ -20,6 +20,13 @@ export interface RoleProps {
    * Optionally encrypt it with the given key.
    */
   readonly passwordArn: string
+
+  /**
+   * Database to which this user gets access.
+   *
+   * @default no database connect is granted
+   */
+  readonly databaseName?: string
 }
 
 export class Role extends CustomResource {
@@ -31,6 +38,7 @@ export class Role extends CustomResource {
         ResourceId: props.roleName,
         SecretArn: props.provider.secret.secretArn,
         PasswordArn: props.passwordArn,
+        DatabaseName: props.databaseName,
       },
     })
     this.node.addDependency(props.provider)

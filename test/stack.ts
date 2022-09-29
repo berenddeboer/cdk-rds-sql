@@ -23,6 +23,7 @@ export class TestStack extends Stack {
         "ParameterGroup",
         "default.aurora-postgresql10"
       ),
+      enableDataApi: true,
       removalPolicy: RemovalPolicy.DESTROY,
       scaling: {
         autoPause: Duration.minutes(60),
@@ -45,7 +46,7 @@ export class TestStack extends Stack {
       provider: provider,
       roleName: "myrole",
       cluster: cluster,
-      databaseName: "mydb2",
+      databaseName: "postgres",
     })
     const database = new Database(this, "Database", {
       provider: provider,

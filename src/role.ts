@@ -18,9 +18,11 @@ export interface RoleProps {
   readonly roleName: string
 
   /**
-   * Database name this user is expected to use.
+   * Ootional database name this user is expected to use.
+   *
+   * @default no connection to any database is granted
    */
-  readonly databaseName: string
+  readonly databaseName?: string
 
   /**
    * Database cluster to access.
@@ -70,6 +72,7 @@ export class Role extends Construct {
       provider: props.provider,
       roleName: props.roleName,
       passwordArn: this.secret.secretArn,
+      databaseName: props.databaseName,
     })
     role.node.addDependency(this.secret)
     this.roleName = props.roleName

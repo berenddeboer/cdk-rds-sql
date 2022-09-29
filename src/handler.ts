@@ -37,7 +37,15 @@ type JumpTable = {
 }
 
 interface RoleProps {
+  /**
+   * Secret ARN.
+   */
   PasswordArn: string
+
+  /**
+   * Optional database to which role is granted connect permissions.
+   */
+  DatabaseName?: string
 }
 
 interface DatabaseProps {
@@ -74,27 +82,45 @@ const jumpTable: JumpTable = {
       if (!props.PasswordArn) throw "No PasswordArn provided"
       const password = await getPassword(props.PasswordArn)
       if (password) {
-        return format("create role %I with password %L", resourceId, password)
+        const sql = [format("create role %I with password %L", resourceId, password)]
+        if (props.DatabaseName) {
+          sql.push(
+            format("grant connect on database %I to %I", props.DatabaseName, resourceId)
+          )
+        }
+        return sql
       } else {
         throw `Cannot parse password from ${props.PasswordArn}`
       }
     },
-    Update: async (resourceId: string, oldResourceId: string, props?: RoleProps) => {
+    Update: async (resourceId: string, oldResourceId: string, props: RoleProps) => {
+      // TODO: if database name has changed in OldResourceProperties, revoke connect
       if (props && props.PasswordArn) {
         const password = await getPassword(props.PasswordArn)
         if (password) {
-          return format(
-            "alter role %I rename to %I; alter role %I with password %L",
-            oldResourceId,
-            resourceId,
-            resourceId,
-            password
-          )
+          const sql = [
+            format(
+              "alter role %I rename to %I; alter role %I with password %L",
+              oldResourceId,
+              resourceId,
+              resourceId,
+              password
+            ),
+          ]
+          if (props.DatabaseName) {
+            sql.push(
+              format("grant connect on database %I to %I", props.DatabaseName, resourceId)
+            )
+          }
+          return sql
         } else {
           throw `Cannot parse password from ${props.PasswordArn}`
         }
       } else {
-        return format("alter role %I rename to %I", oldResourceId, resourceId)
+        return [
+          format("alter role %I rename to %I", oldResourceId, resourceId),
+          format("grant connect on database %I to %I", props.DatabaseName, resourceId),
+        ]
       }
     },
     Delete: (resourceId: string) => {
@@ -226,6 +252,8 @@ export const handler = async (
   }
 
   let response: CustomResourceResponse = {}
+  // Except for the SQL resource, return the new resource id. This
+  // will cause a delete to be send for the old resource.
   if (resource !== RdsSqlResource.SQL) {
     response.PhysicalResourceId = resourceId
   }

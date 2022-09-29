@@ -82,6 +82,7 @@ test("role", async () => {
   const newRoleName = "example2"
   const create = createRequest("role", oldRoleName, {
     PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+    DatabaseName: "postgres",
   })
   await handler(create)
   expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
@@ -97,15 +98,32 @@ test("role", async () => {
 
     const update = updateRequest("role", oldRoleName, newRoleName, {
       PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      DatabaseName: "postgres",
     })
     await handler(update)
     expect(await roleExists(client, oldRoleName)).toEqual(false)
     expect(await roleExists(client, newRoleName)).toEqual(true)
 
-    // CloudFormation will send a delete afterward, so test that too
+    // CloudFormation will send a delete afterward as we change the
+    // physical id, so test that too
     const remove = deleteRequest("role", oldRoleName)
     await handler(remove)
     expect(await roleExists(client, oldRoleName)).toEqual(false)
+  } finally {
+    await client.end()
+  }
+})
+
+test("role without database", async () => {
+  const roleName = "example"
+  const create = createRequest("role", roleName, {
+    PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+  })
+  await handler(create)
+  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+  const client = await newClient()
+  try {
+    expect(await roleExists(client, roleName)).toEqual(true)
   } finally {
     await client.end()
   }
@@ -142,6 +160,7 @@ test("database with owner", async () => {
   const roleName = "example"
   const create_role = createRequest("role", roleName, {
     PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+    DatabaseName: "postgres",
   })
   await handler(create_role)
   const create_db = createRequest("database", databaseName, { Owner: "example" })

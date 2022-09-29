@@ -211,10 +211,14 @@ Test code via projen with:
 
 You can run the sample stack with:
 
-    npx cdk synth --context vpc-id=vpc-0123456789
+    npx cdk deploy --context vpc-id=vpc-0123456789
 
 # To do
 
 - Add `.from()` functions to make everything more type-safe, and make
   it impossible to import database from other stacks or created
   outside the stack.
+- Update role: will not revoke connect to previous database if database name has changed.
+- If the cluster is configured for autopausing, wake cluster up before doing any SQL operations.
+- We rename roles and database on update: is that actually the best
+  thing? More change to get us into an irrecoverable situation??
