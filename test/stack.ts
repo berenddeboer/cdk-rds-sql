@@ -44,16 +44,15 @@ export class TestStack extends Stack {
       provider: provider,
       schemaName: "myschema",
     })
-    const postgres = Database.fromDatabaseName(this, "DefaultDatabase", "postgres")
     const role = new Role(this, "Role", {
       provider: provider,
       roleName: "myrole",
       cluster: cluster,
-      database: postgres,
+      databaseName: "mydb",
     })
     const database = new Database(this, "Database", {
       provider: provider,
-      databaseName: "mydb2",
+      databaseName: "mydb",
       owner: role,
     })
     new Sql(this, "Sql", {

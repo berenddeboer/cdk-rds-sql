@@ -83,13 +83,21 @@ const jumpTable: JumpTable = {
       const password = await getPassword(props.PasswordArn)
       if (password) {
         const sql = [
+          "start transaction",
           format("create role %I with login password %L", resourceId, password),
         ]
         if (props.DatabaseName) {
+          // grant connect to database if database already exists
           sql.push(
-            format("grant connect on database %I to %I", props.DatabaseName, resourceId)
+            format(
+              "DO $$BEGIN\nIF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN grant connect on database %I to %I; END IF;\nEND$$;",
+              props.DatabaseName,
+              props.DatabaseName,
+              resourceId
+            )
           )
         }
+        sql.push("commit")
         return sql
       } else {
         throw `Cannot parse password from ${props.PasswordArn}`
@@ -101,6 +109,7 @@ const jumpTable: JumpTable = {
         const password = await getPassword(props.PasswordArn)
         if (password) {
           const sql = [
+            "start transaction",
             format(
               "alter role %I rename to %I; alter role %I with password %L",
               oldResourceId,
@@ -114,26 +123,36 @@ const jumpTable: JumpTable = {
               format("grant connect on database %I to %I", props.DatabaseName, resourceId)
             )
           }
+          sql.push("commit")
           return sql
         } else {
           throw `Cannot parse password from ${props.PasswordArn}`
         }
       } else {
         return [
+          "start transaction",
           format("alter role %I rename to %I", oldResourceId, resourceId),
-          format("grant connect on database %I to %I", props.DatabaseName, resourceId),
+          format(
+            "DO $$BEGIN\nIF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN grant connect on database %I to %I; END IF;\nEND$$;",
+            props.DatabaseName,
+            props.DatabaseName,
+            resourceId
+          ),
+          "commit",
         ]
       }
     },
     Delete: (resourceId: string) => {
       // TODO: if user is owner of a database, assign ownership to master user?
       return [
+        "start transaction",
         format(
-          "DO $$BEGIN\nIF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database postgres from %I; END IF;\nEND$$;",
+          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database postgres from %I; END IF;\nEND$$;",
           resourceId,
           resourceId
         ),
         format("drop role if exists %I", resourceId),
+        "commit",
       ]
     },
   },

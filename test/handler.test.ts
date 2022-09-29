@@ -77,7 +77,7 @@ test("schema", async () => {
   }
 })
 
-test("role", async () => {
+test("role with existing database", async () => {
   const oldRoleName = "example"
   const newRoleName = "example2"
   const create = createRequest("role", oldRoleName, {
@@ -160,7 +160,7 @@ test("database with owner", async () => {
   const roleName = "example"
   const create_role = createRequest("role", roleName, {
     PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
-    DatabaseName: "postgres",
+    DatabaseName: "mydb", // database does not exist yet
   })
   await handler(create_role)
   const create_db = createRequest("database", databaseName, { Owner: "example" })
