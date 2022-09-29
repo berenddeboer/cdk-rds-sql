@@ -103,6 +103,10 @@ does, with all the connection info needed for this user. It's secret value is a 
 
 You can access the secret via `role.secret`.
 
+Instead of `databaseName` you can also specify `database` to reference
+an existing database. The role will not be created until the database
+has been created.
+
 ## Database
 
 Create a datdabse as follows:

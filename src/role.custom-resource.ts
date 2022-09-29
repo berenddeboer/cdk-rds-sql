@@ -23,15 +23,28 @@ export interface RoleProps {
   readonly passwordArn: string
 
   /**
-   * Database to which this user gets access.
+   * Optional database this user is expected to use.
    *
-   * @default no database connect is granted
+   * Specify none of `database` or `databaseName` or only one of them.
+   *
+   * @default no connection to any database is granted
    */
   readonly database?: IDatabase
+
+  /**
+   * Ootional database name this user is expected to use.
+   *
+   * Specify none of `database` or `databaseName` or only one of them.
+   *
+   * @default no connection to any database is granted
+   */
+  readonly databaseName?: string
 }
 
 export class Role extends CustomResource {
   constructor(scope: Construct, id: string, props: RoleProps) {
+    if (props.database && props.databaseName)
+      throw "Specify either database or databaseName"
     super(scope, id, {
       serviceToken: props.provider.serviceToken,
       properties: {
@@ -39,7 +52,7 @@ export class Role extends CustomResource {
         ResourceId: props.roleName,
         SecretArn: props.provider.secret.secretArn,
         PasswordArn: props.passwordArn,
-        DatabaseName: props.database ? props.database.databaseName : undefined,
+        DatabaseName: props.database ? props.database.databaseName : props.databaseName,
       },
     })
     this.node.addDependency(props.provider)

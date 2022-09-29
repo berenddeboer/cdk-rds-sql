@@ -19,11 +19,22 @@ export interface RoleProps {
   readonly roleName: string
 
   /**
-   * Ootional database name this user is expected to use.
+   * Optional database this user is expected to use.
+   *
+   * Specify none of `database` or `databaseName` or only one of them.
    *
    * @default no connection to any database is granted
    */
   readonly database?: IDatabase
+
+  /**
+   * Ootional database name this user is expected to use.
+   *
+   * Specify none of `database` or `databaseName` or only one of them.
+   *
+   * @default no connection to any database is granted
+   */
+  readonly databaseName?: string
 
   /**
    * Database cluster to access.
@@ -50,6 +61,8 @@ export class Role extends Construct {
   public readonly secret: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
+    if (props.database && props.databaseName)
+      throw "Specify either database or databaseName"
     super(scope, id)
     this.secret = new Secret(this, "Secret", {
       encryptionKey: props.encryptionKey,
@@ -74,6 +87,7 @@ export class Role extends Construct {
       roleName: props.roleName,
       passwordArn: this.secret.secretArn,
       database: props.database,
+      databaseName: props.databaseName,
     })
     role.node.addDependency(this.secret)
     this.roleName = props.roleName

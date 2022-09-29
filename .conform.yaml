@@ -24,8 +24,11 @@ policies:
           - "test"
           - "vendor"
         scopes:
-          - "docker"
-          - "meltano"
+          - "provider"
+          - "database"
+          - "schema"
+          - "role"
+          - "sql"
         descriptionLength: 160
   - type: license
     spec:
