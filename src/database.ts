@@ -4,12 +4,7 @@ import { RdsSqlResource } from "./enum"
 import { Provider } from "./provider"
 import { Role } from "./role"
 
-export interface DatabaseProps {
-  /**
-   * Provider.
-   */
-  readonly provider: Provider
-
+interface DatabaseAttributes {
   /**
    * Name of database to create.
    */
@@ -21,7 +16,36 @@ export interface DatabaseProps {
   readonly owner?: Role
 }
 
-export class Database extends CustomResource {
+export interface DatabaseProps extends DatabaseAttributes {
+  /**
+   * Provider.
+   */
+  readonly provider: Provider
+}
+
+export interface IDatabase {
+  readonly databaseName: string
+}
+
+class ImportedDatabase extends Construct implements IDatabase {
+  public readonly databaseName: string
+
+  constructor(scope: Construct, id: string, props: DatabaseAttributes) {
+    super(scope, id)
+    this.databaseName = props.databaseName
+  }
+}
+
+export class Database extends CustomResource implements IDatabase {
+  /**
+   * Return a Database based upon name only. Use for importing existing databases.
+   */
+  static fromDatabaseName(scope: Construct, id: string, databaseName: string): IDatabase {
+    return new ImportedDatabase(scope, id, {
+      databaseName: databaseName,
+    })
+  }
+
   public readonly databaseName: string
 
   constructor(scope: Construct, id: string, props: DatabaseProps) {

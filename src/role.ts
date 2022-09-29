@@ -3,6 +3,7 @@ import * as kms from "aws-cdk-lib/aws-kms"
 import { ServerlessCluster } from "aws-cdk-lib/aws-rds"
 import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
+import { IDatabase } from "./database"
 import { Provider } from "./provider"
 import { Role as CustomResourceRole } from "./role.custom-resource"
 
@@ -22,7 +23,7 @@ export interface RoleProps {
    *
    * @default no connection to any database is granted
    */
-  readonly databaseName?: string
+  readonly database?: IDatabase
 
   /**
    * Database cluster to access.
@@ -61,7 +62,7 @@ export class Role extends Construct {
           host: props.cluster.clusterEndpoint.hostname,
           port: props.cluster.clusterEndpoint.port,
           username: props.roleName,
-          dbname: props.databaseName,
+          dbname: props.database ? props.database.databaseName : undefined,
         }),
         generateStringKey: "password",
         excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
@@ -72,7 +73,7 @@ export class Role extends Construct {
       provider: props.provider,
       roleName: props.roleName,
       passwordArn: this.secret.secretArn,
-      databaseName: props.databaseName,
+      database: props.database,
     })
     role.node.addDependency(this.secret)
     this.roleName = props.roleName

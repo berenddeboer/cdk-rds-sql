@@ -31,6 +31,7 @@ export class TestStack extends Stack {
         maxCapacity: rds.AuroraCapacityUnit.ACU_2,
       },
     })
+    // Allow connections from jump host to test things
     cluster.connections.allowDefaultPortFrom(ec2.Peer.ipv4("10.88.64.0/16"))
 
     const provider = new Provider(this, "Provider", {
@@ -38,26 +39,27 @@ export class TestStack extends Stack {
       cluster: cluster,
       secret: cluster.secret!,
     })
+
     new Schema(this, "Schema", {
       provider: provider,
       schemaName: "myschema",
     })
+    const postgres = Database.fromDatabaseName(this, "DefaultDatabase", "postgres")
     const role = new Role(this, "Role", {
       provider: provider,
       roleName: "myrole",
       cluster: cluster,
-      databaseName: "postgres",
+      database: postgres,
     })
     const database = new Database(this, "Database", {
       provider: provider,
       databaseName: "mydb2",
       owner: role,
     })
-    const sql = new Sql(this, "Sql", {
+    new Sql(this, "Sql", {
       provider: provider,
-      databaseName: database.databaseName,
+      database: database,
       statement: "create table t (i int)",
     })
-    sql.node.addDependency(database)
   }
 }

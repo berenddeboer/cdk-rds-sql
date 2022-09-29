@@ -164,7 +164,7 @@ import { Sql } from "cdk-rds-sql"
 
 const sql = new Sql(this, "Sql", {
   provider: provider,
-  databaseName: database.databaseName,
+  database: database,
   statement: "create table t (i int)",
 })
 ```
@@ -215,9 +215,6 @@ You can run the sample stack with:
 
 # To do
 
-- Add `.from()` functions to make everything more type-safe, and make
-  it impossible to import database from other stacks or created
-  outside the stack.
 - Update role: will not revoke connect to previous database if database name has changed.
 - If the cluster is configured for autopausing, wake cluster up before doing any SQL operations.
 - We rename roles and database on update: is that actually the best

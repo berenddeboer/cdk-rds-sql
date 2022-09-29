@@ -1,5 +1,6 @@
 import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
+import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
 import { Provider } from "./provider"
 
@@ -26,7 +27,7 @@ export interface RoleProps {
    *
    * @default no database connect is granted
    */
-  readonly databaseName?: string
+  readonly database?: IDatabase
 }
 
 export class Role extends CustomResource {
@@ -38,9 +39,10 @@ export class Role extends CustomResource {
         ResourceId: props.roleName,
         SecretArn: props.provider.secret.secretArn,
         PasswordArn: props.passwordArn,
-        DatabaseName: props.databaseName,
+        DatabaseName: props.database ? props.database.databaseName : undefined,
       },
     })
     this.node.addDependency(props.provider)
+    if (props.database) this.node.addDependency(props.database)
   }
 }

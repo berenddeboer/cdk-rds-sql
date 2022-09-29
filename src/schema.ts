@@ -1,5 +1,6 @@
 import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
+import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
 import { Provider } from "./provider"
 
@@ -14,7 +15,7 @@ export interface SchemaProps {
    *
    * @default - use default database
    */
-  readonly databaseName?: string
+  readonly database?: IDatabase
 
   /**
    * SQL.
@@ -32,10 +33,11 @@ export class Schema extends CustomResource {
         Resource: RdsSqlResource.SCHEMA,
         ResourceId: props.schemaName,
         SecretArn: props.provider.secret.secretArn,
-        Database: props.databaseName,
+        Database: props.database ? props.database.databaseName : undefined,
       },
     })
     this.node.addDependency(props.provider)
     this.schemaName = props.schemaName
+    if (props.database) this.node.addDependency(props.database)
   }
 }
