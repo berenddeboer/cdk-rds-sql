@@ -51,6 +51,13 @@ export interface RoleProps {
    * Optionally encrypt it with the given key.
    */
   readonly encryptionKey?: kms.IKey
+
+  /**
+   * A new secret is created for this user.
+   *
+   * Optionally add secret name to the secret.
+   */
+  readonly secretName?: string
 }
 
 export class Role extends Construct {
@@ -69,6 +76,7 @@ export class Role extends Construct {
       throw "Specify either database or databaseName"
     super(scope, id)
     this.secret = new Secret(this, "Secret", {
+      secretName: props.secretName,
       encryptionKey: props.encryptionKey,
       description: `Generated secret for postgres role ${props.roleName}`,
       generateSecretString: {
