@@ -51,6 +51,13 @@ export interface RoleProps {
    * Optionally encrypt it with the given key.
    */
   readonly encryptionKey?: kms.IKey
+
+  /**
+   * A new secret is created for this user.
+   *
+   * Optionally add secret name to the secret.
+   */
+  readonly secretName?: string
 }
 
 export class Role extends Construct {
