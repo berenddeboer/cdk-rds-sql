@@ -40,7 +40,7 @@ repos:
       - id: synth
         name: synth
         language: system
-        entry: sh -c 'npx cdk synth --quiet --context vpc-id=$VPC_ID'
+        entry: sh -c 'npx cdk synth --quiet --context vpc-id=vpc-123456'
         files: src/.*\.ts$
   - repo: local
     hooks:
