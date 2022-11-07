@@ -87,7 +87,7 @@ export class Role extends Construct {
           host: props.cluster.clusterEndpoint.hostname,
           port: props.cluster.clusterEndpoint.port,
           username: props.roleName,
-          dbname: props.database ? props.database.databaseName : undefined,
+          dbname: props.database ? props.database.databaseName : props.databaseName,
         }),
         generateStringKey: "password",
         excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
