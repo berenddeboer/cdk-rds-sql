@@ -66,7 +66,10 @@ export class Role extends Construct {
   public readonly secret: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
-    if (props.database && props.databaseName)
+    if (
+      (props.database && props.databaseName) ||
+      (!props.database && !props.databaseName)
+    )
       throw "Specify either database or databaseName"
     super(scope, id)
     this.secret = new Secret(this, "Secret", {
