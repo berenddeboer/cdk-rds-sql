@@ -4,7 +4,7 @@ import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
 import { Provider } from "../src/provider"
 import { Role } from "../src/role"
-import { TestStack } from "./stack"
+import { TestStack } from "./serverless-stack"
 
 test("stack", () => {
   const app = new cdk.App()
