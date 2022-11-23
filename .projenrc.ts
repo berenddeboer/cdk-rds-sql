@@ -1,4 +1,5 @@
 import { awscdk, JsonPatch } from "projen"
+import { NodePackageManager } from "projen/lib/javascript"
 
 const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
 
@@ -12,6 +13,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   defaultReleaseBranch: "main",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
+  packageManager: NodePackageManager.NPM,
   constructsVersion: "10.1.168",
   cdkVersion: "2.51.1",
   disableTsconfig: true,
