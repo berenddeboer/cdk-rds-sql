@@ -9,8 +9,21 @@ import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
 
 export interface RdsSqlProps {
+  /**
+   * VPC of your cluster.
+   */
   readonly vpc: IVpc
+
+  /**
+   * Your database.
+   */
   readonly cluster: IServerlessCluster
+
+  /**
+   * Secret that grants access to your database.
+   *
+   * Usually this is your cluster's master secret.
+   */
   readonly secret: ISecret
 }
 
@@ -18,10 +31,12 @@ export class Provider extends Construct {
   public readonly serviceToken: string
   public readonly secret: ISecret
   public readonly handler: IFunction
+  public readonly cluster: IServerlessCluster
 
   constructor(scope: Construct, id: string, props: RdsSqlProps) {
     super(scope, id)
     this.secret = props.secret
+    this.cluster = props.cluster
 
     const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
     this.handler =

@@ -48,7 +48,6 @@ export class TestStack extends Stack {
     const role = new Role(this, "Role", {
       provider: provider,
       roleName: "myrole",
-      cluster: cluster,
       databaseName: "mydb",
     })
     const database = new Database(this, "Database", {

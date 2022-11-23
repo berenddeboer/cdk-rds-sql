@@ -1,6 +1,5 @@
 import { RemovalPolicy } from "aws-cdk-lib"
 import * as kms from "aws-cdk-lib/aws-kms"
-import { ServerlessCluster } from "aws-cdk-lib/aws-rds"
 import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
@@ -41,11 +40,6 @@ export interface RoleProps {
   readonly databaseName?: string
 
   /**
-   * Database cluster to access.
-   */
-  readonly cluster: ServerlessCluster
-
-  /**
    * A new secret is created for this user.
    *
    * Optionally encrypt it with the given key.
@@ -82,10 +76,10 @@ export class Role extends Construct {
       generateSecretString: {
         passwordLength: 30, // Oracle password cannot have more than 30 characters
         secretStringTemplate: JSON.stringify({
-          dbClusterIdentifier: props.cluster.clusterIdentifier,
+          dbClusterIdentifier: props.provider.cluster.clusterIdentifier,
           engine: "postgres",
-          host: props.cluster.clusterEndpoint.hostname,
-          port: props.cluster.clusterEndpoint.port,
+          host: props.provider.cluster.clusterEndpoint.hostname,
+          port: props.provider.cluster.clusterEndpoint.port,
           username: props.roleName,
           dbname: props.database ? props.database.databaseName : props.databaseName,
         }),
