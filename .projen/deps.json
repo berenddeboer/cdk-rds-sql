@@ -34,12 +34,12 @@
     },
     {
       "name": "aws-cdk-lib",
-      "version": "2.43.1",
+      "version": "2.51.1",
       "type": "build"
     },
     {
       "name": "constructs",
-      "version": "10.1.104",
+      "version": "10.1.168",
       "type": "build"
     },
     {
@@ -99,7 +99,7 @@
     },
     {
       "name": "npm-check-updates",
-      "version": "^15",
+      "version": "^16",
       "type": "build"
     },
     {
@@ -162,23 +162,13 @@
       "type": "override"
     },
     {
-      "name": "@types/responselike",
-      "version": "1.0.0",
-      "type": "override"
-    },
-    {
-      "name": "got",
-      "version": "12.3.1",
-      "type": "override"
-    },
-    {
       "name": "aws-cdk-lib",
-      "version": "^2.43.1",
+      "version": "^2.51.1",
       "type": "peer"
     },
     {
       "name": "constructs",
-      "version": "^10.1.104",
+      "version": "^10.1.168",
       "type": "peer"
     }
   ],
