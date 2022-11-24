@@ -81,7 +81,6 @@ import { Role } from "cdk-rds-sql"
 const role = new Role(this, "Role", {
   provider: provider,
   roleName: "myrole",
-  cluster: cluster,
   databaseName: "mydb",
 })
 ```
@@ -173,6 +172,19 @@ const sql = new Sql(this, "Sql", {
 })
 ```
 
+Create a table if it does not exist, and grant a role privileges:
+
+```ts
+const sql = new Sql(this, "Sql", {
+  provider: provider,
+  database: database,
+  statement: `
+create table if not exists t (i int);
+grant select on t to myrole;
+`,
+})
+```
+
 Note that there is no synchronisation between various `Sql`
 constructs, in particular the order in your code does not determine
 the order in which your SQL is executed. This happens in parallel,
@@ -215,7 +227,7 @@ Test code via projen with:
 
 You can run the sample stack with:
 
-    npx cdk deploy --context vpc-id=vpc-0123456789
+    npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV2Stack
 
 # To do
 
