@@ -1533,7 +1533,7 @@
   dependencies:
     "@types/glob" "*"
 
-"@types/aws-lambda@^8.10.108":
+"@types/aws-lambda@^8.10.109":
   version "8.10.109"
   resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.109.tgz#2f434cbfafe083529e365fe9c114787827a169a8"
   integrity sha512-/ME92FneNyXQzrAfcnQQlW1XkCZGPDlpi2ao1MJwecN+6SbeonKeggU8eybv1DfKli90FAVT1MlIZVXfwVuCyg==
@@ -6368,7 +6368,7 @@ prettier-linter-helpers@^1.0.0:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@^2.7.1:
+prettier@^2.8.0:
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.8.0.tgz#c7df58393c9ba77d6fba3921ae01faf994fb9dc9"
   integrity sha512-9Lmg8hTFZKG0Asr/kW9Bp8tJjRVluO8EJQVfY2T7FMw9T5jy4I/Uvx0Rca/XWf50QQ1/SS48+6IJWnrb+2yemA==
@@ -6397,7 +6397,7 @@ progress@^2.0.3:
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
 
-projen@^0.65.32:
+projen@^0.65.34:
   version "0.65.34"
   resolved "https://registry.yarnpkg.com/projen/-/projen-0.65.34.tgz#3999bf4b20420d20ae469c125c00044facbf52ad"
   integrity sha512-nQKiFCf4W6mx5I5iRBsRruB+5CmC1P4iQr9xbqyggT5y0XC+X4XMmmxzF96P7XeailiQQdaV7tCzLsrLFyOnIw==
