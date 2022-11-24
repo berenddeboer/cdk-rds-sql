@@ -22,7 +22,7 @@ jobs:
       - name: Change permissions on /var/run/docker.sock
         run: sudo chown superchain /var/run/docker.sock
       - name: Install dependencies
-        run: npm install
+        run: yarn install --check-files
       - name: build
         run: npx projen build
       - name: Find mutations
@@ -102,7 +102,7 @@ jobs:
       - name: Prepare Repository
         run: mv dist .repo
       - name: Install Dependencies
-        run: cd .repo && npm ci
+        run: cd .repo && yarn install --check-files --frozen-lockfile
       - name: Create js artifact
         run: cd .repo && npx projen package:js
       - name: Collect js Artifact

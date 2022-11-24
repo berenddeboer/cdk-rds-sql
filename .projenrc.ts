@@ -13,7 +13,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   defaultReleaseBranch: "main",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
-  packageManager: NodePackageManager.NPM,
+  packageManager: NodePackageManager.YARN,
   constructsVersion: "10.1.168",
   cdkVersion: "2.51.1",
   disableTsconfig: true,

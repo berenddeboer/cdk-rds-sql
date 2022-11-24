@@ -21,7 +21,7 @@ jobs:
       - name: Change permissions on /var/run/docker.sock
         run: sudo chown superchain /var/run/docker.sock
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --check-files --frozen-lockfile
       - name: Upgrade dependencies
         run: npx projen upgrade
       - name: Find mutations
