@@ -47,7 +47,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     },
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
-  minMajorVersion: 1,
+  minMajorVersion: 2,
 })
 project.addGitIgnore("*~")
 if (project.eslint) {
