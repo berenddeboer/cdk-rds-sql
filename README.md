@@ -1,8 +1,8 @@
 # About
 
 This CDK construct library makes it possible create databases,
-schemas, and roles to an Aurora Serverless database created in that
-stack.
+schemas, and roles to an Aurora Serverless or database cluster created
+in that stack. Both Aurora Serverless v1 and v2 are supported.
 
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
