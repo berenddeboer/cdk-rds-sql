@@ -108,16 +108,11 @@ const jumpTable: JumpTable = {
       if (props && props.PasswordArn) {
         const password = await getPassword(props.PasswordArn)
         if (password) {
-          const sql = [
-            "start transaction",
-            format(
-              "alter role %I rename to %I; alter role %I with password %L",
-              oldResourceId,
-              resourceId,
-              resourceId,
-              password
-            ),
-          ]
+          const sql = ["start transaction"]
+          if (oldResourceId !== resourceId) {
+            sql.push(format("alter role %I rename to %I", oldResourceId, resourceId))
+          }
+          sql.push(format("alter role %I with password %L", resourceId, password))
           if (props.DatabaseName) {
             sql.push(
               format("grant connect on database %I to %I", props.DatabaseName, resourceId)
@@ -129,17 +124,20 @@ const jumpTable: JumpTable = {
           throw `Cannot parse password from ${props.PasswordArn}`
         }
       } else {
-        return [
-          "start transaction",
-          format("alter role %I rename to %I", oldResourceId, resourceId),
+        const sql = ["start transaction"]
+        if (oldResourceId !== resourceId) {
+          sql.push(format("alter role %I rename to %I", oldResourceId, resourceId))
+        }
+        sql.push(
           format(
             "DO $$BEGIN\nIF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN grant connect on database %I to %I; END IF;\nEND$$;",
             props.DatabaseName,
             props.DatabaseName,
             resourceId
-          ),
-          "commit",
-        ]
+          )
+        )
+        sql.push("commit")
+        return sql
       }
     },
     Delete: (resourceId: string) => {
