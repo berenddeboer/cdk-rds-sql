@@ -129,6 +129,25 @@ test("role without database", async () => {
   }
 })
 
+test("change role password", async () => {
+  const roleName = "example"
+  const create = createRequest("role", roleName, {
+    PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+  })
+  await handler(create)
+  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+  const client = await newClient()
+  try {
+    expect(await roleExists(client, roleName)).toEqual(true)
+    const update = updateRequest("role", roleName, roleName, {
+      PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+    })
+    await handler(update)
+  } finally {
+    await client.end()
+  }
+})
+
 test("database", async () => {
   const oldDatabaseName = "mydb"
   const newDatabaseName = "mydb2"
