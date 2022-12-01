@@ -62,7 +62,7 @@ export class Provider extends Construct {
     const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
       entry: entry,
-      runtime: Runtime.NODEJS_14_X,
+      runtime: Runtime.NODEJS_16_X,
       timeout: Duration.seconds(300),
       bundling: {
         sourceMap: true,
