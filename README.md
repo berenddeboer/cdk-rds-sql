@@ -108,7 +108,7 @@ has been created.
 
 ## Database
 
-Create a datdabse as follows:
+Create a database as follows:
 
 ```ts
 import { Database } from "cdk-rds-sql"
