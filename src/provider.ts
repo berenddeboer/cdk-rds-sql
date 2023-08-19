@@ -1,4 +1,5 @@
 import { existsSync } from "fs"
+import * as path from "path"
 import { Duration, Stack } from "aws-cdk-lib"
 import { IVpc } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
@@ -58,7 +59,19 @@ export class Provider extends Construct {
     props: RdsSqlProps
   ): lambda.NodejsFunction {
     const ts_filename = `${__dirname}/handler.ts`
-    const entry = existsSync(ts_filename) ? ts_filename : `${__dirname}/handler.js`
+    const js_filename = `${__dirname}/handler.js`
+    let entry: string
+    if (existsSync(ts_filename)) {
+      entry = ts_filename
+    } else if (existsSync(js_filename)) {
+      entry = js_filename
+    } else {
+      // Ugly hack to support SST (possibly caused by my hack to make SST work with CommonJS libraries)
+      entry = path.join(
+        path.dirname(process.env.npm_package_json || process.cwd()),
+        "node_modules/cdk-rds-sql/lib/handler.js"
+      )
+    }
     const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
       entry: entry,
