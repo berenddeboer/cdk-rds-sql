@@ -206,12 +206,12 @@ export const handler = async (
     | CloudFormationCustomResourceUpdateEvent
     | CloudFormationCustomResourceDeleteEvent
 ): Promise<any> => {
-  //console.debug("EVENT", event)
+  console.log("event", event)
 
   const requestType = event.RequestType
   const resource: RdsSqlResource = event.ResourceProperties.Resource
   const resourceId = event.ResourceProperties.ResourceId
-  const database = event.ResourceProperties.Database
+  const databaseName = event.ResourceProperties.DatabaseName
 
   if (!Object.keys(jumpTable).includes(event.ResourceProperties.Resource)) {
     throw `Resource type '${resource}' not recognised.`
@@ -250,8 +250,12 @@ export const handler = async (
   }
 
   if (sql) {
-    //console.debug("DATABASE", database)
-    console.debug("SQL", sql)
+    let database: string
+    if (resource === RdsSqlResource.ROLE) {
+      database = secretValues.dbname
+    } else {
+      database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
+    }
     const params = {
       host: secretValues.host,
       port: secretValues.port,
@@ -261,6 +265,10 @@ export const handler = async (
       connectionTimeoutMillis: 2000, // return an error if a connection could not be established within 2 seconds
     }
     //console.debug ("PARAMS", params)
+    console.debug(
+      `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
+    )
+    console.debug("Executing SQL", sql)
     const pg_client = new Client(params)
     await pg_client.connect()
     try {

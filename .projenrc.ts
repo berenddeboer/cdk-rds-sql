@@ -19,11 +19,12 @@ const project = new awscdk.AwsCdkConstructLibrary({
     workflow: false,
   },
   constructsVersion: "10.1.168",
-  cdkVersion: "2.51.1",
+  cdkVersion: "2.64.0",
   disableTsconfig: true,
   tsconfigDev: {
     compilerOptions: {
       esModuleInterop: true,
+      noUnusedLocals: false,
     },
   },
   eslint: true,

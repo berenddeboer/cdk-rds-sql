@@ -20,9 +20,9 @@ const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
 >
 
 const DB_PORT = 5432
-const DB_MASTER_USERNAME = "postgres"
+const DB_MASTER_USERNAME = "pgroot"
 const DB_MASTER_PASSWORD = "masterpwd"
-const DB_DEFAULT_DB = "postgres"
+const DB_DEFAULT_DB = "dummy"
 
 let pgContainer: StartedTestContainer
 let pgHost: string
@@ -31,7 +31,9 @@ let pgPort: number
 beforeEach(async () => {
   pgContainer = await new GenericContainer("postgres")
     .withExposedPorts(DB_PORT)
+    .withEnv("POSTGRES_USER", DB_MASTER_USERNAME)
     .withEnv("POSTGRES_PASSWORD", DB_MASTER_PASSWORD)
+    .withEnv("POSTGRES_DB", DB_DEFAULT_DB)
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
@@ -50,6 +52,9 @@ SecretsManagerClientMock.prototype.send.mockImplementation(() => {
       port: pgPort,
       username: DB_MASTER_USERNAME,
       password: DB_MASTER_PASSWORD,
+      dbname: DB_DEFAULT_DB,
+      engine: "postgres",
+      dbClusterIdentifier: "dummy",
     }),
   }
 })
@@ -189,7 +194,7 @@ test("database with owner", async () => {
     expect(await databaseExists(client, databaseName)).toEqual(true)
     expect(await databaseOwnerIs(client, databaseName, roleName)).toEqual(true)
     const create_table = createRequest("sql", "", {
-      Database: databaseName,
+      DatabaseName: databaseName,
       Statement: "create table t(i int)",
     })
     await handler(create_table)

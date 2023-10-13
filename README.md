@@ -44,7 +44,7 @@ const cluster = new rds.ServerlessCluster(this, "Cluster", {
   parameterGroup: rds.ParameterGroup.fromParameterGroupName(
     this,
     "ParameterGroup",
-    "default.aurora-postgresql10"
+    "default.aurora-postgresql11"
   ),
   removalPolicy: RemovalPolicy.DESTROY,
   scaling: {
@@ -226,6 +226,14 @@ Test code via projen with:
     npx projen test
 
 You can run the sample stack with:
+
+    npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV1Stack
+
+Or for v2:
+
+    npx cdk deploy TestServerlessV2Stack
+
+If you want to use an existing vpc:
 
     npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV2Stack
 

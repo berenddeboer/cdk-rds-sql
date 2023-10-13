@@ -33,7 +33,7 @@ export class Schema extends CustomResource {
         Resource: RdsSqlResource.SCHEMA,
         ResourceId: props.schemaName,
         SecretArn: props.provider.secret.secretArn,
-        Database: props.database ? props.database.databaseName : undefined,
+        DatabaseName: props.database ? props.database.databaseName : undefined,
       },
     })
     this.node.addDependency(props.provider)

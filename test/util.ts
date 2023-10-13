@@ -11,9 +11,7 @@ import { Client } from "pg"
 export const createRequest = (
   resource: string,
   resourceId: string,
-  props?: {
-    [Key: string]: any
-  }
+  props?: Record<string, any>
 ): CloudFormationCustomResourceCreateEvent => {
   return {
     ServiceToken: "",
@@ -36,9 +34,7 @@ export const updateRequest = (
   resource: string,
   oldResourceId: string,
   newResourceId: string,
-  props?: {
-    [Key: string]: any
-  }
+  props?: Record<string, any>
 ): CloudFormationCustomResourceUpdateEvent => {
   return {
     ServiceToken: "",
@@ -64,7 +60,8 @@ export const updateRequest = (
 
 export const deleteRequest = (
   resource: string,
-  resourceId: string
+  resourceId: string,
+  props?: Record<string, any>
 ): CloudFormationCustomResourceDeleteEvent => {
   return {
     ServiceToken: "",
@@ -77,6 +74,7 @@ export const deleteRequest = (
       ServiceToken: "",
       Resource: resource,
       ResourceId: resourceId,
+      ...props,
     },
     RequestType: "Delete",
     PhysicalResourceId: resourceId,

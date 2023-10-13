@@ -30,7 +30,7 @@ export class Sql extends CustomResource {
       properties: {
         Resource: RdsSqlResource.SQL,
         SecretArn: props.provider.secret.secretArn,
-        Database: props.database ? props.database.databaseName : undefined,
+        DatabaseName: props.database ? props.database.databaseName : undefined,
         Statement: props.statement,
       },
     })

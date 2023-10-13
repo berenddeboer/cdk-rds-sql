@@ -11,7 +11,11 @@ import { Construct } from "constructs"
 
 export interface RdsSqlProps {
   /**
-   * VPC of your cluster.
+   * VPC network to place the provider lambda.
+   *
+   * Normally this is the VPC of your database.
+   *
+   * @default - Function is not placed within a VPC.
    */
   readonly vpc: IVpc
 
@@ -26,6 +30,13 @@ export interface RdsSqlProps {
    * Usually this is your cluster's master secret.
    */
   readonly secret: ISecret
+
+  /**
+   * Timeout for lambda to do its work.
+   *
+   * @default - 5 minutes
+   */
+  readonly timeout?: Duration
 }
 
 export class Provider extends Construct {
@@ -76,7 +87,7 @@ export class Provider extends Construct {
       vpc: props.vpc,
       entry: entry,
       runtime: Runtime.NODEJS_18_X,
-      timeout: Duration.seconds(300),
+      timeout: props.timeout ?? Duration.seconds(300),
       bundling: {
         sourceMap: true,
         externalModules: ["pg-native"],
