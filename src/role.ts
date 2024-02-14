@@ -101,5 +101,9 @@ export class Role extends Construct {
     role.node.addDependency(this.secret)
     this.roleName = props.roleName
     this.secret.grantRead(props.provider.handler)
+    if (this.secret.encryptionKey) {
+      // It seems we need to grant explicit permission
+      this.secret.encryptionKey.grantDecrypt(props.provider.handler)
+    }
   }
 }

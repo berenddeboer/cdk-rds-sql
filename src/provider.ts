@@ -60,6 +60,10 @@ export class Provider extends Construct {
     })
     this.serviceToken = provider.serviceToken
     this.secret.grantRead(this.handler)
+    if (this.secret.encryptionKey) {
+      // It seems we need to grant explicit permission
+      this.secret.encryptionKey.grantDecrypt(this.handler)
+    }
     props.cluster.connections.allowDefaultPortFrom(this.handler)
     this.node.addDependency(props.cluster)
   }
