@@ -79,5 +79,41 @@ test("serverless v2", () => {
       SecretStringTemplate: "{\"username\":\"myrole\"}",
     },
     })
-  */
+   */
+  template.hasResourceProperties("AWS::EC2::SecurityGroupIngress", {
+    FromPort: {
+      "Fn::GetAtt": ["Cluster2720FF351", "Endpoint.Port"],
+    },
+    IpProtocol: "tcp",
+    SourceSecurityGroupId: {
+      "Fn::GetAtt": [
+        "RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508",
+        "GroupId",
+      ],
+    },
+  })
+})
+
+test("absence of security group is detected", () => {
+  const app = new cdk.App()
+  const stack = new serverlessv2.ImportedClusterStack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  let template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
+    Resource: "role",
+  })
+  template.hasResourceProperties("AWS::EC2::SecurityGroupIngress", {
+    FromPort: 5432,
+    IpProtocol: "tcp",
+    SourceSecurityGroupId: {
+      "Fn::GetAtt": [
+        "RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508",
+        "GroupId",
+      ],
+    },
+  })
 })

@@ -64,6 +64,9 @@ export class Provider extends Construct {
       // It seems we need to grant explicit permission
       this.secret.encryptionKey.grantDecrypt(this.handler)
     }
+    if (props.cluster.connections.securityGroups.length === 0) {
+      throw new Error("Cluster does not have a security group.")
+    }
     props.cluster.connections.allowDefaultPortFrom(this.handler)
     this.node.addDependency(props.cluster)
   }

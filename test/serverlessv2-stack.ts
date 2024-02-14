@@ -1,6 +1,7 @@
-import { Aspects, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Aspects, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
+import * as secrets from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
 import { Provider, Database, Role, Schema, Sql } from "./../src/index"
 import { Vpc } from "./vpc"
@@ -68,6 +69,53 @@ export class TestStack extends Stack {
 create table if not exists t (i int);
 grant select on t to myrole;
 `,
+    })
+  }
+}
+
+export class ImportedClusterStack extends Stack {
+  constructor(scope: Construct, id: string, props: StackProps) {
+    super(scope, id, props)
+
+    const vpc = new Vpc(this, "Vpc")
+
+    const secret = secrets.Secret.fromSecretCompleteArn(
+      this,
+      "Secret",
+      Fn.importValue("secret-arn")
+    )
+
+    const cluster = rds.DatabaseCluster.fromDatabaseClusterAttributes(
+      this,
+      "DatabaseCluster",
+      {
+        clusterIdentifier: Fn.importValue("cluster-identifier"),
+        clusterEndpointAddress: Fn.importValue("cluster-endpoint"),
+        engine: rds.DatabaseClusterEngine.auroraPostgres({
+          version: rds.AuroraPostgresEngineVersion.VER_14_6,
+        }),
+        port: 5432, // absence of port in import causes an exception
+        securityGroups: [
+          ec2.SecurityGroup.fromSecurityGroupId(
+            this,
+            "RdsSecurityGroup",
+            "sg-00bbd66b014133c45"
+          ),
+        ],
+      }
+    )
+
+    const provider = new Provider(this, "Provider", {
+      vpc: vpc.vpc,
+      cluster: cluster,
+      secret: secret,
+    })
+    Database.fromDatabaseName(this, "DefaultDatabase", "example")
+
+    new Role(this, "Role", {
+      provider: provider,
+      roleName: "myrole",
+      databaseName: "mydb",
     })
   }
 }
