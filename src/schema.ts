@@ -18,7 +18,7 @@ export interface SchemaProps {
   readonly database?: IDatabase
 
   /**
-   * SQL.
+   * Schema name.
    */
   readonly schemaName: string
 }
