@@ -140,13 +140,14 @@ const jumpTable: JumpTable = {
         return sql
       }
     },
-    Delete: (resourceId: string) => {
+    Delete: (resourceId: string, props: RoleProps) => {
       // TODO: if user is owner of a database, assign ownership to master user?
       return [
         "start transaction",
         format(
-          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database postgres from %I; END IF;\nEND$$;",
+          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database %I from %I; END IF;\nEND$$;",
           resourceId,
+          props.DatabaseName,
           resourceId
         ),
         format("drop role if exists %I", resourceId),
@@ -242,9 +243,8 @@ export const handler = async (
       break
     }
     case "Delete": {
-      const oldResourceId = (event as CloudFormationCustomResourceDeleteEvent)
-        .PhysicalResourceId
-      sql = jumpTable[resource][requestType](resourceId, oldResourceId)
+      console.debug("!!!!!!!!!! DELETE", event)
+      sql = jumpTable[resource][requestType](resourceId, event.ResourceProperties)
       break
     }
   }

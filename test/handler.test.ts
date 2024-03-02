@@ -111,7 +111,9 @@ test("role with existing database", async () => {
 
     // CloudFormation will send a delete afterward as we change the
     // physical id, so test that too
-    const remove = deleteRequest("role", oldRoleName)
+    const remove = deleteRequest("role", oldRoleName, {
+      DatabaseName: "postgres",
+    })
     await handler(remove)
     expect(await roleExists(client, oldRoleName)).toEqual(false)
   } finally {
