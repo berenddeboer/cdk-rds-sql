@@ -1,12 +1,14 @@
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
+  GetSecretValueCommandOutput,
 } from "@aws-sdk/client-secrets-manager"
 import {
   CloudFormationCustomResourceCreateEvent,
   CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
 } from "aws-lambda"
+import { backOff } from "exponential-backoff"
 import { format } from "node-pg-format"
 import { Client } from "pg"
 import { RdsSqlResource } from "./enum"
@@ -219,12 +221,23 @@ export const handler = async (
   }
 
   const secrets_client = new SecretsManagerClient({})
+
   const command = new GetSecretValueCommand({
     SecretId: event.ResourceProperties.SecretArn,
   })
-  const secret = await secrets_client.send(command)
+  // As the IAM credentials can be cached, an update makde very recent
+  // could not yet be available.
+  // So we retry this a bit.
+  const secret: GetSecretValueCommandOutput = await backOff(
+    async () => {
+      return secrets_client.send(command)
+    },
+    {
+      numOfAttempts: 3,
+      startingDelay: 500,
+    }
+  )
   if (!secret.SecretString) throw "No secret string"
-
   const secretValues = JSON.parse(secret.SecretString)
 
   let sql: string | string[] | void
@@ -243,7 +256,6 @@ export const handler = async (
       break
     }
     case "Delete": {
-      console.debug("!!!!!!!!!! DELETE", event)
       sql = jumpTable[resource][requestType](resourceId, event.ResourceProperties)
       break
     }
