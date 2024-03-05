@@ -66,6 +66,10 @@ export class Provider extends Construct {
     }
     if (props.cluster.connections.securityGroups.length === 0) {
       throw new Error("Cluster does not have a security group.")
+    } else {
+      this.handler.node.defaultChild?.node.addDependency(
+        props.cluster.connections.securityGroups[0]
+      )
     }
     props.cluster.connections.allowDefaultPortFrom(this.handler)
     this.node.addDependency(props.cluster)
