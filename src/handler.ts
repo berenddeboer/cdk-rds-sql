@@ -147,8 +147,9 @@ const jumpTable: JumpTable = {
       return [
         "start transaction",
         format(
-          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN revoke all privileges on database %I from %I; END IF;\nEND$$;",
+          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') AND EXISTS (select from pg_database WHERE datname = '%s') THEN revoke all privileges on database %I from %I; END IF;\nEND$$;",
           resourceId,
+          props.DatabaseName,
           props.DatabaseName,
           resourceId
         ),
@@ -191,11 +192,17 @@ const jumpTable: JumpTable = {
       }
       return statements
     },
-    Delete: (resourceId: string) => {
+    Delete: (resourceId: string, newOwner: string) => {
       return [
         format(
           "select pg_terminate_backend(pg_stat_activity.pid) from pg_stat_activity where datname = %L",
           resourceId
+        ),
+        format(
+          "DO $$BEGIN\nIF EXISTS (select from pg_database WHERE datname = '%s') THEN alter database %I owner to %I; END IF;\nEND$$;",
+          resourceId,
+          resourceId,
+          newOwner
         ),
         format("drop database if exists %I", resourceId),
       ]
@@ -256,7 +263,11 @@ export const handler = async (
       break
     }
     case "Delete": {
-      sql = jumpTable[resource][requestType](resourceId, event.ResourceProperties)
+      if (resource === RdsSqlResource.DATABASE) {
+        sql = jumpTable[resource][requestType](resourceId, secretValues.username)
+      } else {
+        sql = jumpTable[resource][requestType](resourceId, event.ResourceProperties)
+      }
       break
     }
   }
