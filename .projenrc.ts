@@ -18,8 +18,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
   depsUpgradeOptions: {
     workflow: false,
   },
-  constructsVersion: "10.1.168",
-  cdkVersion: "2.64.0",
+  constructsVersion: "10.3.0",
+  cdkVersion: "2.124.0",
   disableTsconfig: true,
   tsconfigDev: {
     compilerOptions: {
