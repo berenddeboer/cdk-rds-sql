@@ -240,7 +240,7 @@ export const handler = async (
       return secrets_client.send(command)
     },
     {
-      numOfAttempts: 3,
+      numOfAttempts: 10,
       startingDelay: 500,
     }
   )
