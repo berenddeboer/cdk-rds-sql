@@ -37,6 +37,13 @@ export interface RdsSqlProps {
    * @default - 5 minutes
    */
   readonly timeout?: Duration
+
+  /**
+   * Log SQL statements. This includes passwords. Use only for debugging.
+   *
+   * @default - false
+   */
+  readonly logger?: boolean
 }
 
 export class Provider extends Construct {
@@ -94,14 +101,18 @@ export class Provider extends Construct {
         "node_modules/cdk-rds-sql/lib/handler.js"
       )
     }
+    const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
       entry: entry,
-      runtime: Runtime.NODEJS_18_X,
+      runtime: Runtime.NODEJS_20_X,
       timeout: props.timeout ?? Duration.seconds(300),
       bundling: {
         sourceMap: true,
         externalModules: ["pg-native"],
+      },
+      environment: {
+        LOGGER: logger.toString(),
       },
     })
     return fn

@@ -216,7 +216,10 @@ export const handler = async (
     | CloudFormationCustomResourceUpdateEvent
     | CloudFormationCustomResourceDeleteEvent
 ): Promise<any> => {
-  console.log("event", event)
+  const logger = process.env.LOGGER
+  if (logger === "true") {
+    console.debug(event)
+  }
 
   const requestType = event.RequestType
   const resource: RdsSqlResource = event.ResourceProperties.Resource
@@ -287,11 +290,12 @@ export const handler = async (
       database: database,
       connectionTimeoutMillis: 2000, // return an error if a connection could not be established within 2 seconds
     }
-    //console.debug ("PARAMS", params)
-    console.debug(
-      `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
-    )
-    console.debug("Executing SQL", sql)
+    if (logger === "true") {
+      console.debug(
+        `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
+      )
+      console.debug("Executing SQL", sql)
+    }
     const pg_client = new Client(params)
     await pg_client.connect()
     try {

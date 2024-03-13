@@ -18,14 +18,14 @@ export class TestStack extends Stack {
       }),
       removalPolicy: RemovalPolicy.DESTROY,
       defaultDatabaseName: "example",
-      instances: 1,
-      instanceProps: {
-        vpc: vpc.vpc,
-        vpcSubnets: {
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-        },
-        instanceType: new ec2.InstanceType("serverless"),
+      writer: rds.ClusterInstance.serverlessV2("writer", {
+        instanceIdentifier: "writer",
+        publiclyAccessible: false,
         enablePerformanceInsights: false,
+      }),
+      vpc: vpc.vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
     })
 
