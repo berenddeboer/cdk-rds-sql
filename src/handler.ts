@@ -288,7 +288,7 @@ export const handler = async (
       user: secretValues.username,
       password: secretValues.password,
       database: database,
-      connectionTimeoutMillis: 2000, // return an error if a connection could not be established within 2 seconds
+      connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
     }
     if (logger === "true") {
       console.debug(
