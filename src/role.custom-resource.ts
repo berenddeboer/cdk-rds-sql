@@ -55,7 +55,7 @@ export class Role extends CustomResource {
         ResourceId: props.roleName,
         SecretArn: props.provider.secret.secretArn,
         PasswordArn: props.passwordArn,
-        DatabaseName: props.database ? props.database.databaseName : props.databaseName,
+        Database: props.database ? props.database.databaseName : props.databaseName,
       },
     })
     this.node.addDependency(props.provider)
