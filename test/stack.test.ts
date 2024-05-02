@@ -37,10 +37,21 @@ test("role without database", () => {
       region: "us-east-1",
     },
   })
-  const vpc = new ec2.Vpc(stack, "Vpc")
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
 
   const cluster = new rds.ServerlessCluster(stack, "Cluster", {
     vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
     engine: rds.DatabaseClusterEngine.auroraPostgres({
       version: rds.AuroraPostgresEngineVersion.VER_11_13,
     }),
@@ -116,4 +127,54 @@ test("absence of security group is detected", () => {
       ],
     },
   })
+})
+
+test("vpcSubnet selection can be specified", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      {
+        cidrMask: 28,
+        name: "nat",
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+    ],
+  })
+
+  const cluster = new rds.ServerlessCluster(stack, "Cluster", {
+    vpc: vpc,
+    // vpcSubnets: {
+    //   subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    // },
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_11_13,
+    }),
+  })
+
+  const provider = new Provider(stack, "Provider", {
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+    },
+    cluster: cluster,
+    secret: cluster.secret!,
+  })
+
+  expect(() => {
+    new Role(stack, "Role", {
+      provider: provider,
+      roleName: "role",
+    })
+  }).toThrowError()
 })

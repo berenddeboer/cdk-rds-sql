@@ -1,7 +1,7 @@
 import { existsSync } from "fs"
 import * as path from "path"
 import { Duration, Stack } from "aws-cdk-lib"
-import { IVpc } from "aws-cdk-lib/aws-ec2"
+import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { IDatabaseCluster, IServerlessCluster } from "aws-cdk-lib/aws-rds"
@@ -18,6 +18,13 @@ export interface RdsSqlProps {
    * @default - Function is not placed within a VPC.
    */
   readonly vpc: IVpc
+
+  /**
+   * Where to place the networkprovivder lambda within the VPC.
+   *
+   * @default - the isolated subnet if not specified
+   */
+  readonly vpcSubnets?: SubnetSelection
 
   /**
    * Your database.
@@ -104,6 +111,9 @@ export class Provider extends Construct {
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
+      vpcSubnets: props.vpcSubnets ?? {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
       entry: entry,
       runtime: Runtime.NODEJS_20_X,
       timeout: props.timeout ?? Duration.seconds(300),
