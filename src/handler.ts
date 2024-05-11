@@ -210,16 +210,18 @@ const jumpTable: JumpTable = {
   },
 }
 
+const log =
+  process.env.LOGGER === "true"
+    ? console.debug
+    : (_message?: any, ..._optionalParams: any[]) => {}
+
 export const handler = async (
   event:
     | CloudFormationCustomResourceCreateEvent
     | CloudFormationCustomResourceUpdateEvent
     | CloudFormationCustomResourceDeleteEvent
 ): Promise<any> => {
-  const logger = process.env.LOGGER
-  if (logger === "true") {
-    console.debug(event)
-  }
+  log(event)
 
   const requestType = event.RequestType
   const resource: RdsSqlResource = event.ResourceProperties.Resource
@@ -231,16 +233,22 @@ export const handler = async (
   }
 
   const secrets_client = new SecretsManagerClient({})
-
   const command = new GetSecretValueCommand({
     SecretId: event.ResourceProperties.SecretArn,
   })
   // As the IAM credentials can be cached, an update makde very recent
   // could not yet be available.
   // So we retry this a bit.
+  log("Fetching secret")
   const secret: GetSecretValueCommandOutput = await backOff(
     async () => {
-      return secrets_client.send(command)
+      try {
+        const result = await secrets_client.send(command)
+        return result
+      } catch (e) {
+        log("Error fetching secret %o", e)
+        throw e
+      }
     },
     {
       numOfAttempts: 10,
@@ -290,12 +298,10 @@ export const handler = async (
       database: database,
       connectionTimeoutMillis: 2000, // return an error if a connection could not be established within 2 seconds
     }
-    if (logger === "true") {
-      console.debug(
-        `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
-      )
-      console.debug("Executing SQL", sql)
-    }
+    log(
+      `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
+    )
+    log("Executing SQL", sql)
     const pg_client = new Client(params)
     await pg_client.connect()
     try {
