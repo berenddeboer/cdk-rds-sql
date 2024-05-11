@@ -46,12 +46,6 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "source-map-support",
   ],
   devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers", "esbuild"],
-  workflowBootstrapSteps: [
-    {
-      name: "Change permissions on /var/run/docker.sock",
-      run: "sudo chown superchain /var/run/docker.sock",
-    },
-  ],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })
