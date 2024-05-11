@@ -116,6 +116,10 @@
       "type": "bundled"
     },
     {
+      "name": "@types/aws-lambda",
+      "type": "bundled"
+    },
+    {
       "name": "exponential-backoff",
       "type": "bundled"
     },
