@@ -119,10 +119,12 @@ export class Provider extends Construct {
       timeout: props.timeout ?? Duration.seconds(300),
       bundling: {
         sourceMap: true,
+        sourcesContent: false,
         externalModules: ["pg-native"],
       },
       environment: {
         LOGGER: logger.toString(),
+        NODE_OPTIONS: "--enable-source-maps",
       },
     })
     return fn
