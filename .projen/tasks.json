@@ -250,13 +250,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/ms,@types/pg,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,jsii-diff,jsii-pacmak,prettier,projen,testcontainers,ts-node,typescript,@aws-sdk/client-secrets-manager,aws-lambda,exponential-backoff,ms,node-pg-format,pg,source-map-support"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/ms,@types/pg,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,jsii-diff,jsii-pacmak,prettier,projen,testcontainers,ts-node,typescript,@aws-sdk/client-secrets-manager,exponential-backoff,ms,node-pg-format,pg,source-map-support,@types/aws-lambda"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/aws-lambda @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii prettier projen standard-version testcontainers ts-jest ts-node typescript @aws-sdk/client-secrets-manager aws-lambda exponential-backoff ms node-pg-format pg source-map-support aws-cdk-lib constructs"
+          "exec": "npm update @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii prettier projen standard-version testcontainers ts-jest ts-node typescript @aws-sdk/client-secrets-manager exponential-backoff ms node-pg-format pg source-map-support aws-cdk-lib constructs @types/aws-lambda"
         },
         {
           "exec": "npx projen"

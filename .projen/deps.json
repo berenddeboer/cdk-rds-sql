@@ -1,10 +1,6 @@
 {
   "dependencies": [
     {
-      "name": "@types/aws-lambda",
-      "type": "build"
-    },
-    {
       "name": "@types/jest",
       "version": "^27",
       "type": "build"
@@ -120,10 +116,6 @@
       "type": "bundled"
     },
     {
-      "name": "aws-lambda",
-      "type": "bundled"
-    },
-    {
       "name": "exponential-backoff",
       "type": "bundled"
     },
@@ -162,6 +154,10 @@
       "name": "constructs",
       "version": "^10.3.0",
       "type": "peer"
+    },
+    {
+      "name": "@types/aws-lambda",
+      "type": "runtime"
     },
     {
       "name": "exponential-backoff",

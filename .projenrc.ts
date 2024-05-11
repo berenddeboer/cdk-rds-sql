@@ -35,9 +35,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
   gitignore: tmpDirectories,
   npmignore: tmpDirectories,
   docgen: false,
-  deps: ["exponential-backoff"],
+  deps: ["exponential-backoff", "@types/aws-lambda"],
   bundledDeps: [
-    "aws-lambda",
     "@aws-sdk/client-secrets-manager",
     "pg",
     "node-pg-format",
@@ -45,7 +44,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "exponential-backoff",
     "source-map-support",
   ],
-  devDeps: ["@types/ms", "@types/pg", "@types/aws-lambda", "testcontainers", "esbuild"],
+  devDeps: ["@types/ms", "@types/pg", "testcontainers", "esbuild"],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })
