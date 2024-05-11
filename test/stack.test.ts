@@ -2,10 +2,10 @@ import * as cdk from "aws-cdk-lib"
 import { Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import { Provider } from "../src/provider"
-import { Role } from "../src/role"
 import * as serverlessv1 from "./serverlessv1-stack"
 import * as serverlessv2 from "./serverlessv2-stack"
+import { Provider } from "../src/provider"
+import { Role } from "../src/role"
 
 test("serverless v1", () => {
   const app = new cdk.App()
