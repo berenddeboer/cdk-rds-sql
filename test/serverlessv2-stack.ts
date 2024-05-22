@@ -1,5 +1,6 @@
 import { Aspects, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
@@ -45,6 +46,12 @@ export class TestStack extends Stack {
       vpc: vpc.vpc,
       cluster: cluster,
       secret: cluster.secret!,
+      functionProps: {
+        logGroup: new LogGroup(this, "loggroup", {
+          retention: RetentionDays.ONE_WEEK,
+          logGroupName: "/aws/lambda/provider",
+        }),
+      },
     })
     Database.fromDatabaseName(this, "DefaultDatabase", "example")
 
