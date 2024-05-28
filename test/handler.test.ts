@@ -34,13 +34,15 @@ beforeEach(async () => {
     .withEnv("POSTGRES_USER", DB_MASTER_USERNAME)
     .withEnv("POSTGRES_PASSWORD", DB_MASTER_PASSWORD)
     .withEnv("POSTGRES_DB", DB_DEFAULT_DB)
+    .withStartupTimeout(ms("90s"))
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
-}, ms("2m"))
+}, ms("5m"))
 
-afterEach(() => {
+afterEach(async () => {
   jest.clearAllMocks()
+  await pgContainer.stop()
 })
 
 //jest.setTimeout(ms("15s"))

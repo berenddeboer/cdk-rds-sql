@@ -4,6 +4,7 @@ import { Duration, Stack } from "aws-cdk-lib"
 import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
+import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
 import { IDatabaseCluster, IServerlessCluster } from "aws-cdk-lib/aws-rds"
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
@@ -51,6 +52,17 @@ export interface RdsSqlProps {
    * @default - false
    */
   readonly logger?: boolean
+
+  /**
+   * Additional function customization.
+   *
+   * This enables additional function customization such as the log group. However,
+   * lambda function properties controlled by other {RdsSqlProps} parameters will trump
+   * opions set via this parameter.
+   *
+   * @default - empty
+   */
+  readonly functionProps?: NodejsFunctionProps
 }
 
 export class Provider extends Construct {
@@ -110,6 +122,7 @@ export class Provider extends Construct {
     }
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
+      ...props.functionProps,
       vpc: props.vpc,
       vpcSubnets: props.vpcSubnets ?? {
         subnetType: SubnetType.PRIVATE_ISOLATED,
