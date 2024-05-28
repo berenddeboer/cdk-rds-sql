@@ -97,7 +97,7 @@ export class Provider extends Construct {
         props.cluster.connections.securityGroups[0]
       )
     }
-    props.cluster.connections.allowDefaultPortFrom(this.handler)
+    this.handler.connections.allowToDefaultPort(props.cluster)
     this.node.addDependency(props.cluster)
   }
 
