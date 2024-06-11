@@ -305,15 +305,26 @@ export const handler = async (
     const pg_client = new Client(params)
     await pg_client.connect()
     try {
-      if (typeof sql === "string") {
-        await pg_client.query(sql)
-      } else {
-        await Promise.all(
-          sql.map(async (statement) => {
-            await pg_client.query(statement)
-          })
-        )
-      }
+      await backOff(
+        async () => {
+          if (typeof sql === "string") {
+            return pg_client.query(sql)
+          } else {
+            if (sql) {
+              return Promise.all(
+                sql.map((statement) => {
+                  return pg_client.query(statement)
+                })
+              )
+            } else {
+              return
+            }
+          }
+        },
+        {
+          retry: errorFilter,
+        }
+      )
     } finally {
       await pg_client.end()
     }
@@ -327,6 +338,14 @@ export const handler = async (
   }
 
   return response
+}
+
+// Custom error filter, mainly to retry role creation.
+// Frequently see "tuple concurrently updated", and adding
+// dependencies is very hard to make work.
+const errorFilter = (error: any) => {
+  // Retry only if the error message contains "tuple concurrently updated"
+  return error.message.includes("tuple concurrently updated")
 }
 
 /**
