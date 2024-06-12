@@ -154,19 +154,21 @@ END$$;`,
         return sql
       }
     },
-    Delete: (resourceId: string, _props: RoleProps) => {
+    Delete: (resourceId: string, props: RoleProps) => {
+      // TODO: if user is owner of a database, assign ownership to master user
+      // This will require a specified inheritor on role creation
       return [
         "start transaction",
         format(
           `DO $$
 BEGIN
-  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN
-    reassign OWNED by %I to posgres;
-    drop OWNED by %I;
+  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') AND EXISTS (select from pg_database WHERE datname = '%s') THEN
+    revoke all privileges on database %I from %I;
   END IF;
 END$$;`,
           resourceId,
-          resourceId,
+          props.DatabaseName,
+          props.DatabaseName,
           resourceId
         ),
         format("drop role if exists %I", resourceId),
