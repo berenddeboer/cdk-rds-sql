@@ -68,7 +68,7 @@ const jumpTable: JumpTable = {
     Update: (_: string, __: string, props?: any) => {
       return props.Statement
     },
-    Delete: (_: string) => { },
+    Delete: (_: string) => {},
   },
   schema: {
     Create: async (resourceId: string) => {
@@ -167,7 +167,7 @@ BEGIN
 END$$;`,
           resourceId,
           resourceId,
-          resourceId,
+          resourceId
         ),
         format("drop role if exists %I", resourceId),
         "commit",
@@ -229,7 +229,7 @@ END$$;`,
 const log =
   process.env.LOGGER === "true"
     ? console.debug
-    : (_message?: any, ..._optionalParams: any[]) => { }
+    : (_message?: any, ..._optionalParams: any[]) => {}
 
 export const handler = async (
   event:
@@ -340,7 +340,6 @@ export const handler = async (
         {
           retry: errorFilter,
           numOfAttempts: maxAttempts,
-
         }
       )
     } finally {
@@ -365,8 +364,14 @@ const errorFilter = (error: any, nextAttemptNumber: number) => {
   // Retry only if the error message contains "tuple concurrently"
   // This will cover concurrent updates and deletes
   const willRetry = error.message.includes("tuple concurrently")
-  log("Encountered an error on attempt %d/%d retry=%s error=[%o]", nextAttemptNumber - 1, maxAttempts, willRetry, error)
-  return willRetry;
+  log(
+    "Encountered an error on attempt %d/%d retry=%s error=[%o]",
+    nextAttemptNumber - 1,
+    maxAttempts,
+    willRetry,
+    error
+  )
+  return willRetry
 }
 
 /**
