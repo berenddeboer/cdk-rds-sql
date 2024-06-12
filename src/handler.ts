@@ -157,8 +157,18 @@ END$$;`,
     Delete: (resourceId: string, _props: RoleProps) => {
       return [
         "start transaction",
-        format('reassign OWNED by %I to postgres', resourceId),
-        format('drop OWNED by %I', resourceId),
+        format(
+          `DO $$
+BEGIN
+  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') THEN
+    reassign OWNED by %I to posgres;
+    drop OWNED by %I;
+  END IF;
+END$$;`,
+          resourceId,
+          resourceId,
+          resourceId,
+        ),
         format("drop role if exists %I", resourceId),
         "commit",
       ]
