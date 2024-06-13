@@ -68,7 +68,9 @@ const jumpTable: JumpTable = {
     Update: (_: string, __: string, props?: any) => {
       return props.Statement
     },
-    Delete: (_: string) => {},
+    Delete: (_: string, __: string, props?: any) => {
+      return props.Rollback
+    },
   },
   schema: {
     Create: async (resourceId: string) => {

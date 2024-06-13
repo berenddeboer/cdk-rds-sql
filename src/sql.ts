@@ -21,6 +21,11 @@ export interface SqlProps {
    * SQL.
    */
   readonly statement?: string
+
+  /**
+   * Optional statment to be executed when the resource is deleted
+   */
+  readonly rollback?: string
 }
 
 export class Sql extends CustomResource {
@@ -32,6 +37,7 @@ export class Sql extends CustomResource {
         SecretArn: props.provider.secret.secretArn,
         DatabaseName: props.database ? props.database.databaseName : undefined,
         Statement: props.statement,
+        Rollback: props.rollback,
       },
     })
     this.node.addDependency(props.provider)
