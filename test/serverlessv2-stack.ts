@@ -78,8 +78,10 @@ grant select on t to myrole;
 `,
       rollback: `
 DO $$BEGIN
-  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') AND EXISTS (select from pg_database WHERE datname = 't') THEN
-    revoke select  database t from myrole;
+   IF EXISTS (select from pg_database WHERE datname = 't') THEN
+     IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') THEN
+       revoke select  database t from myrole;
+    END IF;
     drop table t;
   END IF;
 END$$;,
