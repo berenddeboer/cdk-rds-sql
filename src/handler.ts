@@ -58,6 +58,8 @@ interface DatabaseUpdateProps extends DatabaseProps {
   MasterOwner: string
 }
 
+const maxAttempts = 20
+
 const jumpTable: JumpTable = {
   sql: {
     Create: (_: string, props?: any) => {
@@ -92,7 +94,12 @@ const jumpTable: JumpTable = {
           // grant connect to database if database already exists
           sql.push(
             format(
-              "DO $$BEGIN\nIF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN grant connect on database %I to %I; END IF;\nEND$$;",
+              `DO $$
+BEGIN
+  IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
+    grant connect on database %I to %I;
+  END IF;
+END$$;`,
               props.DatabaseName,
               props.DatabaseName,
               resourceId
@@ -132,7 +139,12 @@ const jumpTable: JumpTable = {
         }
         sql.push(
           format(
-            "DO $$BEGIN\nIF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN grant connect on database %I to %I; END IF;\nEND$$;",
+            `DO $$
+BEGIN
+  IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
+    grant connect on database %I to %I;
+  END IF;
+END$$;`,
             props.DatabaseName,
             props.DatabaseName,
             resourceId
@@ -143,11 +155,17 @@ const jumpTable: JumpTable = {
       }
     },
     Delete: (resourceId: string, props: RoleProps) => {
-      // TODO: if user is owner of a database, assign ownership to master user?
+      // TODO: if user is owner of a database, assign ownership to master user
+      // This will require a specified inheritor on role creation
       return [
         "start transaction",
         format(
-          "DO $$BEGIN\nIF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') AND EXISTS (select from pg_database WHERE datname = '%s') THEN revoke all privileges on database %I from %I; END IF;\nEND$$;",
+          `DO $$
+BEGIN
+  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') AND EXISTS (select from pg_database WHERE datname = '%s') THEN
+    revoke all privileges on database %I from %I;
+  END IF;
+END$$;`,
           resourceId,
           props.DatabaseName,
           props.DatabaseName,
@@ -299,7 +317,7 @@ export const handler = async (
       connectionTimeoutMillis: 2000, // return an error if a connection could not be established within 2 seconds
     }
     log(
-      `Connecting to host ${params.host}:${params.port}, database ${params.database} as ${params.user}`
+      `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`
     )
     log("Executing SQL", sql)
     const pg_client = new Client(params)
@@ -323,6 +341,7 @@ export const handler = async (
         },
         {
           retry: errorFilter,
+          numOfAttempts: maxAttempts,
         }
       )
     } finally {
@@ -343,9 +362,18 @@ export const handler = async (
 // Custom error filter, mainly to retry role creation.
 // Frequently see "tuple concurrently updated", and adding
 // dependencies is very hard to make work.
-const errorFilter = (error: any) => {
-  // Retry only if the error message contains "tuple concurrently updated"
-  return error.message.includes("tuple concurrently updated")
+const errorFilter = (error: any, nextAttemptNumber: number) => {
+  // Retry only if the error message contains "tuple concurrently"
+  // This will cover concurrent updates and deletes
+  const willRetry = error.message.includes("tuple concurrently")
+  log(
+    "Encountered an error on attempt %d/%d retry=%s error=[%o]",
+    nextAttemptNumber - 1,
+    maxAttempts,
+    willRetry,
+    error
+  )
+  return willRetry
 }
 
 /**
