@@ -210,6 +210,30 @@ grant select on t to myrole;
 })
 ```
 
+Rollback sql on stack deletion:
+
+```ts
+const sql = new Sql(this, "Sql", {
+  provider: provider,
+  database: database,
+  statement: `
+create table if not exists t (i int);
+grant select on t to myrole;
+`,
+  rollback: `
+DO $$BEGIN
+  IF EXISTS (select from pg_database WHERE datname = 't') THEN
+    IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') THEN
+      revoke select t from myrole;
+    END IF;
+    drop table t;
+  END IF;
+END$$;
+`
+})
+```
+
+
 Note that there is no synchronisation between various `Sql`
 constructs, in particular the order in your code does not determine
 the order in which your SQL is executed. This happens in parallel,
@@ -219,8 +243,8 @@ There are a lot of concerns when using `Sql`:
 
 - When you update your Sql, your previous Sql is not "rolled back",
   the new Sql is simply executed again.
-- The same when you delete your `Sql` construct: nothing is rolled
-  back in the database.
+- When you delete your `Sql` construct the rollback is executed if specified
+- When permission are granted via `Sql` they must be removed via rollback to succesfully remove the role
 - Currently the `Sql` constructs has less than 5 minutes to execute
   its work.
 - It is unknown how large your SQL can be.

@@ -61,6 +61,7 @@ export class TestStack extends Stack {
       provider: provider,
       database: database,
       statement: "create table t (i int)",
+      rollback: "drop table t",
     })
   }
 }

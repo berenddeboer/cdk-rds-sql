@@ -76,6 +76,16 @@ export class TestStack extends Stack {
 create table if not exists t (i int);
 grant select on t to myrole;
 `,
+      rollback: `
+DO $$BEGIN
+   IF EXISTS (select from pg_database WHERE datname = 't') THEN
+     IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') THEN
+       revoke select  database t from myrole;
+    END IF;
+    drop table t;
+  END IF;
+END$$;,
+`,
     })
   }
 }
