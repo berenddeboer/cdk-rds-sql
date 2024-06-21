@@ -1,8 +1,8 @@
 import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
-import { Role } from "./role"
+import { ClusterProvider, InstanceProvider } from "./provider"
+import { ClusterPostgresRole, InstancePostgresRole } from "./role"
 
 interface DatabaseAttributes {
   /**
@@ -13,14 +13,14 @@ interface DatabaseAttributes {
   /**
    * Optional database owner.
    */
-  readonly owner?: Role
+  readonly owner?: ClusterPostgresRole | InstancePostgresRole
 }
 
 export interface DatabaseProps extends DatabaseAttributes {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: ClusterProvider | InstanceProvider
 }
 
 export interface IDatabase {
