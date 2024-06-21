@@ -4,14 +4,14 @@ import { NodePackageManager } from "projen/lib/javascript"
 const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
 
 const project = new awscdk.AwsCdkConstructLibrary({
-  author: "Berend de Boer",
-  authorAddress: "berend@pobox.com",
-  authorEmail: "berend@pobox.com",
-  name: "cdk-rds-sql",
+  author: "Emmanuel N Kyeyune",
+  authorAddress: "emmanuelnk.spam@gmail.com",
+  authorEmail: "emmanuelnk.spam@gmail.com",
+  name: "@emmanuelnk/cdk-rds-sql",
   description:
     "A CDK construct that allows creating roles and databases an on Aurora Serverless Postgresql cluster.",
   defaultReleaseBranch: "main",
-  repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
+  repositoryUrl: "https://github.com/emmanuelnk/cdk-rds-sql.git",
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
   depsUpgrade: true,
@@ -19,7 +19,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     workflow: false,
   },
   constructsVersion: "10.3.0",
-  cdkVersion: "2.124.0",
+  cdkVersion: "2.147.0",
   disableTsconfig: true,
   tsconfigDev: {
     compilerOptions: {

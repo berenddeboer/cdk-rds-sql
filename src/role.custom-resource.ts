@@ -2,13 +2,13 @@ import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
+import { ClusterProvider, InstanceProvider } from "./provider"
 
 export interface RoleProps {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: ClusterProvider | InstanceProvider
 
   /**
    * SQL.

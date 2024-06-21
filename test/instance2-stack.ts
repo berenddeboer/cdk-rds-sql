@@ -4,54 +4,42 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
+import { Vpc } from "./vpc"
 import {
-  ClusterProvider as Provider,
+  InstanceProvider as Provider,
   Database,
-  ClusterPostgresRole as Role,
+  InstancePostgresRole as Role,
   Schema,
   Sql,
-} from "./../src/index"
-import { Vpc } from "./vpc"
+} from "../src/index"
 
-export class TestStack extends Stack {
+export class TestInstanceStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props)
 
     const vpc = new Vpc(this, "Vpc")
 
-    const cluster = new rds.DatabaseCluster(this, "Cluster2", {
-      engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_14_5,
-      }),
-      removalPolicy: RemovalPolicy.DESTROY,
-      defaultDatabaseName: "example",
-      writer: rds.ClusterInstance.serverlessV2("writer", {
-        instanceIdentifier: "writer",
-        publiclyAccessible: false,
-        enablePerformanceInsights: false,
-      }),
+    const instance = new rds.DatabaseInstance(this, "Instance", {
       vpc: vpc.vpc,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
-    })
-
-    Aspects.of(cluster).add({
-      // <-- cluster is an instance of DatabaseCluster
-      visit(node) {
-        if (node instanceof rds.CfnDBCluster) {
-          node.serverlessV2ScalingConfiguration = {
-            minCapacity: 0.5,
-            maxCapacity: 1,
-          }
-        }
-      },
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_13_4,
+      }),
+      databaseName: "example",
+      credentials: rds.Credentials.fromGeneratedSecret("pgroot"),
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.BURSTABLE3,
+        ec2.InstanceSize.MICRO
+      ),
+      removalPolicy: RemovalPolicy.DESTROY,
     })
 
     const provider = new Provider(this, "Provider", {
       vpc: vpc.vpc,
-      cluster: cluster,
-      secret: cluster.secret!,
+      instance: instance,
+      secret: instance.secret!,
       functionProps: {
         logGroup: new LogGroup(this, "loggroup", {
           retention: RetentionDays.ONE_WEEK,
@@ -96,7 +84,7 @@ END$$;,
   }
 }
 
-export class ImportedClusterStack extends Stack {
+export class ImportedInstanceStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props)
 
@@ -108,14 +96,14 @@ export class ImportedClusterStack extends Stack {
       Fn.importValue("secret-arn")
     )
 
-    const cluster = rds.DatabaseCluster.fromDatabaseClusterAttributes(
+    const instance = rds.DatabaseInstance.fromDatabaseInstanceAttributes(
       this,
-      "DatabaseCluster",
+      "DatabaseInstance",
       {
-        clusterIdentifier: Fn.importValue("cluster-identifier"),
-        clusterEndpointAddress: Fn.importValue("cluster-endpoint"),
-        engine: rds.DatabaseClusterEngine.auroraPostgres({
-          version: rds.AuroraPostgresEngineVersion.VER_14_6,
+        instanceIdentifier: Fn.importValue("instance-identifier"),
+        instanceEndpointAddress: Fn.importValue("instance-endpoint"),
+        engine: rds.DatabaseInstanceEngine.postgres({
+          version: rds.PostgresEngineVersion.VER_13_4,
         }),
         port: 5432, // absence of port in import causes an exception
         securityGroups: [
@@ -130,7 +118,7 @@ export class ImportedClusterStack extends Stack {
 
     const provider = new Provider(this, "Provider", {
       vpc: vpc.vpc,
-      cluster: cluster,
+      instance: instance,
       secret: secret,
     })
     Database.fromDatabaseName(this, "DefaultDatabase", "example")

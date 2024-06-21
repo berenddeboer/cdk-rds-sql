@@ -1,8 +1,8 @@
 # About
 
 This CDK construct library makes it possible to create databases,
-schemas, and roles in an Aurora Serverless or database cluster created
-in that stack. Both Aurora Serverless v1 and v2 are supported.
+schemas, and roles in an Aurora Serverless (v1 and v2 are supported), RDS Database Cluster or Database Instance created
+in that stack.
 
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
@@ -18,7 +18,7 @@ environments, and works in isolated subnets.
 
 # Installation
 
-     npm i cdk-rds-sql
+     npm i @emmanuelnk/cdk-rds-sql
 
 # Usage
 
@@ -55,14 +55,25 @@ const cluster = new rds.ServerlessCluster(this, "Cluster", {
 })
 ```
 
-Then create a provider which will connect to your database:
+Then create a provider which will connect to your database. For a cluster:
 
 ```ts
-import { Provider } from "cdk-rds-sql"
+import { ClusterProvider as Provider } from "@emmanuelnk/cdk-rds-sql"
 
 const provider = new Provider(this, "Provider", {
   vpc: vpc,
   cluster: cluster,
+  secret: cluster.secret!,
+})
+```
+
+For an instance:
+```ts
+import { InstanceProvider as Provider } from "@emmanuelnk/cdk-rds-sql"
+
+const provider = new Provider(this, "Provider", {
+  vpc: vpc,
+  instance: instance,
   secret: cluster.secret!,
 })
 ```
@@ -84,7 +95,7 @@ access in case you have no such VPC endpoints, specify the subnet as
 follows:
 
 ```ts
-import { Provider } from "cdk-rds-sql"
+import { ClusterProvider as Provider } from "@emmanuelnk/cdk-rds-sql"
 
 const provider = new Provider(this, "Provider", {
   vpc: vpc,
@@ -98,10 +109,10 @@ const provider = new Provider(this, "Provider", {
 
 ## Roles
 
-Create a postgres role (user) as follows:
+Create a postgres role (user) for a cluster as follows:
 
 ```ts
-import { Role } from "cdk-rds-sql"
+import { ClusterPostgresRole as Role } from "@emmanuelnk/cdk-rds-sql"
 
 const role = new Role(this, "Role", {
   provider: provider,
@@ -136,7 +147,7 @@ has been created.
 Create a database as follows:
 
 ```ts
-import { Database } from "cdk-rds-sql"
+import { Database } from "@emmanuelnk/cdk-rds-sql"
 
 const database = new Database(this, "Database", {
   provider: provider,
@@ -160,7 +171,7 @@ const database = new Database(this, "Database", {
 Create a schema in the default database as follows:
 
 ```ts
-import { Schema } from "cdk-rds-sql"
+import { Schema } from "@emmanuelnk/cdk-rds-sql"
 
 new Schema(this, "Schema", {
   provider: provider,
@@ -188,7 +199,7 @@ new Schema(this, "Schema", {
 You can insert arbitrary SQL into your database with the `Sql` construct:
 
 ```ts
-import { Sql } from "cdk-rds-sql"
+import { Sql } from "@emmanuelnk/cdk-rds-sql"
 
 const sql = new Sql(this, "Sql", {
   provider: provider,

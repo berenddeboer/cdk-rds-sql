@@ -2,14 +2,14 @@ import * as cdk from "aws-cdk-lib"
 import { Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import * as serverlessv1 from "./serverlessv1-stack"
-import * as serverlessv2 from "./serverlessv2-stack"
-import { ClusterProvider as Provider } from "../src/provider"
-import { ClusterPostgresRole as Role } from "../src/role"
+import * as serverlessInstancev1 from "./instance1-stack"
+import * as serverlessInstancev2 from "./instance2-stack"
+import { InstanceProvider as Provider } from "../src/provider"
+import { InstancePostgresRole as Role } from "../src/role"
 
-test("serverless v1", () => {
+test("serverless instance v1", () => {
   const app = new cdk.App()
-  const stack = new serverlessv1.TestStack(app, "TestStack", {
+  const stack = new serverlessInstancev1.TestInstanceStack(app, "TestInstanceStack", {
     env: {
       account: "123456789",
       region: "us-east-1",
@@ -29,9 +29,9 @@ test("serverless v1", () => {
   */
 })
 
-test("role without database", () => {
+test("instance role without database", () => {
   const app = new cdk.App()
-  const stack = new cdk.Stack(app, "TestStack", {
+  const stack = new cdk.Stack(app, "TestInstanceStack", {
     env: {
       account: "123456789",
       region: "us-east-1",
@@ -47,20 +47,20 @@ test("role without database", () => {
     ],
   })
 
-  const cluster = new rds.ServerlessCluster(stack, "Cluster", {
+  const instance = new rds.DatabaseInstance(stack, "Instance", {
     vpc: vpc,
     vpcSubnets: {
       subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
     },
-    engine: rds.DatabaseClusterEngine.auroraPostgres({
-      version: rds.AuroraPostgresEngineVersion.VER_11_13,
+    engine: rds.DatabaseInstanceEngine.postgres({
+      version: rds.PostgresEngineVersion.VER_15,
     }),
   })
 
   const provider = new Provider(stack, "Provider", {
     vpc: vpc,
-    cluster: cluster,
-    secret: cluster.secret!,
+    instance: instance,
+    secret: instance.secret!,
   })
 
   expect(() => {
@@ -71,9 +71,9 @@ test("role without database", () => {
   }).toThrowError()
 })
 
-test("serverless v2", () => {
+test("serverless instance v2", () => {
   const app = new cdk.App()
-  const stack = new serverlessv2.TestStack(app, "TestStack", {
+  const stack = new serverlessInstancev2.TestInstanceStack(app, "TestInstanceStack", {
     env: {
       account: "123456789",
       region: "us-east-1",
@@ -93,7 +93,7 @@ test("serverless v2", () => {
    */
   template.hasResourceProperties("AWS::EC2::SecurityGroupIngress", {
     FromPort: {
-      "Fn::GetAtt": ["Cluster2720FF351", "Endpoint.Port"],
+      "Fn::GetAtt": ["InstanceC1063A87", "Endpoint.Port"],
     },
     IpProtocol: "tcp",
     SourceSecurityGroupId: {
@@ -107,7 +107,7 @@ test("serverless v2", () => {
 
 test("absence of security group is detected", () => {
   const app = new cdk.App()
-  const stack = new serverlessv2.ImportedClusterStack(app, "TestStack", {
+  const stack = new serverlessInstancev2.ImportedInstanceStack(app, "TestInstanceStack", {
     env: {
       account: "123456789",
       region: "us-east-1",
@@ -131,7 +131,7 @@ test("absence of security group is detected", () => {
 
 test("vpcSubnet selection can be specified", () => {
   const app = new cdk.App()
-  const stack = new cdk.Stack(app, "TestStack", {
+  const stack = new cdk.Stack(app, "TestInstanceStack", {
     env: {
       account: "123456789",
       region: "us-east-1",
@@ -152,13 +152,13 @@ test("vpcSubnet selection can be specified", () => {
     ],
   })
 
-  const cluster = new rds.ServerlessCluster(stack, "Cluster", {
+  const instance = new rds.DatabaseInstance(stack, "Instance", {
     vpc: vpc,
     // vpcSubnets: {
     //   subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
     // },
-    engine: rds.DatabaseClusterEngine.auroraPostgres({
-      version: rds.AuroraPostgresEngineVersion.VER_11_13,
+    engine: rds.DatabaseInstanceEngine.postgres({
+      version: rds.PostgresEngineVersion.VER_15,
     }),
   })
 
@@ -167,8 +167,8 @@ test("vpcSubnet selection can be specified", () => {
     vpcSubnets: {
       subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
     },
-    cluster: cluster,
-    secret: cluster.secret!,
+    instance: instance,
+    secret: instance.secret!,
   })
 
   expect(() => {

@@ -5,12 +5,16 @@ import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
-import { IDatabaseCluster, IServerlessCluster } from "aws-cdk-lib/aws-rds"
+import {
+  IDatabaseCluster,
+  IServerlessCluster,
+  IDatabaseInstance,
+} from "aws-cdk-lib/aws-rds"
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
 
-export interface RdsSqlProps {
+export interface ClusterProviderProps {
   /**
    * VPC network to place the provider lambda.
    *
@@ -65,13 +69,68 @@ export interface RdsSqlProps {
   readonly functionProps?: NodejsFunctionProps
 }
 
-export class Provider extends Construct {
+export interface InstanceProviderProps {
+  /**
+   * VPC network to place the provider lambda.
+   *
+   * Normally this is the VPC of your database.
+   *
+   * @default - Function is not placed within a VPC.
+   */
+  readonly vpc: IVpc
+
+  /**
+   * Where to place the networkprovivder lambda within the VPC.
+   *
+   * @default - the isolated subnet if not specified
+   */
+  readonly vpcSubnets?: SubnetSelection
+
+  /**
+   * Your database.
+   */
+  readonly instance: IDatabaseInstance
+
+  /**
+   * Secret that grants access to your database.
+   *
+   * Usually this is your cluster's master secret.
+   */
+  readonly secret: ISecret
+
+  /**
+   * Timeout for lambda to do its work.
+   *
+   * @default - 5 minutes
+   */
+  readonly timeout?: Duration
+
+  /**
+   * Log SQL statements. This includes passwords. Use only for debugging.
+   *
+   * @default - false
+   */
+  readonly logger?: boolean
+
+  /**
+   * Additional function customization.
+   *
+   * This enables additional function customization such as the log group. However,
+   * lambda function properties controlled by other {RdsSqlProps} parameters will trump
+   * opions set via this parameter.
+   *
+   * @default - empty
+   */
+  readonly functionProps?: NodejsFunctionProps
+}
+
+export class ClusterProvider extends Construct {
   public readonly serviceToken: string
   public readonly secret: ISecret
   public readonly handler: IFunction
   public readonly cluster: IServerlessCluster | IDatabaseCluster
 
-  constructor(scope: Construct, id: string, props: RdsSqlProps) {
+  constructor(scope: Construct, id: string, props: ClusterProviderProps) {
     super(scope, id)
     this.secret = props.secret
     this.cluster = props.cluster
@@ -104,7 +163,7 @@ export class Provider extends Construct {
   protected newCustomResourceHandler(
     scope: Construct,
     id: string,
-    props: RdsSqlProps
+    props: ClusterProviderProps
   ): lambda.NodejsFunction {
     const ts_filename = `${__dirname}/handler.ts`
     const js_filename = `${__dirname}/handler.js`
@@ -122,7 +181,84 @@ export class Provider extends Construct {
     }
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
-      ...props.functionProps,
+      vpc: props.vpc,
+      vpcSubnets: props.vpcSubnets ?? {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
+      entry: entry,
+      runtime: Runtime.NODEJS_20_X,
+      timeout: props.timeout ?? Duration.seconds(300),
+      bundling: {
+        sourceMap: true,
+        sourcesContent: false,
+        externalModules: ["pg-native"],
+      },
+      environment: {
+        LOGGER: logger.toString(),
+        NODE_OPTIONS: "--enable-source-maps",
+      },
+    })
+    return fn
+  }
+}
+
+export class InstanceProvider extends Construct {
+  public readonly serviceToken: string
+  public readonly secret: ISecret
+  public readonly handler: IFunction
+  public readonly instance: IDatabaseInstance
+
+  constructor(scope: Construct, id: string, props: InstanceProviderProps) {
+    super(scope, id)
+    this.secret = props.secret
+    this.instance = props.instance
+
+    const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
+    this.handler =
+      (Stack.of(this).node.tryFindChild(functionName) as IFunction) ??
+      this.newCustomResourceHandler(scope, functionName, props)
+
+    const provider = new customResources.Provider(this, "RdsSql", {
+      onEventHandler: this.handler,
+    })
+    this.serviceToken = provider.serviceToken
+    this.secret.grantRead(this.handler)
+    if (this.secret.encryptionKey) {
+      // It seems we need to grant explicit permission
+      this.secret.encryptionKey.grantDecrypt(this.handler)
+    }
+    if (props.instance.connections.securityGroups.length === 0) {
+      throw new Error("Cluster does not have a security group.")
+    } else {
+      this.handler.node.defaultChild?.node.addDependency(
+        props.instance.connections.securityGroups[0]
+      )
+    }
+    this.handler.connections.allowToDefaultPort(props.instance)
+    this.node.addDependency(props.instance)
+  }
+
+  protected newCustomResourceHandler(
+    scope: Construct,
+    id: string,
+    props: InstanceProviderProps
+  ): lambda.NodejsFunction {
+    const ts_filename = `${__dirname}/handler.ts`
+    const js_filename = `${__dirname}/handler.js`
+    let entry: string
+    if (existsSync(ts_filename)) {
+      entry = ts_filename
+    } else if (existsSync(js_filename)) {
+      entry = js_filename
+    } else {
+      // Ugly hack to support SST (possibly caused by my hack to make SST work with CommonJS libraries)
+      entry = path.join(
+        path.dirname(process.env.npm_package_json || process.cwd()),
+        "node_modules/cdk-rds-sql/lib/handler.js"
+      )
+    }
+    const logger = props.logger ?? false
+    const fn = new lambda.NodejsFunction(scope, id, {
       vpc: props.vpc,
       vpcSubnets: props.vpcSubnets ?? {
         subnetType: SubnetType.PRIVATE_ISOLATED,

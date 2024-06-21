@@ -1,9 +1,9 @@
 {
-  "name": "cdk-rds-sql",
+  "name": "@emmanuelnk/cdk-rds-sql",
   "description": "A CDK construct that allows creating roles and databases an on Aurora Serverless Postgresql cluster.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/berenddeboer/cdk-rds-sql.git"
+    "url": "https://github.com/emmanuelnk/cdk-rds-sql.git"
   },
   "scripts": {
     "build": "npx projen build",
@@ -29,8 +29,8 @@
     "projen": "npx projen"
   },
   "author": {
-    "name": "Berend de Boer",
-    "email": "berend@pobox.com",
+    "name": "Emmanuel N Kyeyune",
+    "email": "emmanuelnk.spam@gmail.com",
     "organization": false
   },
   "devDependencies": {
@@ -40,7 +40,7 @@
     "@types/pg": "^8.11.6",
     "@typescript-eslint/eslint-plugin": "^6",
     "@typescript-eslint/parser": "^6",
-    "aws-cdk-lib": "2.124.0",
+    "aws-cdk-lib": "2.147.0",
     "constructs": "10.3.0",
     "esbuild": "^0.21.3",
     "eslint": "^8",
@@ -63,7 +63,7 @@
     "typescript": "^4.9.5"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.124.0",
+    "aws-cdk-lib": "^2.147.0",
     "constructs": "^10.3.0"
   },
   "dependencies": {
