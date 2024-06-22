@@ -1,7 +1,7 @@
 import { awscdk, JsonPatch } from "projen"
 import { NodePackageManager } from "projen/lib/javascript"
 
-const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
+const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc", ".npmrc"]
 
 const project = new awscdk.AwsCdkConstructLibrary({
   author: "Emmanuel N Kyeyune",

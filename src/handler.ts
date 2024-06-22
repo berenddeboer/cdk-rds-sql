@@ -68,7 +68,7 @@ const jumpTable: JumpTable = {
     Update: (_: string, __: string, props?: any) => {
       return props.Statement
     },
-    Delete: (_: string, __: string, props?: any) => {
+    Delete: (_: string, props?: any) => {
       return props.Rollback
     },
   },
