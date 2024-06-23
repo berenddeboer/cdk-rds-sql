@@ -1,5 +1,6 @@
 import { RemovalPolicy } from "aws-cdk-lib"
 import * as kms from "aws-cdk-lib/aws-kms"
+import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
 import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
@@ -72,6 +73,19 @@ export class Role extends Construct {
     )
       throw "Specify either database or databaseName"
     super(scope, id)
+
+    const host = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+      ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.hostname
+      : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.hostname
+
+    const port = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+      ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.port
+      : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.port
+
+    const identifier = (props.provider.cluster as IDatabaseCluster).clusterIdentifier
+      ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
+      : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
+
     this.secret = new Secret(this, "Secret", {
       secretName: props.secretName,
       encryptionKey: props.encryptionKey,
@@ -79,10 +93,10 @@ export class Role extends Construct {
       generateSecretString: {
         passwordLength: 30, // Oracle password cannot have more than 30 characters
         secretStringTemplate: JSON.stringify({
-          dbClusterIdentifier: props.provider.cluster.clusterIdentifier,
+          dbClusterIdentifier: identifier,
           engine: "postgres",
-          host: props.provider.cluster.clusterEndpoint.hostname,
-          port: props.provider.cluster.clusterEndpoint.port,
+          host: host,
+          port: port,
           username: props.roleName,
           dbname: props.database ? props.database.databaseName : props.databaseName,
         }),
