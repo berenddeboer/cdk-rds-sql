@@ -5,7 +5,11 @@ import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
-import { IDatabaseCluster, IServerlessCluster } from "aws-cdk-lib/aws-rds"
+import {
+  IDatabaseCluster,
+  IServerlessCluster,
+  IDatabaseInstance,
+} from "aws-cdk-lib/aws-rds"
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
@@ -30,7 +34,7 @@ export interface RdsSqlProps {
   /**
    * Your database.
    */
-  readonly cluster: IServerlessCluster | IDatabaseCluster
+  readonly cluster: IServerlessCluster | IDatabaseCluster | IDatabaseInstance
 
   /**
    * Secret that grants access to your database.
@@ -69,7 +73,7 @@ export class Provider extends Construct {
   public readonly serviceToken: string
   public readonly secret: ISecret
   public readonly handler: IFunction
-  public readonly cluster: IServerlessCluster | IDatabaseCluster
+  public readonly cluster: IServerlessCluster | IDatabaseCluster | IDatabaseInstance
 
   constructor(scope: Construct, id: string, props: RdsSqlProps) {
     super(scope, id)
@@ -122,7 +126,6 @@ export class Provider extends Construct {
     }
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
-      ...props.functionProps,
       vpc: props.vpc,
       vpcSubnets: props.vpcSubnets ?? {
         subnetType: SubnetType.PRIVATE_ISOLATED,

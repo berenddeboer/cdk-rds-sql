@@ -1,8 +1,8 @@
 # About
 
 This CDK construct library makes it possible to create databases,
-schemas, and roles in an Aurora Serverless or database cluster created
-in that stack. Both Aurora Serverless v1 and v2 are supported.
+schemas, and roles in an Aurora Serverless (v1 and v2 are supported), RDS Database Cluster or Database Instance created
+in that stack.
 
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
@@ -55,7 +55,7 @@ const cluster = new rds.ServerlessCluster(this, "Cluster", {
 })
 ```
 
-Then create a provider which will connect to your database:
+Then create a provider which will connect to your database. For a cluster:
 
 ```ts
 import { Provider } from "cdk-rds-sql"
@@ -63,6 +63,17 @@ import { Provider } from "cdk-rds-sql"
 const provider = new Provider(this, "Provider", {
   vpc: vpc,
   cluster: cluster,
+  secret: cluster.secret!,
+})
+```
+
+For an instance:
+```ts
+import { Provider } from "cdk-rds-sql"
+
+const provider = new Provider(this, "Provider", {
+  vpc: vpc,
+  instance: instance,
   secret: cluster.secret!,
 })
 ```
@@ -98,7 +109,7 @@ const provider = new Provider(this, "Provider", {
 
 ## Roles
 
-Create a postgres role (user) as follows:
+Create a postgres role (user) for a cluster as follows:
 
 ```ts
 import { Role } from "cdk-rds-sql"
