@@ -52,6 +52,7 @@ export const updateRequest = (
     RequestType: "Update",
     PhysicalResourceId: oldResourceId,
     OldResourceProperties: {
+      ServiceToken: "",
       Resource: resource,
       ResourceId: oldResourceId,
     },

@@ -40,7 +40,6 @@ const project = new awscdk.AwsCdkConstructLibrary({
   bundledDeps: [
     "@types/aws-lambda",
     "@aws-sdk/client-secrets-manager",
-    "@types/pg",
     "pg",
     "node-pg-format",
     "ms",
@@ -58,14 +57,4 @@ if (project.eslint) {
     quotes: ["error", "double"],
   })
 }
-// const buildWorkflow = project.tryFindObjectFile(".github/workflows/build.yml")
-// if (buildWorkflow && buildWorkflow.patch) {
-//   buildWorkflow.patch(JsonPatch.add("/jobs/build/container/options", "--group-add sudo"))
-// }
-// const releaseWorkflow = project.tryFindObjectFile(".github/workflows/release.yml")
-// if (releaseWorkflow && releaseWorkflow.patch) {
-//   releaseWorkflow.patch(
-//     JsonPatch.add("/jobs/release/container/options", "--group-add sudo")
-//   )
-// }
 project.synth()
