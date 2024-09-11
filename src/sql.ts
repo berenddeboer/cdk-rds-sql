@@ -38,7 +38,6 @@ export class Sql extends CustomResource {
         DatabaseName: props.database ? props.database.databaseName : undefined,
         Statement: props.statement,
         Rollback: props.rollback,
-        ConnectionProps: props.provider.connectionProps,
       },
     })
     this.node.addDependency(props.provider)
