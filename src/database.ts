@@ -56,7 +56,6 @@ export class Database extends CustomResource implements IDatabase {
         ResourceId: props.databaseName,
         SecretArn: props.provider.secret.secretArn,
         Owner: props.owner?.roleName,
-        ConnectionProps: props.provider.connectionProps,
       },
     })
     this.node.addDependency(props.provider)

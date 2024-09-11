@@ -34,7 +34,6 @@ export class Schema extends CustomResource {
         ResourceId: props.schemaName,
         SecretArn: props.provider.secret.secretArn,
         DatabaseName: props.database ? props.database.databaseName : undefined,
-        ConnectionProps: props.provider.connectionProps,
       },
     })
     this.node.addDependency(props.provider)
