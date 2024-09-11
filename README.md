@@ -107,6 +107,24 @@ const provider = new Provider(this, "Provider", {
 })
 ```
 
+### Additional connection options
+
+Additional options can be passed to the provider.
+The available options can be found [here](https://node-postgres.com/apis/client).
+
+> Keep in mind that certain properties (e.g., username, password, host) are forcibly by this resource. If you provide them in `connectionProps`, they will be ignored.
+
+```ts
+const provider = new Provider(this, "Provider", {
+  vpc: vpc,
+  instance: instance,
+  secret: cluster.secret!,
+  connectionProps: {
+    ssl: true
+  }
+})
+```
+
 ## Roles
 
 Create a postgres role (user) for a cluster as follows:
