@@ -120,6 +120,10 @@
       "type": "bundled"
     },
     {
+      "name": "@types/pg",
+      "type": "bundled"
+    },
+    {
       "name": "exponential-backoff",
       "type": "bundled"
     },
