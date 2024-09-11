@@ -35,7 +35,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   gitignore: tmpDirectories,
   npmignore: tmpDirectories,
   docgen: false,
-  deps: ["exponential-backoff", "@types/aws-lambda"],
+  deps: ["exponential-backoff", "@types/aws-lambda", "@types/pg"],
   bundledDeps: [
     "@types/aws-lambda",
     "@aws-sdk/client-secrets-manager",
