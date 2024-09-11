@@ -126,6 +126,7 @@ export class Provider extends Construct {
     }
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
+      ...props.functionProps,
       vpc: props.vpc,
       vpcSubnets: props.vpcSubnets ?? {
         subnetType: SubnetType.PRIVATE_ISOLATED,

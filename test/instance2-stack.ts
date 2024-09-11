@@ -39,6 +39,7 @@ export class TestInstanceStack extends Stack {
           retention: RetentionDays.ONE_WEEK,
           logGroupName: "/aws/lambda/provider",
         }),
+        allowPublicSubnet: true,
       },
     })
     Database.fromDatabaseName(this, "DefaultDatabase", "example")

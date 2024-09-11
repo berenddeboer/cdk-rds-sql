@@ -33,6 +33,9 @@ export class TestInstanceStack extends Stack {
       cluster: instance,
       secret: instance.secret!,
       timeout: Duration.seconds(10),
+      functionProps: {
+        allowPublicSubnet: true,
+      },
     })
     Database.fromDatabaseName(this, "DefaultDatabase", "example")
 
