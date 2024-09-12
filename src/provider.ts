@@ -67,6 +67,14 @@ export interface RdsSqlProps {
    * @default - empty
    */
   readonly functionProps?: NodejsFunctionProps
+
+  /**
+   * Additional properties when establishing the database sql
+   * connection.
+   *
+   * @default - empty object
+   */
+  readonly connectionProps?: any
 }
 
 export class Provider extends Construct {
@@ -74,11 +82,13 @@ export class Provider extends Construct {
   public readonly secret: ISecret
   public readonly handler: IFunction
   public readonly cluster: IServerlessCluster | IDatabaseCluster | IDatabaseInstance
+  public readonly connectionProps?: any
 
   constructor(scope: Construct, id: string, props: RdsSqlProps) {
     super(scope, id)
     this.secret = props.secret
     this.cluster = props.cluster
+    this.connectionProps = props.connectionProps
 
     const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
     this.handler =

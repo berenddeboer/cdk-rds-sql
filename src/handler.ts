@@ -247,6 +247,7 @@ export const handler = async (
   const resource: RdsSqlResource = event.ResourceProperties.Resource
   const resourceId = event.ResourceProperties.ResourceId
   const databaseName = event.ResourceProperties.DatabaseName
+  const connectionProps = event.ResourceProperties.ConnectionProps || {}
 
   if (!Object.keys(jumpTable).includes(event.ResourceProperties.Resource)) {
     throw `Resource type '${resource}' not recognised.`
@@ -310,7 +311,7 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
-    const params = {
+    const baseParams = {
       host: secretValues.host,
       port: secretValues.port,
       user: secretValues.username,
@@ -318,6 +319,9 @@ export const handler = async (
       database: database,
       connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
     }
+    // merge the base params with the new params provided
+    // directly to the resource
+    const params = { ...connectionProps, ...baseParams }
     log(
       `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`
     )
