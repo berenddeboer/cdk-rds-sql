@@ -32,15 +32,14 @@
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
-        "RELEASE_TAG_PREFIX": "",
-        "BUMP_PACKAGE": "commit-and-tag-version@^12"
+        "RELEASE_TAG_PREFIX": ""
       },
       "steps": [
         {
           "builtin": "release/bump-version"
         }
       ],
-      "condition": "git log --oneline -1 | grep -qv \"chore(release):\""
+      "condition": "! git log --oneline -1 | grep -q \"chore(release):\""
     },
     "clobber": {
       "name": "clobber",
@@ -146,12 +145,7 @@
       "description": "Creates the distribution package",
       "steps": [
         {
-          "spawn": "package:js",
-          "condition": "node -e \"if (!process.env.CI) process.exit(1)\""
-        },
-        {
-          "spawn": "package-all",
-          "condition": "node -e \"if (process.env.CI) process.exit(1)\""
+          "exec": "if [ ! -z ${CI} ]; then rsync -a . .repo --exclude .git --exclude node_modules && rm -rf dist && mv .repo dist; else npx projen package-all; fi"
         }
       ]
     },
@@ -240,8 +234,7 @@
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
-        "RELEASE_TAG_PREFIX": "",
-        "BUMP_PACKAGE": "commit-and-tag-version@^12"
+        "RELEASE_TAG_PREFIX": ""
       },
       "steps": [
         {
@@ -263,7 +256,7 @@
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser commit-and-tag-version esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii prettier projen testcontainers ts-jest ts-node typescript @aws-sdk/client-secrets-manager @types/aws-lambda exponential-backoff ms node-pg-format pg source-map-support aws-cdk-lib constructs"
+          "exec": "npm update @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii prettier projen standard-version testcontainers ts-jest ts-node typescript @aws-sdk/client-secrets-manager @types/aws-lambda exponential-backoff ms node-pg-format pg source-map-support aws-cdk-lib constructs"
         },
         {
           "exec": "npx projen"
