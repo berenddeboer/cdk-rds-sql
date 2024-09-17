@@ -58,6 +58,13 @@ interface DatabaseUpdateProps extends DatabaseProps {
   MasterOwner: string
 }
 
+interface SchemaProps {
+  /**
+   * Optional role is granted permissions.
+   */
+  RoleName?: string
+}
+
 const maxAttempts = 20
 
 const jumpTable: JumpTable = {
@@ -73,14 +80,58 @@ const jumpTable: JumpTable = {
     },
   },
   schema: {
-    Create: async (resourceId: string) => {
-      return format("create schema if not exists %I", resourceId)
+    Create: async (resourceId: string, props: SchemaProps) => {
+      const sql: string[] = [format("create schema if not exists %I", resourceId)]
+      if (props.RoleName) {
+        sql.push(format("GRANT USAGE ON SCHEMA %I TO %I", resourceId, props.RoleName))
+        sql.push(format("GRANT CREATE ON SCHEMA %I TO %I", resourceId, props.RoleName))
+        sql.push(
+          format("GRANT ALL ON ALL TABLES IN SCHEMA %I TO %I", resourceId, props.RoleName)
+        )
+      }
+      return sql
     },
-    Update: async (resourceId: string, oldResourceId: string) => {
-      return format("alter schema %I rename to %I", oldResourceId, resourceId)
+    Update: async (resourceId: string, oldResourceId: string, props: SchemaProps) => {
+      const sql: string[] = []
+      // TODO: revoke old role-name if props.RoleName was removed or changed
+      if (props.RoleName) {
+        sql.push(
+          format(
+            "REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I",
+            oldResourceId,
+            props.RoleName
+          )
+        )
+        sql.push(
+          format("REVOKE CREATE ON SCHEMA %I FROM %FROM", oldResourceId, props.RoleName)
+        )
+        sql.push(format("REVOKE ALL ON SCHEMA %I FROM %I", oldResourceId, props.RoleName))
+      }
+      sql.push(format("alter schema %I rename to %I", oldResourceId, resourceId))
+      if (props.RoleName) {
+        sql.push(format("GRANT USAGE ON SCHEMA %I TO %I", resourceId, props.RoleName))
+        sql.push(format("GRANT CREATE ON SCHEMA %I TO %I", resourceId, props.RoleName))
+        sql.push(
+          format("GRANT ALL ON ALL TABLES IN SCHEMA %I TO %I", resourceId, props.RoleName)
+        )
+      }
+      return sql
     },
-    Delete: (resourceId: string) => {
-      return format("drop schema if exists %I cascade", resourceId)
+    Delete: (resourceId: string, props: SchemaProps) => {
+      const sql: string[] = []
+      if (props.RoleName) {
+        sql.push(
+          format(
+            "REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I",
+            resourceId,
+            props.RoleName
+          )
+        )
+        sql.push(format("REVOKE CREATE ON SCHEMA %I FROM %I", resourceId, props.RoleName))
+        sql.push(format("REVOKE ALL ON SCHEMA %I FROM %I", resourceId, props.RoleName))
+      }
+      sql.push(format("drop schema if exists %I cascade", resourceId))
+      return sql
     },
   },
   role: {
