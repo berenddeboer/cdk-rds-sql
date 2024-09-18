@@ -260,10 +260,8 @@ END$$;`,
 const grantRoleForSchema = (schema: string, roleName: string) => [
   format("GRANT USAGE ON SCHEMA %I TO %I", schema, roleName),
   format("GRANT CREATE ON SCHEMA %I TO %I", schema, roleName),
-  format("GRANT ALL ON ALL TABLES IN SCHEMA %I TO %I", schema, roleName),
 ]
 const revokeRoleFromSchema = (schema: string, roleName: string) => [
-  format("REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I", schema, roleName),
   format("REVOKE CREATE ON SCHEMA %I FROM %I", schema, roleName),
   format("REVOKE ALL ON SCHEMA %I FROM %I", schema, roleName),
 ]
