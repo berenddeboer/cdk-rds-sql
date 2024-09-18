@@ -91,7 +91,9 @@ const jumpTable: JumpTable = {
       const sql: string[] = []
       // TODO: revoke old role-name if props.RoleName was removed or changed
       if (props.RoleName) {
-        revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
+        revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
+          sql.push(stmt)
+        )
       }
       sql.push(format("alter schema %I rename to %I", oldResourceId, resourceId))
       if (props.RoleName) {

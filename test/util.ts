@@ -90,6 +90,23 @@ export const schemaExists = async (client: Client, schema: string): Promise<bool
   return schemas.find((s) => s === schema) !== undefined
 }
 
+export const roleGrantedForSchema = async (
+  client: Client,
+  schema: string,
+  role: string
+): Promise<boolean> => {
+  const sql = `select nspname as schema_name, r.rolname as role_name,\
+                      pg_catalog.has_schema_privilege(r.rolname, nspname, 'CREATE') as create_grant,\
+                      pg_catalog.has_schema_privilege(r.rolname, nspname, 'USAGE') as usage_grant\
+                      from pg_namespace pn,pg_catalog.pg_roles r \
+                      where array_to_string(nspacl,',') like '%'||r.rolname||'%' and nspowner > 1 \
+                      and nspname = '${schema}' and r.rolname = '${role}'`
+  const { rows } = await client.query(sql)
+  return (
+    rows.length === 1 && rows[0].create_grant === true && rows[0].usage_grant === true
+  )
+}
+
 const getSchemas = async (client: Client): Promise<string[]> => {
   const { rows } = await client.query(
     "select schema_name from information_schema.schemata"
