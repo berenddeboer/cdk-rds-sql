@@ -58,6 +58,13 @@ interface DatabaseUpdateProps extends DatabaseProps {
   MasterOwner: string
 }
 
+interface SchemaProps {
+  /**
+   * Optional role is granted permissions.
+   */
+  RoleName?: string
+}
+
 const maxAttempts = 20
 
 const jumpTable: JumpTable = {
@@ -73,14 +80,34 @@ const jumpTable: JumpTable = {
     },
   },
   schema: {
-    Create: async (resourceId: string) => {
-      return format("create schema if not exists %I", resourceId)
+    Create: async (resourceId: string, props: SchemaProps) => {
+      const sql: string[] = [format("create schema if not exists %I", resourceId)]
+      if (props.RoleName) {
+        grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
+      }
+      return sql
     },
-    Update: async (resourceId: string, oldResourceId: string) => {
-      return format("alter schema %I rename to %I", oldResourceId, resourceId)
+    Update: async (resourceId: string, oldResourceId: string, props: SchemaProps) => {
+      const sql: string[] = []
+      // TODO: revoke old role-name if props.RoleName was removed or changed
+      if (props.RoleName) {
+        revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
+          sql.push(stmt)
+        )
+      }
+      sql.push(format("alter schema %I rename to %I", oldResourceId, resourceId))
+      if (props.RoleName) {
+        grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
+      }
+      return sql
     },
-    Delete: (resourceId: string) => {
-      return format("drop schema if exists %I cascade", resourceId)
+    Delete: (resourceId: string, props: SchemaProps) => {
+      const sql: string[] = []
+      if (props.RoleName) {
+        revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
+      }
+      sql.push(format("drop schema if exists %I cascade", resourceId))
+      return sql
     },
   },
   role: {
@@ -229,6 +256,15 @@ END$$;`,
     },
   },
 }
+
+const grantRoleForSchema = (schema: string, roleName: string) => [
+  format("GRANT USAGE ON SCHEMA %I TO %I", schema, roleName),
+  format("GRANT CREATE ON SCHEMA %I TO %I", schema, roleName),
+]
+const revokeRoleFromSchema = (schema: string, roleName: string) => [
+  format("REVOKE CREATE ON SCHEMA %I FROM %I", schema, roleName),
+  format("REVOKE ALL ON SCHEMA %I FROM %I", schema, roleName),
+]
 
 const log =
   process.env.LOGGER === "true"

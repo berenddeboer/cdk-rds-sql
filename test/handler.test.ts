@@ -11,6 +11,7 @@ import {
   databaseExists,
   databaseOwnerIs,
   rowCount,
+  roleGrantedForSchema,
 } from "./util"
 import { handler } from "../src/handler"
 
@@ -67,6 +68,7 @@ test("schema", async () => {
   const create = createRequest("schema", oldSchemaName)
   await handler(create)
   expect(SecretsManagerClientMock).toHaveBeenCalledTimes(1)
+
   const client = await newClient()
   try {
     expect(await schemaExists(client, oldSchemaName)).toEqual(true)
@@ -76,9 +78,39 @@ test("schema", async () => {
     expect(await schemaExists(client, newSchemaName)).toEqual(true)
 
     // CloudFormation will send a delete afterward, so test that too
-    const remove = deleteRequest("schema", oldSchemaName)
+    const remove = deleteRequest("schema", newSchemaName)
     await handler(remove)
-    expect(await schemaExists(client, oldSchemaName)).toEqual(false)
+    expect(await schemaExists(client, newSchemaName)).toEqual(false)
+
+    // create role for testing
+    const roleName = "schematest"
+    const createRole = createRequest("role", roleName, {
+      PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      DatabaseName: "postgres",
+    })
+    await handler(createRole)
+
+    const createWithRole = createRequest("schema", oldSchemaName, {
+      RoleName: roleName,
+    })
+    await handler(createWithRole)
+    expect(await roleGrantedForSchema(client, oldSchemaName, roleName)).toEqual(true)
+    const updateWithRole = updateRequest("schema", oldSchemaName, newSchemaName, {
+      RoleName: roleName,
+    })
+    await handler(updateWithRole)
+    expect(await roleGrantedForSchema(client, oldSchemaName, roleName)).toEqual(false)
+    expect(await roleGrantedForSchema(client, newSchemaName, roleName)).toEqual(true)
+    const removeWithRole = deleteRequest("schema", newSchemaName, {
+      RoleName: roleName,
+    })
+    await handler(removeWithRole)
+    expect(await roleGrantedForSchema(client, newSchemaName, roleName)).toEqual(false)
+
+    const removeRole = deleteRequest("role", roleName, {
+      DatabaseName: "postgres",
+    })
+    await handler(removeRole)
   } finally {
     await client.end()
   }

@@ -194,6 +194,17 @@ new Schema(this, "Schema", {
 })
 ```
 
+One may need a role permitted for using schema:
+
+```ts
+new Schema(this, "Schema", {
+  provider: provider,
+  schemaName: "myschema",
+  databaseName: database.databaseName,
+  role: role,
+})
+```
+
 ## Sql
 
 You can insert arbitrary SQL into your database with the `Sql` construct:
