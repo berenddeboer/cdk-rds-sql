@@ -29,6 +29,7 @@ let pgHost: string
 let pgPort: number
 
 beforeEach(async () => {
+  process.env.SSL = "false"
   pgContainer = await new GenericContainer("postgres")
     .withExposedPorts(DB_PORT)
     .withEnv("POSTGRES_USER", DB_MASTER_USERNAME)
