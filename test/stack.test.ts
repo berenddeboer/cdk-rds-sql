@@ -1,5 +1,5 @@
 import * as cdk from "aws-cdk-lib"
-import { Template } from "aws-cdk-lib/assertions"
+import { Match, Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as serverlessv1 from "./serverlessv1-stack"
@@ -103,6 +103,15 @@ test("serverless v2", () => {
       ],
     },
   })
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Runtime: "nodejs20.x",
+    Environment: {
+      Variables: {
+        LOGGER: "false",
+        SSL: Match.absent(),
+      },
+    },
+  })
 })
 
 test("absence of security group is detected", () => {
@@ -177,4 +186,25 @@ test("vpcSubnet selection can be specified", () => {
       roleName: "role",
     })
   }).toThrowError()
+})
+
+test("ssl can be disabled", () => {
+  const app = new cdk.App()
+  const stack = new serverlessv2.TestStack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+    ssl: false,
+  })
+  const template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Runtime: "nodejs20.x",
+    Environment: {
+      Variables: {
+        LOGGER: "false",
+        SSL: "false",
+      },
+    },
+  })
 })

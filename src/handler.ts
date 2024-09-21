@@ -346,6 +346,7 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
+    const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : true
     const params = {
       host: secretValues.host,
       port: secretValues.port,
@@ -353,6 +354,7 @@ export const handler = async (
       password: secretValues.password,
       database: database,
       connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
+      ssl: ssl,
     }
     log(
       `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`

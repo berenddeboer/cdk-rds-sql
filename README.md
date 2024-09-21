@@ -68,6 +68,7 @@ const provider = new Provider(this, "Provider", {
 ```
 
 For an instance:
+
 ```ts
 import { Provider } from "cdk-rds-sql"
 
@@ -104,6 +105,22 @@ const provider = new Provider(this, "Provider", {
   },
   cluster: cluster,
   secret: cluster.secret!,
+})
+```
+
+### Disabling SSL
+
+The default connection to RDS is ssl enabled (this used to be disabled
+in versions below 4).
+
+You can disable ssl by setting the `ssl` option to `false`:
+
+```ts
+const provider = new Provider(this, "Provider", {
+  vpc: vpc,
+  instance: instance,
+  secret: cluster.secret!,
+  ssl: false, // default is true
 })
 ```
 
@@ -251,10 +268,9 @@ DO $$BEGIN
     drop table t;
   END IF;
 END$$;
-`
+`,
 })
 ```
-
 
 Note that there is no synchronisation between various `Sql`
 constructs, in particular the order in your code does not determine

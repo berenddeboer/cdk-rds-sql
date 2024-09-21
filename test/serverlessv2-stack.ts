@@ -1,4 +1,4 @@
-import { Aspects, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
@@ -7,8 +7,12 @@ import { Construct } from "constructs"
 import { Provider, Database, Role, Schema, Sql } from "./../src/index"
 import { Vpc } from "./vpc"
 
+export interface TestStackProps extends StackProps {
+  ssl?: boolean
+}
+
 export class TestStack extends Stack {
-  constructor(scope: Construct, id: string, props: StackProps) {
+  constructor(scope: Construct, id: string, props: TestStackProps) {
     super(scope, id, props)
 
     const vpc = new Vpc(this, "Vpc")
@@ -24,21 +28,11 @@ export class TestStack extends Stack {
         publiclyAccessible: false,
         enablePerformanceInsights: false,
       }),
+      serverlessV2MinCapacity: 0.5,
+      serverlessV2MaxCapacity: 1,
       vpc: vpc.vpc,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-      },
-    })
-
-    Aspects.of(cluster).add({
-      // <-- cluster is an instance of DatabaseCluster
-      visit(node) {
-        if (node instanceof rds.CfnDBCluster) {
-          node.serverlessV2ScalingConfiguration = {
-            minCapacity: 0.5,
-            maxCapacity: 1,
-          }
-        }
       },
     })
 
@@ -52,6 +46,7 @@ export class TestStack extends Stack {
           logGroupName: "/aws/lambda/provider",
         }),
       },
+      ssl: props.ssl,
     })
     Database.fromDatabaseName(this, "DefaultDatabase", "example")
 
