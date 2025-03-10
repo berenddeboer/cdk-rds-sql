@@ -100,7 +100,7 @@ import { Provider } from "cdk-rds-sql"
 
 const provider = new Provider(this, "Provider", {
   vpc: vpc,
-  vpcSubnet: {
+  vpcSubnets: {
     subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
   },
   cluster: cluster,
