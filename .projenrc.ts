@@ -40,13 +40,13 @@ const project = new awscdk.AwsCdkConstructLibrary({
   bundledDeps: [
     "@types/aws-lambda",
     "@aws-sdk/client-secrets-manager",
-    "pg",
+    "pg@^8.13.3",
     "node-pg-format",
     "ms",
     "exponential-backoff",
     "source-map-support",
   ],
-  devDeps: ["@types/ms", "@types/pg", "testcontainers", "esbuild"],
+  devDeps: ["@types/ms", "@types/pg@^8.11.11", "testcontainers", "esbuild"],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })

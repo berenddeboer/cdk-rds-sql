@@ -10,7 +10,7 @@ import {
 } from "aws-lambda"
 import { backOff } from "exponential-backoff"
 import { format } from "node-pg-format"
-import { Client } from "pg"
+import { Client, ClientConfig } from "pg"
 import { RdsSqlResource } from "./enum"
 
 interface CustomResourceResponse {
@@ -346,13 +346,15 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
-    const params = {
+    const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : true
+    const params: ClientConfig = {
       host: secretValues.host,
       port: secretValues.port,
       user: secretValues.username,
       password: secretValues.password,
       database: database,
       connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
+      ssl: ssl,
     }
     log(
       `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`

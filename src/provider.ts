@@ -67,6 +67,13 @@ export interface RdsSqlProps {
    * @default - empty
    */
   readonly functionProps?: NodejsFunctionProps
+
+  /**
+   * Use SSL?
+   *
+   * @default - true
+   */
+  readonly ssl?: boolean
 }
 
 export class Provider extends Construct {
@@ -124,6 +131,12 @@ export class Provider extends Construct {
         "node_modules/cdk-rds-sql/lib/handler.js"
       )
     }
+    let ssl_options: Record<string, string> | undefined
+    if (props.ssl !== undefined && !props.ssl) {
+      ssl_options = {
+        SSL: JSON.stringify(props.ssl),
+      }
+    }
     const logger = props.logger ?? false
     const fn = new lambda.NodejsFunction(scope, id, {
       ...props.functionProps,
@@ -142,6 +155,7 @@ export class Provider extends Construct {
       environment: {
         LOGGER: logger.toString(),
         NODE_OPTIONS: "--enable-source-maps",
+        ...ssl_options,
       },
     })
     return fn
