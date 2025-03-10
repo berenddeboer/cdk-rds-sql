@@ -10,7 +10,7 @@ import {
 } from "aws-lambda"
 import { backOff } from "exponential-backoff"
 import { format } from "node-pg-format"
-import { Client } from "pg"
+import { Client, ClientConfig } from "pg"
 import { RdsSqlResource } from "./enum"
 
 interface CustomResourceResponse {
@@ -311,7 +311,7 @@ export const handler = async (
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
     const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : true
-    const params = {
+    const params: ClientConfig = {
       host: secretValues.host,
       port: secretValues.port,
       user: secretValues.username,

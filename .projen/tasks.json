@@ -257,7 +257,7 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/ms,@types/pg,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,jsii-diff,jsii-pacmak,prettier,projen,testcontainers,ts-node,typescript,@aws-sdk/client-secrets-manager,@types/aws-lambda,exponential-backoff,ms,node-pg-format,pg,source-map-support"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/ms,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,jsii-diff,jsii-pacmak,prettier,projen,testcontainers,ts-node,typescript,@aws-sdk/client-secrets-manager,@types/aws-lambda,exponential-backoff,ms,node-pg-format,source-map-support"
         },
         {
           "exec": "npm install"
