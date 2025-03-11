@@ -112,6 +112,9 @@ test("serverless v2", () => {
       },
     },
   })
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Timeout: 300,
+  })
 })
 
 test("absence of security group is detected", () => {
@@ -206,5 +209,89 @@ test("ssl can be disabled", () => {
         SSL: "false",
       },
     },
+  })
+})
+
+test("timeout can be set on main properties", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "Cluster", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_14_5,
+    }),
+    writer: rds.ClusterInstance.serverlessV2("writer"),
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+  })
+
+  new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: cluster,
+    secret: cluster.secret!,
+    timeout: cdk.Duration.seconds(400),
+  })
+  const template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Timeout: 400,
+  })
+})
+
+test("timeout can be set on function properties", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "Cluster", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_14_5,
+    }),
+    writer: rds.ClusterInstance.serverlessV2("writer"),
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+  })
+
+  new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: cluster,
+    secret: cluster.secret!,
+    functionProps: {
+      timeout: cdk.Duration.seconds(200),
+    },
+  })
+  const template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Timeout: 200,
   })
 })

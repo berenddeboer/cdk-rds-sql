@@ -146,7 +146,7 @@ export class Provider extends Construct {
       },
       entry: entry,
       runtime: Runtime.NODEJS_20_X,
-      timeout: props.timeout ?? Duration.seconds(300),
+      timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
       bundling: {
         sourceMap: true,
         sourcesContent: false,
