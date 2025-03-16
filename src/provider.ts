@@ -25,7 +25,7 @@ export interface RdsSqlProps {
   readonly vpc: IVpc
 
   /**
-   * Where to place the networkprovivder lambda within the VPC.
+   * Where to place the network provider lambda within the VPC.
    *
    * @default - the isolated subnet if not specified
    */
@@ -71,7 +71,7 @@ export interface RdsSqlProps {
   /**
    * Use SSL?
    *
-   * @default - true
+   * @default - false
    */
   readonly ssl?: boolean
 }

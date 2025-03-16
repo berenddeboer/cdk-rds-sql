@@ -346,7 +346,7 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
-    const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : true
+    const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : false
     const params: ClientConfig = {
       host: secretValues.host,
       port: secretValues.port,
