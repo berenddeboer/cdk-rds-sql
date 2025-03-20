@@ -108,7 +108,6 @@ export class Provider extends Construct {
         props.cluster.connections.securityGroups[0]
       )
     }
-    this.handler.connections.allowToDefaultPort(props.cluster)
     this.node.addDependency(props.cluster)
   }
 
@@ -158,6 +157,17 @@ export class Provider extends Construct {
         ...ssl_options,
       },
     })
+
+    if (
+      !props.functionProps?.securityGroups ||
+      props.functionProps?.securityGroups.length === 0
+    ) {
+      props.cluster.connections.allowDefaultPortFrom(
+        fn,
+        "Allow the rds sql handler to connect to db"
+      )
+    }
+
     return fn
   }
 }
