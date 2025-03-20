@@ -34,6 +34,8 @@ cdk.context.json
 .idea/
 cdk.out/
 .envrc
+.env
+CONVENTIONS.md
 /test-reports/
 junit.xml
 /coverage/

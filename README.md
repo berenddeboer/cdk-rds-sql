@@ -314,11 +314,7 @@ Test code via projen with:
 
 You can run the sample stack with:
 
-    npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV1Stack
-
-Or for v2:
-
-    npx cdk deploy TestServerlessV2Stack
+    npx projen integ:deploy:serverless
 
 If you want to use an existing vpc:
 

@@ -141,6 +141,15 @@
         }
       ]
     },
+    "integ:deploy:serverless": {
+      "name": "integ:deploy:serverless",
+      "description": "Deploy the Aurora Serverless V2 integration test stack",
+      "steps": [
+        {
+          "exec": "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never"
+        }
+      ]
+    },
     "package": {
       "name": "package",
       "description": "Creates the distribution package",

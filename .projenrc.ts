@@ -1,7 +1,14 @@
 import { awscdk, JsonPatch } from "projen"
 import { NodePackageManager } from "projen/lib/javascript"
 
-const tmpDirectories = ["cdk.context.json", ".idea/", "cdk.out/", ".envrc"]
+const tmpDirectories = [
+  "cdk.context.json",
+  ".idea/",
+  "cdk.out/",
+  ".envrc",
+  ".env",
+  "CONVENTIONS.md",
+]
 
 const project = new awscdk.AwsCdkConstructLibrary({
   author: "Berend de Boer",
@@ -57,4 +64,10 @@ if (project.eslint) {
     quotes: ["error", "double"],
   })
 }
+
+project.addTask("integ:deploy:serverless", {
+  description: "Deploy the Aurora Serverless V2 integration test stack",
+  exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never",
+})
+
 project.synth()
