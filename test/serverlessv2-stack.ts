@@ -1,6 +1,6 @@
-import { Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Duration, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
+import { RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
@@ -19,7 +19,7 @@ export class TestStack extends Stack {
 
     const cluster = new rds.DatabaseCluster(this, "Cluster2", {
       engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_14_5,
+        version: rds.AuroraPostgresEngineVersion.VER_14_9,
       }),
       removalPolicy: RemovalPolicy.DESTROY,
       defaultDatabaseName: "example",
@@ -41,13 +41,12 @@ export class TestStack extends Stack {
       cluster: cluster,
       secret: cluster.secret!,
       functionProps: {
-        logGroup: new LogGroup(this, "loggroup", {
-          retention: RetentionDays.ONE_WEEK,
-          logGroupName: "/aws/lambda/provider",
-        }),
+        logRetention: RetentionDays.ONE_WEEK,
+        timeout: Duration.seconds(30),
       },
       ssl: props.ssl,
     })
+
     Database.fromDatabaseName(this, "DefaultDatabase", "example")
 
     new Schema(this, "Schema", {

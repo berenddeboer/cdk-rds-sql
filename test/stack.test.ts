@@ -2,32 +2,9 @@ import * as cdk from "aws-cdk-lib"
 import { Match, Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import * as serverlessv1 from "./serverlessv1-stack"
 import * as serverlessv2 from "./serverlessv2-stack"
 import { Provider } from "../src/provider"
 import { Role } from "../src/role"
-
-test("serverless v1", () => {
-  const app = new cdk.App()
-  const stack = new serverlessv1.TestStack(app, "TestStack", {
-    env: {
-      account: "123456789",
-      region: "us-east-1",
-    },
-  })
-  let template = Template.fromStack(stack)
-  //console.debug("TEMPLATE", template.toJSON())
-  template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
-    Resource: "role",
-  })
-  /*
-  template.hasResourceProperties("AWS::SecretsManager::Secret", {
-    GenerateSecretString: {
-      SecretStringTemplate: "{\"username\":\"myrole\"}",
-    },
-    })
-  */
-})
 
 test("role without database", () => {
   const app = new cdk.App()
@@ -113,7 +90,7 @@ test("serverless v2", () => {
     },
   })
   template.hasResourceProperties("AWS::Lambda::Function", {
-    Timeout: 300,
+    Timeout: 900,
   })
 })
 

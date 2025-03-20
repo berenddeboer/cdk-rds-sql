@@ -18,6 +18,8 @@ export class Vpc extends Construct {
         vpcName: "cdk-rds-sql",
         ipAddresses: ec2.IpAddresses.cidr("192.168.249.0/24"),
         maxAzs: 2,
+        natGateways: 0,
+        createInternetGateway: false,
         subnetConfiguration: [
           {
             cidrMask: 28,
@@ -25,6 +27,11 @@ export class Vpc extends Construct {
             subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
           },
         ],
+      })
+
+      // Add VPC endpoint for Secrets Manager to allow Lambda to access secrets without internet access
+      this.vpc.addInterfaceEndpoint("SecretsManagerEndpoint", {
+        service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
       })
     }
   }
