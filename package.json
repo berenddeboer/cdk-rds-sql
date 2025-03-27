@@ -15,6 +15,7 @@
     "eject": "npx projen eject",
     "eslint": "npx projen eslint",
     "integ:deploy:serverless": "npx projen integ:deploy:serverless",
+    "integ:destroy:serverless": "npx projen integ:destroy:serverless",
     "package": "npx projen package",
     "package-all": "npx projen package-all",
     "package:js": "npx projen package:js",

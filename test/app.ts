@@ -11,4 +11,6 @@ new serverlessv2.TestStack(app, "TestRdsSqlServerlessV2Stack", {
     region: process.env.CDK_DEFAULT_REGION,
   },
   description: "Feel free to delete",
+  logger: true,
+  ssl: true,
 })

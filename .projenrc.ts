@@ -70,4 +70,9 @@ project.addTask("integ:deploy:serverless", {
   exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never",
 })
 
+project.addTask("integ:destroy:serverless", {
+  description: "Destroy the Aurora Serverless V2 integration test stack",
+  exec: "npx cdk destroy TestRdsSqlServerlessV2Stack --force",
+})
+
 project.synth()

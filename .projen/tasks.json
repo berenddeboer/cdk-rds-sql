@@ -150,6 +150,15 @@
         }
       ]
     },
+    "integ:destroy:serverless": {
+      "name": "integ:destroy:serverless",
+      "description": "Destroy the Aurora Serverless V2 integration test stack",
+      "steps": [
+        {
+          "exec": "npx cdk destroy TestRdsSqlServerlessV2Stack --force"
+        }
+      ]
+    },
     "package": {
       "name": "package",
       "description": "Creates the distribution package",

@@ -8,6 +8,16 @@ import { Provider, Database, Role, Schema, Sql } from "./../src/index"
 import { Vpc } from "./vpc"
 
 export interface TestStackProps extends StackProps {
+  /**
+   * Print SQL statements being executed.
+   *
+   * @default true
+   */
+  logger?: boolean
+
+  /**
+   * @default true
+   */
   ssl?: boolean
 }
 
@@ -44,6 +54,7 @@ export class TestStack extends Stack {
         logRetention: RetentionDays.ONE_WEEK,
         timeout: Duration.seconds(30),
       },
+      logger: props.logger,
       ssl: props.ssl,
     })
 
@@ -74,11 +85,11 @@ grant select on t to myrole;
 DO $$BEGIN
    IF EXISTS (select from pg_database WHERE datname = 't') THEN
      IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') THEN
-       revoke select  database t from myrole;
+       revoke select on database t from myrole;
     END IF;
     drop table t;
   END IF;
-END$$;,
+END$$;
 `,
     })
   }
