@@ -148,8 +148,24 @@ export class Provider extends Construct {
       timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
       bundling: {
         sourceMap: true,
-        sourcesContent: false,
         externalModules: ["pg-native"],
+        // Include the migrations directory in the bundle
+        commandHooks: {
+          beforeBundling(_: string, outputDir: string): string[] {
+            return [
+              `curl --silent -fL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o ${path.join(
+                outputDir,
+                "global-bundle.pem"
+              )}`,
+            ]
+          },
+          afterBundling(): string[] {
+            return []
+          },
+          beforeInstall(): string[] {
+            return []
+          },
+        },
       },
       environment: {
         LOGGER: logger.toString(),

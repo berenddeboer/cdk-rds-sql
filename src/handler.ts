@@ -1,3 +1,5 @@
+import * as fs from "fs"
+import { ConnectionOptions } from "tls"
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -346,7 +348,16 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
-    const ssl = process.env.SSL ? JSON.parse(process.env.SSL) : false
+    // Parse SSL option from env, if provided.
+    // If process.env.SSL is the string "false", disable SSL.
+    const isSslEnabled = process.env.SSL ? JSON.parse(process.env.SSL) : true
+    const ssl: ConnectionOptions | false = isSslEnabled
+      ? {
+          ca: fs.readFileSync(`${process.env.LAMBDA_TASK_ROOT}/global-bundle.pem`),
+          rejectUnauthorized: true, // This forces the client to verify the server's certificate.
+        }
+      : false
+
     const params: ClientConfig = {
       host: secretValues.host,
       port: secretValues.port,
@@ -354,7 +365,7 @@ export const handler = async (
       password: secretValues.password,
       database: database,
       connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
-      ssl: ssl,
+      ssl,
     }
     log(
       `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`
