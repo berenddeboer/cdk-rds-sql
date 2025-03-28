@@ -85,12 +85,7 @@ access to the VPC of the database. Only the provider lambda will talk
 to your database.
 
 The provider will by default use the private isolated subnet of the
-VPC. This is a breaking change from the past, where the provider used
-the default strategy, which may not have been the private isolated
-subnet. But from an enterprise security point of view having third
-party code run in an isolated network by default is better.
-
-Your isolated network must have a VPC endpoint to AWS Secrets Manager
+VPC. Your isolated network must have a VPC endpoint to AWS Secrets Manager
 and possibly KMS as well. If you want to use a subnet with egress
 access in case you have no such VPC endpoints, specify the subnet as
 follows:
