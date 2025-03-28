@@ -368,7 +368,9 @@ export const handler = async (
       ssl,
     }
     log(
-      `Connecting to host ${params.host}: ${params.port}, database ${params.database} as ${params.user}`
+      `Connecting to host ${params.host}:${params.port}${
+        ssl ? " using a secure connection" : ""
+      }, database ${params.database} as ${params.user}`
     )
     log("Executing SQL", sql)
     const pg_client = new Client(params)
