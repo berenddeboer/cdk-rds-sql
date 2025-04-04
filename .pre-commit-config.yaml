@@ -8,7 +8,7 @@ repos:
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
-        exclude: (API.md|.mergify.yml|.projen/|.github|tsconfig.dev.json|.gitignore|LICENSE|.gitattributes|.eslintrc.json)
+        exclude: (tsconfig.json|API.md|.mergify.yml|.projen/|.github|tsconfig.dev.json|.gitignore|LICENSE|.gitattributes|.eslintrc.json)
       - id: trailing-whitespace
       - id: check-json
         exclude: (tsconfig.json|.eslintrc.json|tsconfig.dev.json)

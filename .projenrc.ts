@@ -25,9 +25,14 @@ const project = new awscdk.AwsCdkConstructLibrary({
   depsUpgradeOptions: {
     workflow: false,
   },
+  minNodeVersion: "20.19",
+  jestOptions: {
+    jestVersion: "~29",
+  },
+  typescriptVersion: "~5.8",
   constructsVersion: "10.3.0",
-  cdkVersion: "2.144.0",
-  disableTsconfig: true,
+  cdkVersion: "2.171.1",
+  jsiiVersion: "~5.7.0",
   tsconfigDev: {
     compilerOptions: {
       esModuleInterop: true,
@@ -53,7 +58,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "exponential-backoff",
     "source-map-support",
   ],
-  devDeps: ["@types/ms", "@types/pg@^8.11.11", "testcontainers", "esbuild"],
+  devDeps: ["@types/ms@2", "@types/pg@^8.11.11", "testcontainers@10", "esbuild"],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })

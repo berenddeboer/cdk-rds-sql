@@ -33,9 +33,11 @@ beforeEach(async () => {
   process.env.SSL = "false"
   pgContainer = await new GenericContainer("postgres")
     .withExposedPorts(DB_PORT)
-    .withEnv("POSTGRES_USER", DB_MASTER_USERNAME)
-    .withEnv("POSTGRES_PASSWORD", DB_MASTER_PASSWORD)
-    .withEnv("POSTGRES_DB", DB_DEFAULT_DB)
+    .withEnvironment({
+      POSTGRES_USER: DB_MASTER_USERNAME,
+      POSTGRES_PASSWORD: DB_MASTER_PASSWORD,
+      POSTGRES_DB: DB_DEFAULT_DB,
+    })
     .withStartupTimeout(ms("90s"))
     .start()
   pgHost = pgContainer.getHost()
