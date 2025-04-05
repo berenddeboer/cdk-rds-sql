@@ -1,4 +1,4 @@
-import { awscdk, JsonPatch } from "projen"
+import { awscdk } from "projen"
 import { NodePackageManager } from "projen/lib/javascript"
 
 const tmpDirectories = [
@@ -8,6 +8,8 @@ const tmpDirectories = [
   ".envrc",
   ".env",
   "CONVENTIONS.md",
+  "src/handler/handler.js",
+  "lambda/handler.js",
 ]
 
 const project = new awscdk.AwsCdkConstructLibrary({
@@ -25,7 +27,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   depsUpgradeOptions: {
     workflow: false,
   },
-  minNodeVersion: "20.19",
+  minNodeVersion: "22.14",
   jestOptions: {
     jestVersion: "~29",
   },
@@ -48,9 +50,13 @@ const project = new awscdk.AwsCdkConstructLibrary({
   npmignore: tmpDirectories,
   docgen: false,
   workflowNodeVersion: "20.x",
-  deps: ["exponential-backoff", "@types/aws-lambda"],
-  bundledDeps: [
-    "@types/aws-lambda",
+  deps: ["@types/aws-lambda"],
+  bundledDeps: ["@types/aws-lambda"],
+  devDeps: [
+    "@types/ms@2",
+    "@types/pg@^8.11.11",
+    "testcontainers@10",
+    "esbuild",
     "@aws-sdk/client-secrets-manager",
     "pg@^8.13.3",
     "node-pg-format",
@@ -58,7 +64,6 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "exponential-backoff",
     "source-map-support",
   ],
-  devDeps: ["@types/ms@2", "@types/pg@^8.11.11", "testcontainers@10", "esbuild"],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })
@@ -79,5 +84,20 @@ project.addTask("integ:destroy:serverless", {
   description: "Destroy the Aurora Serverless V2 integration test stack",
   exec: "npx cdk destroy TestRdsSqlServerlessV2Stack --force",
 })
+
+// Add build tasks for transpiling the Lambda handler
+project.addTask("build:handler", {
+  description: "Transpile the Lambda handler to JavaScript",
+  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node22 --external:aws-sdk --outfile=src/handler/handler.js",
+})
+
+project.addTask("copy:handler", {
+  description: "Copy transpiled handler into lib",
+  exec: "cp src/handler/handler.js lib/handler/handler.js",
+})
+
+// Hook these tasks into the build process
+project.tasks.tryFind("pre-compile")?.spawn(project.tasks.tryFind("build:handler")!)
+project.tasks.tryFind("compile")?.spawn(project.tasks.tryFind("copy:handler")!)
 
 project.synth()

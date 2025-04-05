@@ -116,18 +116,20 @@ export class Provider extends Construct {
     id: string,
     props: RdsSqlProps
   ): lambda.NodejsFunction {
-    const ts_filename = `${__dirname}/handler.ts`
-    const js_filename = `${__dirname}/handler.js`
+    const handlerDir = path.join(__dirname, "handler")
+    const index_ts = path.join(handlerDir, "index.ts")
+    const index_js = path.join(handlerDir, "index.js")
     let entry: string
-    if (existsSync(ts_filename)) {
-      entry = ts_filename
-    } else if (existsSync(js_filename)) {
-      entry = js_filename
+
+    if (existsSync(index_ts)) {
+      entry = index_ts
+    } else if (existsSync(index_js)) {
+      entry = index_js
     } else {
       // Ugly hack to support SST (possibly caused by my hack to make SST work with CommonJS libraries)
       entry = path.join(
         path.dirname(process.env.npm_package_json || process.cwd()),
-        "node_modules/cdk-rds-sql/lib/handler.js"
+        "node_modules/cdk-rds-sql/lib/handler/index.js"
       )
     }
     let ssl_options: Record<string, string> | undefined

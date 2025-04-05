@@ -13,7 +13,7 @@ import {
 import { backOff } from "exponential-backoff"
 import { format } from "node-pg-format"
 import { Client, ClientConfig } from "pg"
-import { RdsSqlResource } from "./enum"
+import { RdsSqlResource } from "../src/enum"
 
 interface CustomResourceResponse {
   PhysicalResourceId?: string

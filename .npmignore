@@ -5,6 +5,8 @@ cdk.out/
 .envrc
 .env
 CONVENTIONS.md
+src/handler/handler.js
+lambda/handler.js
 /.projen/
 /test-reports/
 junit.xml

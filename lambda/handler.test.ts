@@ -13,7 +13,7 @@ import {
   rowCount,
   roleGrantedForSchema,
 } from "./util"
-import { handler } from "../src/handler"
+import { handler } from "./handler"
 
 jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<

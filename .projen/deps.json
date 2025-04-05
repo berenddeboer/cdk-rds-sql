@@ -1,6 +1,10 @@
 {
   "dependencies": [
     {
+      "name": "@aws-sdk/client-secrets-manager",
+      "type": "build"
+    },
+    {
       "name": "@types/jest",
       "version": "~29",
       "type": "build"
@@ -12,7 +16,7 @@
     },
     {
       "name": "@types/node",
-      "version": "^20",
+      "version": "^22",
       "type": "build"
     },
     {
@@ -61,6 +65,10 @@
       "type": "build"
     },
     {
+      "name": "exponential-backoff",
+      "type": "build"
+    },
+    {
       "name": "jest-junit",
       "version": "^16",
       "type": "build"
@@ -89,11 +97,28 @@
       "type": "build"
     },
     {
+      "name": "ms",
+      "type": "build"
+    },
+    {
+      "name": "node-pg-format",
+      "type": "build"
+    },
+    {
+      "name": "pg",
+      "version": "^8.13.3",
+      "type": "build"
+    },
+    {
       "name": "prettier",
       "type": "build"
     },
     {
       "name": "projen",
+      "type": "build"
+    },
+    {
+      "name": "source-map-support",
       "type": "build"
     },
     {
@@ -116,32 +141,7 @@
       "type": "build"
     },
     {
-      "name": "@aws-sdk/client-secrets-manager",
-      "type": "bundled"
-    },
-    {
       "name": "@types/aws-lambda",
-      "type": "bundled"
-    },
-    {
-      "name": "exponential-backoff",
-      "type": "bundled"
-    },
-    {
-      "name": "ms",
-      "type": "bundled"
-    },
-    {
-      "name": "node-pg-format",
-      "type": "bundled"
-    },
-    {
-      "name": "pg",
-      "version": "^8.13.3",
-      "type": "bundled"
-    },
-    {
-      "name": "source-map-support",
       "type": "bundled"
     },
     {
@@ -156,10 +156,6 @@
     },
     {
       "name": "@types/aws-lambda",
-      "type": "runtime"
-    },
-    {
-      "name": "exponential-backoff",
       "type": "runtime"
     }
   ],

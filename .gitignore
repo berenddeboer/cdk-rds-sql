@@ -36,6 +36,8 @@ cdk.out/
 .envrc
 .env
 CONVENTIONS.md
+src/handler/handler.js
+lambda/handler.js
 /test-reports/
 junit.xml
 /coverage/

@@ -24,6 +24,15 @@
         }
       ]
     },
+    "build:handler": {
+      "name": "build:handler",
+      "description": "Transpile the Lambda handler to JavaScript",
+      "steps": [
+        {
+          "exec": "esbuild lambda/handler.ts --bundle --platform=node --target=node22 --external:aws-sdk --outfile=src/handler/handler.js"
+        }
+      ]
+    },
     "bump": {
       "name": "bump",
       "description": "Bumps version based on latest git tag and generates a changelog entry",
@@ -89,6 +98,18 @@
       "steps": [
         {
           "exec": "jsii --silence-warnings=reserved-word"
+        },
+        {
+          "spawn": "copy:handler"
+        }
+      ]
+    },
+    "copy:handler": {
+      "name": "copy:handler",
+      "description": "Copy transpiled handler into lib",
+      "steps": [
+        {
+          "exec": "cp src/handler/handler.js lib/handler/handler.js"
         }
       ]
     },
@@ -204,7 +225,12 @@
     },
     "pre-compile": {
       "name": "pre-compile",
-      "description": "Prepare the project for compilation"
+      "description": "Prepare the project for compilation",
+      "steps": [
+        {
+          "spawn": "build:handler"
+        }
+      ]
     },
     "release": {
       "name": "release",
@@ -278,13 +304,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,jsii-diff,jsii-pacmak,prettier,projen,ts-node,@aws-sdk/client-secrets-manager,@types/aws-lambda,exponential-backoff,ms,node-pg-format,source-map-support"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@aws-sdk/client-secrets-manager,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,exponential-backoff,jsii-diff,jsii-pacmak,ms,node-pg-format,prettier,projen,source-map-support,ts-node,@types/aws-lambda"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser commit-and-tag-version esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii prettier projen testcontainers ts-jest ts-node typescript @aws-sdk/client-secrets-manager @types/aws-lambda exponential-backoff ms node-pg-format pg source-map-support aws-cdk-lib constructs"
+          "exec": "npm update @aws-sdk/client-secrets-manager @types/jest @types/ms @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser commit-and-tag-version esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint exponential-backoff jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii ms node-pg-format pg prettier projen source-map-support testcontainers ts-jest ts-node typescript @types/aws-lambda aws-cdk-lib constructs"
         },
         {
           "exec": "npx projen"
