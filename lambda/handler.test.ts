@@ -1,5 +1,4 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
-import ms from "ms"
 import { Client, ClientConfig } from "pg"
 import { GenericContainer, StartedTestContainer } from "testcontainers"
 import {
@@ -31,18 +30,17 @@ let pgPort: number
 
 beforeEach(async () => {
   process.env.SSL = "false"
-  pgContainer = await new GenericContainer("postgres")
+  pgContainer = await new GenericContainer("postgres:15")
     .withExposedPorts(DB_PORT)
     .withEnvironment({
       POSTGRES_USER: DB_MASTER_USERNAME,
       POSTGRES_PASSWORD: DB_MASTER_PASSWORD,
       POSTGRES_DB: DB_DEFAULT_DB,
     })
-    .withStartupTimeout(ms("90s"))
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
-}, ms("5m"))
+})
 
 afterEach(async () => {
   jest.clearAllMocks()

@@ -30,6 +30,9 @@ const project = new awscdk.AwsCdkConstructLibrary({
   minNodeVersion: "22.14",
   jestOptions: {
     jestVersion: "~29",
+    jestConfig: {
+      testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
+    },
   },
   typescriptVersion: "~5.8",
   constructsVersion: "10.3.0",
