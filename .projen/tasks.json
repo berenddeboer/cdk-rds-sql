@@ -29,7 +29,7 @@
       "description": "Transpile the Lambda handler to JavaScript",
       "steps": [
         {
-          "exec": "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --outfile=src/handler/handler.js"
+          "exec": "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/handler.js"
         }
       ]
     },

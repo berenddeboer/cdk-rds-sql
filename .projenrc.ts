@@ -97,7 +97,7 @@ project.addTask("integ:destroy:serverless", {
 // Add build tasks for transpiling the Lambda handler
 project.addTask("build:handler", {
   description: "Transpile the Lambda handler to JavaScript",
-  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --outfile=src/handler/handler.js",
+  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/handler.js",
 })
 
 project.addTask("copy:handler", {
