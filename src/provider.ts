@@ -149,8 +149,6 @@ export class Provider extends Construct {
       runtime: Runtime.NODEJS_20_X,
       timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
       bundling: {
-        sourceMap: true,
-        externalModules: ["pg-native"],
         // Include the migrations directory in the bundle
         commandHooks: {
           beforeBundling(_: string, outputDir: string): string[] {
