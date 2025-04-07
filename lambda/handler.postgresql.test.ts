@@ -18,37 +18,6 @@ jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
   typeof SecretsManagerClient
 >
-
-const DB_PORT = 5432
-const DB_MASTER_USERNAME = "pgroot"
-const DB_MASTER_PASSWORD = "masterpwd"
-const DB_DEFAULT_DB = "dummy"
-
-let pgContainer: StartedTestContainer
-let pgHost: string
-let pgPort: number
-
-beforeEach(async () => {
-  process.env.SSL = "false"
-  pgContainer = await new GenericContainer("postgres:15")
-    .withExposedPorts(DB_PORT)
-    .withEnvironment({
-      POSTGRES_USER: DB_MASTER_USERNAME,
-      POSTGRES_PASSWORD: DB_MASTER_PASSWORD,
-      POSTGRES_DB: DB_DEFAULT_DB,
-    })
-    .start()
-  pgHost = pgContainer.getHost()
-  pgPort = pgContainer.getMappedPort(DB_PORT)
-})
-
-afterEach(async () => {
-  jest.clearAllMocks()
-  await pgContainer.stop()
-})
-
-//jest.setTimeout(ms("15s"))
-
 SecretsManagerClientMock.prototype.send.mockImplementation(() => {
   return {
     SecretString: JSON.stringify({
@@ -62,6 +31,40 @@ SecretsManagerClientMock.prototype.send.mockImplementation(() => {
     }),
   }
 })
+
+const DB_PORT = 5432
+const DB_MASTER_USERNAME = "pgroot"
+const DB_MASTER_PASSWORD = "masterpwd"
+const DB_DEFAULT_DB = "dummy"
+
+let pgContainer: StartedTestContainer
+let pgHost: string
+let pgPort: number
+
+beforeEach(async () => {
+  process.env.LOGGER = "true"
+  process.env.SSL = "false"
+  process.env.CONNECTION_TIMEOUT = "5000"
+  pgContainer = await new GenericContainer("postgres:15")
+    .withExposedPorts(DB_PORT)
+    .withEnvironment({
+      POSTGRES_USER: DB_MASTER_USERNAME,
+      POSTGRES_PASSWORD: DB_MASTER_PASSWORD,
+      POSTGRES_DB: DB_DEFAULT_DB,
+    })
+    .start()
+  pgHost = pgContainer.getHost()
+  pgPort = pgContainer.getMappedPort(DB_PORT)
+}, 30000)
+
+afterEach(async () => {
+  jest.clearAllMocks()
+  if (pgContainer) {
+    await pgContainer.stop()
+  }
+})
+
+//jest.setTimeout(ms("15s"))
 
 test("schema", async () => {
   const oldSchemaName = "test"

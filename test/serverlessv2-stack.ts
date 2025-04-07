@@ -19,6 +19,13 @@ export interface TestStackProps extends StackProps {
    * @default true
    */
   ssl?: boolean
+
+  /**
+   * Database engine to use
+   *
+   * @default Aurora PostgreSQL 14.9
+   */
+  engine?: rds.IClusterEngine
 }
 
 export class TestStack extends Stack {
@@ -27,10 +34,15 @@ export class TestStack extends Stack {
 
     const vpc = new Vpc(this, "Vpc")
 
-    const cluster = new rds.DatabaseCluster(this, "Cluster2", {
-      engine: rds.DatabaseClusterEngine.auroraPostgres({
+    // Use provided engine or default to PostgreSQL 14.9
+    const engine =
+      props.engine ||
+      rds.DatabaseClusterEngine.auroraPostgres({
         version: rds.AuroraPostgresEngineVersion.VER_14_9,
-      }),
+      })
+
+    const cluster = new rds.DatabaseCluster(this, "Cluster2", {
+      engine: engine,
       removalPolicy: RemovalPolicy.DESTROY,
       defaultDatabaseName: "example",
       writer: rds.ClusterInstance.serverlessV2("writer", {
@@ -60,10 +72,15 @@ export class TestStack extends Stack {
 
     Database.fromDatabaseName(this, "DefaultDatabase", "example")
 
-    new Schema(this, "Schema", {
-      provider: provider,
-      schemaName: "myschema",
-    })
+    const is_postgress = !props.engine || props.engine.engineFamily !== "MYSQL"
+
+    if (is_postgress) {
+      new Schema(this, "Schema", {
+        provider: provider,
+        schemaName: "myschema",
+      })
+    }
+
     const role = new Role(this, "Role", {
       provider: provider,
       roleName: "myrole",
@@ -74,14 +91,17 @@ export class TestStack extends Stack {
       databaseName: "mydb",
       owner: role,
     })
-    new Sql(this, "Sql", {
-      provider: provider,
-      database: database,
-      statement: `
-create table if not exists t (i int);
+    const statement = is_postgress
+      ? `
+create table t (i int);
 grant select on t to myrole;
-`,
-      rollback: `
+`
+      : `
+create table if not exists t (i int);
+grant select on mydb.t to 'myrole'@'%';
+`
+    const rollback = is_postgress
+      ? `
 DO $$BEGIN
    IF EXISTS (select from pg_database WHERE datname = 't') THEN
      IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = 'myrole') THEN
@@ -90,7 +110,16 @@ DO $$BEGIN
     drop table t;
   END IF;
 END$$;
-`,
+`
+      : `
+      revoke select on table t from myrole;
+      drop table t;
+`
+    new Sql(this, "Sql", {
+      provider: provider,
+      database: database,
+      statement,
+      rollback,
     })
   }
 }

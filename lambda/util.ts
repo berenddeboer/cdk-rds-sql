@@ -5,13 +5,21 @@ import {
 } from "aws-lambda"
 import { Client } from "pg"
 
+export interface ResourceProperties {
+  readonly PasswordArn?: string
+  readonly DatabaseName?: string
+  readonly Owner?: string
+  readonly Statement?: string
+  readonly RoleName?: string
+}
+
 /**
  * Helpers to create CloudFormation requests.
  */
 export const createRequest = (
   resource: string,
   resourceId: string,
-  props?: Record<string, any>
+  props?: ResourceProperties
 ): CloudFormationCustomResourceCreateEvent => {
   return {
     ServiceToken: "",

@@ -38,6 +38,7 @@ cdk.out/
 CONVENTIONS.md
 src/handler/handler.js
 lambda/handler.js
+*~
 /test-reports/
 junit.xml
 /coverage/
@@ -55,5 +56,4 @@ junit.xml
 !/.eslintrc.json
 .jsii
 tsconfig.json
-*~
 !/.projenrc.ts

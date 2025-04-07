@@ -1,5 +1,3 @@
-import * as fs from "fs"
-import { ConnectionOptions } from "tls"
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -11,8 +9,8 @@ import {
   CloudFormationCustomResourceDeleteEvent,
 } from "aws-lambda"
 import { backOff } from "exponential-backoff"
-import { format } from "node-pg-format"
-import { Client, ClientConfig } from "pg"
+import { EngineFactory } from "./engine.factory"
+import { EngineConnectionConfig } from "./engine.abstract"
 import { RdsSqlResource } from "../src/enum"
 
 interface CustomResourceResponse {
@@ -21,252 +19,7 @@ interface CustomResourceResponse {
   NoEcho?: boolean
 }
 
-type CreateResourceHandler = (
-  resourceId: string,
-  props?: any
-) => Promise<string | string[]>
-type UpdateResourceHandler = (
-  resourceId: string,
-  oldResourceId: string,
-  props?: any
-) => Promise<string | string[] | void>
-type DeleteResourceHandler = (resourceId: string, props?: any) => string | string[] | void
-
-type JumpTable = {
-  [key in RdsSqlResource]: {
-    Create: CreateResourceHandler
-    Update: UpdateResourceHandler
-    Delete: DeleteResourceHandler
-  }
-}
-
-interface RoleProps {
-  /**
-   * Secret ARN.
-   */
-  PasswordArn: string
-
-  /**
-   * Optional database to which role is granted connect permissions.
-   */
-  DatabaseName?: string
-}
-
-interface DatabaseProps {
-  Owner: string
-}
-
-interface DatabaseUpdateProps extends DatabaseProps {
-  MasterOwner: string
-}
-
-interface SchemaProps {
-  /**
-   * Optional role is granted permissions.
-   */
-  RoleName?: string
-}
-
 const maxAttempts = 20
-
-const jumpTable: JumpTable = {
-  sql: {
-    Create: (_: string, props?: any) => {
-      return props.Statement
-    },
-    Update: (_: string, __: string, props?: any) => {
-      return props.Statement
-    },
-    Delete: (_: string, props?: any) => {
-      return props.Rollback
-    },
-  },
-  schema: {
-    Create: async (resourceId: string, props: SchemaProps) => {
-      const sql: string[] = [format("create schema if not exists %I", resourceId)]
-      if (props.RoleName) {
-        grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
-      }
-      return sql
-    },
-    Update: async (resourceId: string, oldResourceId: string, props: SchemaProps) => {
-      const sql: string[] = []
-      // TODO: revoke old role-name if props.RoleName was removed or changed
-      if (props.RoleName) {
-        revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
-          sql.push(stmt)
-        )
-      }
-      sql.push(format("alter schema %I rename to %I", oldResourceId, resourceId))
-      if (props.RoleName) {
-        grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
-      }
-      return sql
-    },
-    Delete: (resourceId: string, props: SchemaProps) => {
-      const sql: string[] = []
-      if (props.RoleName) {
-        revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) => sql.push(stmt))
-      }
-      sql.push(format("drop schema if exists %I cascade", resourceId))
-      return sql
-    },
-  },
-  role: {
-    Create: async (resourceId: string, props: RoleProps) => {
-      if (!props.PasswordArn) throw "No PasswordArn provided"
-      const password = await getPassword(props.PasswordArn)
-      if (password) {
-        const sql = [
-          "start transaction",
-          format("create role %I with login password %L", resourceId, password),
-        ]
-        if (props.DatabaseName) {
-          // grant connect to database if database already exists
-          sql.push(
-            format(
-              `DO $$
-BEGIN
-  IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
-    grant connect on database %I to %I;
-  END IF;
-END$$;`,
-              props.DatabaseName,
-              props.DatabaseName,
-              resourceId
-            )
-          )
-        }
-        sql.push("commit")
-        return sql
-      } else {
-        throw `Cannot parse password from ${props.PasswordArn}`
-      }
-    },
-    Update: async (resourceId: string, oldResourceId: string, props: RoleProps) => {
-      // TODO: if database name has changed in OldResourceProperties, revoke connect
-      if (props && props.PasswordArn) {
-        const password = await getPassword(props.PasswordArn)
-        if (password) {
-          const sql = ["start transaction"]
-          if (oldResourceId !== resourceId) {
-            sql.push(format("alter role %I rename to %I", oldResourceId, resourceId))
-          }
-          sql.push(format("alter role %I with password %L", resourceId, password))
-          if (props.DatabaseName) {
-            sql.push(
-              format("grant connect on database %I to %I", props.DatabaseName, resourceId)
-            )
-          }
-          sql.push("commit")
-          return sql
-        } else {
-          throw `Cannot parse password from ${props.PasswordArn}`
-        }
-      } else {
-        const sql = ["start transaction"]
-        if (oldResourceId !== resourceId) {
-          sql.push(format("alter role %I rename to %I", oldResourceId, resourceId))
-        }
-        sql.push(
-          format(
-            `DO $$
-BEGIN
-  IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
-    grant connect on database %I to %I;
-  END IF;
-END$$;`,
-            props.DatabaseName,
-            props.DatabaseName,
-            resourceId
-          )
-        )
-        sql.push("commit")
-        return sql
-      }
-    },
-    Delete: (resourceId: string, props: RoleProps) => {
-      // TODO: if user is owner of a database, assign ownership to master user
-      // This will require a specified inheritor on role creation
-      return [
-        "start transaction",
-        format(
-          `DO $$
-BEGIN
-  IF EXISTS (select from pg_catalog.pg_roles WHERE rolname = '%s') AND EXISTS (select from pg_database WHERE datname = '%s') THEN
-    revoke all privileges on database %I from %I;
-  END IF;
-END$$;`,
-          resourceId,
-          props.DatabaseName,
-          props.DatabaseName,
-          resourceId
-        ),
-        format("drop role if exists %I", resourceId),
-        "commit",
-      ]
-    },
-  },
-  database: {
-    Create: async (resourceId: string, props: DatabaseProps) => {
-      const owner = props.Owner
-      if (owner) {
-        return [
-          format("create database %I", resourceId),
-          format("alter database %I owner to %I", resourceId, owner),
-        ]
-      } else {
-        return format("create database %I", resourceId)
-      }
-    },
-    Update: async (
-      resourceId: string,
-      oldResourceId: string,
-      props: DatabaseUpdateProps
-    ): Promise<string[]> => {
-      const statements: string[] = []
-      if (resourceId !== oldResourceId) {
-        if (props.MasterOwner) {
-          statements.push(
-            format("alter database %I owner to %I", oldResourceId, props.MasterOwner)
-          )
-        }
-        statements.push(
-          format("alter database %I rename to %I", oldResourceId, resourceId)
-        )
-      }
-      const owner = props.Owner
-      if (owner) {
-        statements.push(format("alter database %I owner to %I", resourceId, props.Owner))
-      }
-      return statements
-    },
-    Delete: (resourceId: string, newOwner: string) => {
-      return [
-        format(
-          "select pg_terminate_backend(pg_stat_activity.pid) from pg_stat_activity where datname = %L",
-          resourceId
-        ),
-        format(
-          "DO $$BEGIN\nIF EXISTS (select from pg_database WHERE datname = '%s') THEN alter database %I owner to %I; END IF;\nEND$$;",
-          resourceId,
-          resourceId,
-          newOwner
-        ),
-        format("drop database if exists %I", resourceId),
-      ]
-    },
-  },
-}
-
-const grantRoleForSchema = (schema: string, roleName: string) => [
-  format("GRANT USAGE ON SCHEMA %I TO %I", schema, roleName),
-  format("GRANT CREATE ON SCHEMA %I TO %I", schema, roleName),
-]
-const revokeRoleFromSchema = (schema: string, roleName: string) => [
-  format("REVOKE CREATE ON SCHEMA %I FROM %I", schema, roleName),
-  format("REVOKE ALL ON SCHEMA %I FROM %I", schema, roleName),
-]
 
 const log =
   process.env.LOGGER === "true"
@@ -286,7 +39,7 @@ export const handler = async (
   const resourceId = event.ResourceProperties.ResourceId
   const databaseName = event.ResourceProperties.DatabaseName
 
-  if (!Object.keys(jumpTable).includes(event.ResourceProperties.Resource)) {
+  if (!Object.values(RdsSqlResource).includes(resource)) {
     throw `Resource type '${resource}' not recognised.`
   }
 
@@ -294,9 +47,7 @@ export const handler = async (
   const command = new GetSecretValueCommand({
     SecretId: event.ResourceProperties.SecretArn,
   })
-  // As the IAM credentials can be cached, an update makde very recent
-  // could not yet be available.
-  // So we retry this a bit.
+
   log("Fetching secret")
   const secret: GetSecretValueCommandOutput = await backOff(
     async () => {
@@ -316,26 +67,77 @@ export const handler = async (
   if (!secret.SecretString) throw "No secret string"
   const secretValues = JSON.parse(secret.SecretString)
 
+  // Determine the database engine type
+  const engine = secretValues.engine || "postgresql" // Default to postgresql if not specified
+  const dbEngine = EngineFactory.createEngine(engine)
+
   let sql: string | string[] | void
   switch (requestType) {
     case "Create": {
-      sql = await jumpTable[resource][requestType](resourceId, event.ResourceProperties)
+      switch (resource) {
+        case RdsSqlResource.DATABASE:
+          sql = await dbEngine.createDatabase(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.ROLE:
+          sql = await dbEngine.createRole(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.SCHEMA:
+          sql = await dbEngine.createSchema(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.SQL:
+          sql = await dbEngine.createSql(resourceId, event.ResourceProperties)
+          break
+      }
       break
     }
     case "Update": {
       const oldResourceId = (event as CloudFormationCustomResourceUpdateEvent)
         .PhysicalResourceId
-      sql = await jumpTable[resource][requestType](resourceId, oldResourceId, {
-        ...event.ResourceProperties,
-        MasterOwner: secretValues.username,
-      })
+      switch (resource) {
+        case RdsSqlResource.DATABASE:
+          sql = await dbEngine.updateDatabase(resourceId, oldResourceId, {
+            ...event.ResourceProperties,
+            MasterOwner: secretValues.username,
+          })
+          break
+        case RdsSqlResource.ROLE:
+          sql = await dbEngine.updateRole(
+            resourceId,
+            oldResourceId,
+            event.ResourceProperties
+          )
+          break
+        case RdsSqlResource.SCHEMA:
+          sql = await dbEngine.updateSchema(
+            resourceId,
+            oldResourceId,
+            event.ResourceProperties
+          )
+          break
+        case RdsSqlResource.SQL:
+          sql = await dbEngine.updateSql(
+            resourceId,
+            oldResourceId,
+            event.ResourceProperties
+          )
+          break
+      }
       break
     }
     case "Delete": {
-      if (resource === RdsSqlResource.DATABASE) {
-        sql = jumpTable[resource][requestType](resourceId, secretValues.username)
-      } else {
-        sql = jumpTable[resource][requestType](resourceId, event.ResourceProperties)
+      switch (resource) {
+        case RdsSqlResource.DATABASE:
+          sql = dbEngine.deleteDatabase(resourceId, secretValues.username)
+          break
+        case RdsSqlResource.ROLE:
+          sql = dbEngine.deleteRole(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.SCHEMA:
+          sql = dbEngine.deleteSchema(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.SQL:
+          sql = dbEngine.deleteSql(resourceId, event.ResourceProperties)
+          break
       }
       break
     }
@@ -348,63 +150,34 @@ export const handler = async (
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
     }
-    // Parse SSL option from env, if provided.
-    // If process.env.SSL is the string "false", disable SSL.
-    const isSslEnabled = process.env.SSL ? JSON.parse(process.env.SSL) : true
-    const ssl: ConnectionOptions | false = isSslEnabled
-      ? {
-          ca: fs.readFileSync(`${process.env.LAMBDA_TASK_ROOT}/global-bundle.pem`),
-          rejectUnauthorized: true, // This forces the client to verify the server's certificate.
-        }
-      : false
 
-    const params: ClientConfig = {
+    const config: EngineConnectionConfig = {
       host: secretValues.host,
       port: secretValues.port,
       user: secretValues.username,
       password: secretValues.password,
       database: database,
-      connectionTimeoutMillis: 30000, // return an error if a connection could not be established within 30 seconds
-      ssl,
     }
-    log(
-      `Connecting to host ${params.host}:${params.port}${
-        ssl ? " using a secure connection" : ""
-      }, database ${params.database} as ${params.user}`
-    )
-    log("Executing SQL", sql)
-    const pg_client = new Client(params)
-    await pg_client.connect()
+
     try {
       await backOff(
         async () => {
-          if (typeof sql === "string") {
-            return pg_client.query(sql)
-          } else {
-            if (sql) {
-              return Promise.all(
-                sql.map((statement) => {
-                  return pg_client.query(statement)
-                })
-              )
-            } else {
-              return
-            }
-          }
+          return dbEngine.executeSQL(sql as string | string[], config)
         },
         {
           retry: errorFilter,
           numOfAttempts: maxAttempts,
         }
       )
-    } finally {
-      await pg_client.end()
+    } catch (error) {
+      log("Error executing SQL: %o", error)
+      throw error
     }
   }
 
   let response: CustomResourceResponse = {}
   // Except for the SQL resource, return the new resource id. This
-  // will cause a delete to be send for the old resource.
+  // will cause a delete to be sent for the old resource.
   if (resource !== RdsSqlResource.SQL) {
     response.PhysicalResourceId = resourceId
   }
@@ -413,12 +186,10 @@ export const handler = async (
 }
 
 // Custom error filter, mainly to retry role creation.
-// Frequently see "tuple concurrently updated", and adding
-// dependencies is very hard to make work.
 const errorFilter = (error: any, nextAttemptNumber: number) => {
-  // Retry only if the error message contains "tuple concurrently"
+  // Retry only if the error message includes "tuple concurrently"
   // This will cover concurrent updates and deletes
-  const willRetry = error.message.includes("tuple concurrently")
+  const willRetry = error.message && error.message.includes("tuple concurrently")
   log(
     "Encountered an error on attempt %d/%d retry=%s error=[%o]",
     nextAttemptNumber - 1,
@@ -427,19 +198,4 @@ const errorFilter = (error: any, nextAttemptNumber: number) => {
     error
   )
   return willRetry
-}
-
-/**
- * Parse password field from secret. Returns void on error.
- */
-const getPassword = async (arn: string): Promise<string | void> => {
-  const secrets_client = new SecretsManagerClient({})
-  const command = new GetSecretValueCommand({
-    SecretId: arn,
-  })
-  const secret = await secrets_client.send(command)
-  if (secret.SecretString) {
-    const json = JSON.parse(secret.SecretString)
-    return json.password
-  }
 }

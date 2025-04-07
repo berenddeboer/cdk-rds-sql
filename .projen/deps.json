@@ -10,11 +10,6 @@
       "type": "build"
     },
     {
-      "name": "@types/ms",
-      "version": "2",
-      "type": "build"
-    },
-    {
       "name": "@types/node",
       "version": "^22",
       "type": "build"
@@ -97,7 +92,7 @@
       "type": "build"
     },
     {
-      "name": "ms",
+      "name": "mysql2",
       "type": "build"
     },
     {

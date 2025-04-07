@@ -10,6 +10,7 @@ const tmpDirectories = [
   "CONVENTIONS.md",
   "src/handler/handler.js",
   "lambda/handler.js",
+  "*~",
 ]
 
 const project = new awscdk.AwsCdkConstructLibrary({
@@ -32,6 +33,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
     jestVersion: "~29",
     jestConfig: {
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
+      maxConcurrency: 2,
+      maxWorkers: 2,
     },
   },
   typescriptVersion: "~5.8",
@@ -56,21 +59,19 @@ const project = new awscdk.AwsCdkConstructLibrary({
   deps: ["@types/aws-lambda"],
   bundledDeps: ["@types/aws-lambda"],
   devDeps: [
-    "@types/ms@2",
-    "@types/pg@^8.11.11",
-    "testcontainers@10",
-    "esbuild",
     "@aws-sdk/client-secrets-manager",
-    "pg@^8.13.3",
-    "node-pg-format",
-    "ms",
+    "@types/pg@^8.11.11",
+    "esbuild",
     "exponential-backoff",
+    "mysql2",
+    "node-pg-format",
+    "pg@^8.13.3",
     "source-map-support",
+    "testcontainers@10",
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora"],
   minMajorVersion: 1,
 })
-project.addGitIgnore("*~")
 if (project.eslint) {
   project.eslint.addRules({
     semi: ["off"],
@@ -78,9 +79,14 @@ if (project.eslint) {
   })
 }
 
-project.addTask("integ:deploy:serverless", {
+project.addTask("integ:deploy:postgresql:serverless", {
   description: "Deploy the Aurora Serverless V2 integration test stack",
   exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never",
+})
+
+project.addTask("integ:deploy:mysql:serverless", {
+  description: "Deploy the Aurora Serverless V2 integration test stack",
+  exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --context engine=mysql --require-approval never",
 })
 
 project.addTask("integ:destroy:serverless", {
@@ -91,7 +97,7 @@ project.addTask("integ:destroy:serverless", {
 // Add build tasks for transpiling the Lambda handler
 project.addTask("build:handler", {
   description: "Transpile the Lambda handler to JavaScript",
-  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node22 --external:aws-sdk --outfile=src/handler/handler.js",
+  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --outfile=src/handler/handler.js",
 })
 
 project.addTask("copy:handler", {

@@ -16,7 +16,8 @@
     "default": "npx projen default",
     "eject": "npx projen eject",
     "eslint": "npx projen eslint",
-    "integ:deploy:serverless": "npx projen integ:deploy:serverless",
+    "integ:deploy:mysql:serverless": "npx projen integ:deploy:mysql:serverless",
+    "integ:deploy:postgresql:serverless": "npx projen integ:deploy:postgresql:serverless",
     "integ:destroy:serverless": "npx projen integ:destroy:serverless",
     "package": "npx projen package",
     "package-all": "npx projen package-all",
@@ -40,7 +41,6 @@
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.782.0",
     "@types/jest": "~29",
-    "@types/ms": "2",
     "@types/node": "^22",
     "@types/pg": "^8.11.11",
     "@typescript-eslint/eslint-plugin": "^8",
@@ -61,7 +61,7 @@
     "jsii-diff": "^1.111.0",
     "jsii-pacmak": "^1.111.0",
     "jsii-rosetta": "~5.7.0",
-    "ms": "^2.1.3",
+    "mysql2": "^3.14.0",
     "node-pg-format": "^1.3.5",
     "pg": "^8.13.3",
     "prettier": "^2.8.8",
@@ -107,6 +107,8 @@
       "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
     ],
+    "maxConcurrency": 2,
+    "maxWorkers": 2,
     "clearMocks": true,
     "collectCoverage": true,
     "coverageReporters": [
