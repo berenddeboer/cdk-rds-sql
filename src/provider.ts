@@ -5,11 +5,7 @@ import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
-import {
-  IDatabaseCluster,
-  IServerlessCluster,
-  IDatabaseInstance,
-} from "aws-cdk-lib/aws-rds"
+import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
@@ -34,7 +30,7 @@ export interface RdsSqlProps {
   /**
    * Your database.
    */
-  readonly cluster: IServerlessCluster | IDatabaseCluster | IDatabaseInstance
+  readonly cluster: IDatabaseCluster | IDatabaseInstance
 
   /**
    * Secret that grants access to your database.
@@ -80,12 +76,20 @@ export class Provider extends Construct {
   public readonly serviceToken: string
   public readonly secret: ISecret
   public readonly handler: IFunction
-  public readonly cluster: IServerlessCluster | IDatabaseCluster | IDatabaseInstance
+  public readonly cluster: IDatabaseCluster | IDatabaseInstance
+
+  /**
+   * The engine like "postgres" or "mysql"
+   *
+   * @default - if we cannot determine this "postgres"
+   */
+  public readonly engine: string
 
   constructor(scope: Construct, id: string, props: RdsSqlProps) {
     super(scope, id)
     this.secret = props.secret
     this.cluster = props.cluster
+    this.engine = "postgres"
 
     const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
     this.handler =

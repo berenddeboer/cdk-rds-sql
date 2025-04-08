@@ -24,14 +24,23 @@ test("role without database", () => {
     ],
   })
 
-  const cluster = new rds.ServerlessCluster(stack, "Cluster", {
-    vpc: vpc,
+  const cluster = new rds.DatabaseCluster(stack, "Cluster2", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_15_10,
+    }),
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    defaultDatabaseName: "example",
+    writer: rds.ClusterInstance.serverlessV2("writer", {
+      instanceIdentifier: "writer",
+      publiclyAccessible: false,
+      enablePerformanceInsights: false,
+    }),
+    serverlessV2MinCapacity: 0.5,
+    serverlessV2MaxCapacity: 1,
+    vpc,
     vpcSubnets: {
       subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
     },
-    engine: rds.DatabaseClusterEngine.auroraPostgres({
-      version: rds.AuroraPostgresEngineVersion.VER_11_13,
-    }),
   })
 
   const provider = new Provider(stack, "Provider", {
@@ -45,7 +54,7 @@ test("role without database", () => {
       provider: provider,
       roleName: "role",
     })
-  }).toThrowError()
+  }).toThrow()
 })
 
 test("serverless v2", () => {
@@ -141,14 +150,23 @@ test("vpcSubnet selection can be specified", () => {
     ],
   })
 
-  const cluster = new rds.ServerlessCluster(stack, "Cluster", {
-    vpc: vpc,
-    // vpcSubnets: {
-    //   subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-    // },
-    engine: rds.DatabaseClusterEngine.auroraPostgres({
-      version: rds.AuroraPostgresEngineVersion.VER_11_13,
+  const cluster = new rds.DatabaseCluster(stack, "MySqlCluster", {
+    engine: rds.DatabaseClusterEngine.auroraMysql({
+      version: rds.AuroraMysqlEngineVersion.VER_3_08_0,
     }),
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    defaultDatabaseName: "example",
+    writer: rds.ClusterInstance.serverlessV2("writer", {
+      instanceIdentifier: "writer",
+      publiclyAccessible: false,
+      enablePerformanceInsights: false,
+    }),
+    serverlessV2MinCapacity: 0.5,
+    serverlessV2MaxCapacity: 1,
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+    },
   })
 
   const provider = new Provider(stack, "Provider", {
@@ -165,7 +183,7 @@ test("vpcSubnet selection can be specified", () => {
       provider: provider,
       roleName: "role",
     })
-  }).toThrowError()
+  }).toThrow()
 })
 
 test("ssl can be disabled", () => {

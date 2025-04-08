@@ -94,7 +94,7 @@ export class Role extends Construct {
         passwordLength: 30, // Oracle password cannot have more than 30 characters
         secretStringTemplate: JSON.stringify({
           dbClusterIdentifier: identifier,
-          engine: "postgres",
+          engine: props.provider.engine,
           host: host,
           port: port,
           username: props.roleName,

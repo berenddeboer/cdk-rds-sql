@@ -33,6 +33,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     jestVersion: "~29",
     jestConfig: {
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
+      testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
       maxConcurrency: 2,
       maxWorkers: 2,
     },
