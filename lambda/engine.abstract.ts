@@ -23,12 +23,12 @@ export abstract class AbstractEngine {
         : (_message?: any, ..._optionalParams: any[]) => {}
   }
 
-  abstract createDatabase(resourceId: string, props?: any): Promise<string | string[]>
+  abstract createDatabase(resourceId: string, props?: any): string | string[]
   abstract updateDatabase(
     resourceId: string,
     oldResourceId: string,
     props?: any
-  ): Promise<string | string[]>
+  ): string | string[]
   abstract deleteDatabase(resourceId: string, masterUser: string): string | string[]
 
   abstract createRole(resourceId: string, props?: any): Promise<string | string[]>
@@ -39,20 +39,20 @@ export abstract class AbstractEngine {
   ): Promise<string | string[]>
   abstract deleteRole(resourceId: string, props?: any): string | string[]
 
-  abstract createSchema(resourceId: string, props?: any): Promise<string | string[]>
+  abstract createSchema(resourceId: string, props?: any): string | string[]
   abstract updateSchema(
     resourceId: string,
     oldResourceId: string,
     props?: any
-  ): Promise<string | string[]>
+  ): string | string[]
   abstract deleteSchema(resourceId: string, props?: any): string | string[]
 
-  abstract createSql(resourceId: string, props?: any): Promise<string | string[]>
+  abstract createSql(resourceId: string, props?: any): string | string[]
   abstract updateSql(
     resourceId: string,
     oldResourceId: string,
     props?: any
-  ): Promise<string | string[]>
+  ): string | string[]
   abstract deleteSql(resourceId: string, props?: any): string | string[]
 
   abstract executeSQL(

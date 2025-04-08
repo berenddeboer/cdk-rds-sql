@@ -5,7 +5,7 @@ import { Client, ClientConfig } from "pg"
 import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
 
 export class PostgresqlEngine extends AbstractEngine {
-  async createDatabase(resourceId: string, props?: any): Promise<string | string[]> {
+  createDatabase(resourceId: string, props?: any): string | string[] {
     const owner = props?.Owner
     if (owner) {
       return [
@@ -17,11 +17,7 @@ export class PostgresqlEngine extends AbstractEngine {
     }
   }
 
-  async updateDatabase(
-    resourceId: string,
-    oldResourceId: string,
-    props?: any
-  ): Promise<string[]> {
+  updateDatabase(resourceId: string, oldResourceId: string, props?: any): string[] {
     const statements: string[] = []
     if (resourceId !== oldResourceId) {
       if (props?.MasterOwner) {
@@ -152,7 +148,7 @@ END$$;`,
     ]
   }
 
-  async createSchema(resourceId: string, props?: any): Promise<string[]> {
+  createSchema(resourceId: string, props?: any): string[] {
     const sql: string[] = [pgFormat("create schema if not exists %I", resourceId)]
     if (props?.RoleName) {
       this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
@@ -162,11 +158,7 @@ END$$;`,
     return sql
   }
 
-  async updateSchema(
-    resourceId: string,
-    oldResourceId: string,
-    props?: any
-  ): Promise<string[]> {
+  updateSchema(resourceId: string, oldResourceId: string, props?: any): string[] {
     const sql: string[] = []
     if (props?.RoleName) {
       this.revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
@@ -193,15 +185,11 @@ END$$;`,
     return sql
   }
 
-  async createSql(_resourceId: string, props?: any): Promise<string> {
+  createSql(_resourceId: string, props?: any): string {
     return props.Statement
   }
 
-  async updateSql(
-    _resourceId: string,
-    _oldResourceId: string,
-    props?: any
-  ): Promise<string> {
+  updateSql(_resourceId: string, _oldResourceId: string, props?: any): string {
     return props.Statement
   }
 

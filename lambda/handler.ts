@@ -76,16 +76,16 @@ export const handler = async (
     case "Create": {
       switch (resource) {
         case RdsSqlResource.DATABASE:
-          sql = await dbEngine.createDatabase(resourceId, event.ResourceProperties)
+          sql = dbEngine.createDatabase(resourceId, event.ResourceProperties)
           break
         case RdsSqlResource.ROLE:
           sql = await dbEngine.createRole(resourceId, event.ResourceProperties)
           break
         case RdsSqlResource.SCHEMA:
-          sql = await dbEngine.createSchema(resourceId, event.ResourceProperties)
+          sql = dbEngine.createSchema(resourceId, event.ResourceProperties)
           break
         case RdsSqlResource.SQL:
-          sql = await dbEngine.createSql(resourceId, event.ResourceProperties)
+          sql = dbEngine.createSql(resourceId, event.ResourceProperties)
           break
       }
       break
@@ -95,7 +95,7 @@ export const handler = async (
         .PhysicalResourceId
       switch (resource) {
         case RdsSqlResource.DATABASE:
-          sql = await dbEngine.updateDatabase(resourceId, oldResourceId, {
+          sql = dbEngine.updateDatabase(resourceId, oldResourceId, {
             ...event.ResourceProperties,
             MasterOwner: secretValues.username,
           })
@@ -108,18 +108,10 @@ export const handler = async (
           )
           break
         case RdsSqlResource.SCHEMA:
-          sql = await dbEngine.updateSchema(
-            resourceId,
-            oldResourceId,
-            event.ResourceProperties
-          )
+          sql = dbEngine.updateSchema(resourceId, oldResourceId, event.ResourceProperties)
           break
         case RdsSqlResource.SQL:
-          sql = await dbEngine.updateSql(
-            resourceId,
-            oldResourceId,
-            event.ResourceProperties
-          )
+          sql = dbEngine.updateSql(resourceId, oldResourceId, event.ResourceProperties)
           break
       }
       break

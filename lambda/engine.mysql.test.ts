@@ -8,14 +8,14 @@ describe("MySQL Engine", () => {
   })
 
   describe("Database", () => {
-    it("should generate correct SQL for creating a database", async () => {
-      const sql = await engine.createDatabase("testdb", {})
+    it("should generate correct SQL for creating a database", () => {
+      const sql = engine.createDatabase("testdb", {})
       expect(Array.isArray(sql)).toBe(true)
       expect(sql[0]).toContain("CREATE DATABASE IF NOT EXISTS")
     })
 
-    it("should generate correct SQL for creating a database with an owner", async () => {
-      const sql = await engine.createDatabase("testdb", { Owner: "testuser" })
+    it("should generate correct SQL for creating a database with an owner", () => {
+      const sql = engine.createDatabase("testdb", { Owner: "testuser" })
       expect(Array.isArray(sql)).toBe(true)
       expect(sql[0]).toContain("CREATE DATABASE IF NOT EXISTS")
       expect(sql[1]).toContain("GRANT ALL PRIVILEGES")
@@ -58,12 +58,12 @@ describe("MySQL Engine", () => {
   })
 
   describe("Schema", () => {
-    it("should throw an error when trying to create a schema", async () => {
-      await expect(engine.createSchema("testschema", {})).rejects.toThrow("not supported")
+    it("should throw an error when trying to create a schema", () => {
+      expect(() => engine.createSchema("testschema", {})).toThrow("not supported")
     })
 
-    it("should throw an error when trying to update a schema", async () => {
-      await expect(engine.updateSchema("newschema", "oldschema", {})).rejects.toThrow(
+    it("should throw an error when trying to update a schema", () => {
+      expect(() => engine.updateSchema("newschema", "oldschema", {})).toThrow(
         "not supported"
       )
     })
@@ -74,15 +74,15 @@ describe("MySQL Engine", () => {
   })
 
   describe("SQL", () => {
-    it("should pass through SQL statements for create", async () => {
+    it("should pass through SQL statements for create", () => {
       const statement = "SELECT * FROM users"
-      const sql = await engine.createSql("test", { Statement: statement })
+      const sql = engine.createSql("test", { Statement: statement })
       expect(sql).toBe(statement)
     })
 
-    it("should pass through SQL statements for update", async () => {
+    it("should pass through SQL statements for update", () => {
       const statement = "UPDATE users SET name = 'test'"
-      const sql = await engine.updateSql("test", "old", { Statement: statement })
+      const sql = engine.updateSql("test", "old", { Statement: statement })
       expect(sql).toBe(statement)
     })
 

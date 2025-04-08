@@ -2,7 +2,7 @@ import * as fs from "fs"
 import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
 
 export class MysqlEngine extends AbstractEngine {
-  async createDatabase(resourceId: string, props?: any): Promise<string[]> {
+  createDatabase(resourceId: string, props?: any): string[] {
     const sql = [`CREATE DATABASE IF NOT EXISTS \`${resourceId}\``]
 
     if (props?.Owner) {
@@ -13,7 +13,7 @@ export class MysqlEngine extends AbstractEngine {
     return sql
   }
 
-  async updateDatabase(): Promise<string[]> {
+  updateDatabase(): string[] {
     throw new Error("Renaming database is not supported in MySQL.")
   }
 
@@ -100,15 +100,11 @@ export class MysqlEngine extends AbstractEngine {
     return sql
   }
 
-  async createSchema(_resourceId: string, _props?: any): Promise<string[]> {
+  createSchema(_resourceId: string, _props?: any): string[] {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
-  async updateSchema(
-    _resourceId: string,
-    _oldResourceId: string,
-    _props?: any
-  ): Promise<string[]> {
+  updateSchema(_resourceId: string, _oldResourceId: string, _props?: any): string[] {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
@@ -116,15 +112,11 @@ export class MysqlEngine extends AbstractEngine {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
-  async createSql(_resourceId: string, props?: any): Promise<string> {
+  createSql(_resourceId: string, props?: any): string {
     return props.Statement
   }
 
-  async updateSql(
-    _resourceId: string,
-    _oldResourceId: string,
-    props?: any
-  ): Promise<string> {
+  updateSql(_resourceId: string, _oldResourceId: string, props?: any): string {
     return props.Statement
   }
 
