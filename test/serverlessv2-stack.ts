@@ -41,6 +41,24 @@ export class TestStack extends Stack {
         version: rds.AuroraPostgresEngineVersion.VER_14_9,
       })
 
+    // Create a custom parameter group based on engine type
+    const isMySql = engine.engineFamily === "MYSQL"
+    const parameterGroup = new rds.ParameterGroup(this, "ClusterParameterGroup", {
+      engine: engine,
+      parameters:
+        props.ssl !== false
+          ? {
+              // Set SSL enforcement parameter based on engine type
+              ...(isMySql
+                ? { require_secure_transport: "ON" }
+                : {
+                    "rds.force_ssl": "1",
+                  }),
+            }
+          : {},
+      description: "Parameter group to enforce SSL connections",
+    })
+
     const cluster = new rds.DatabaseCluster(this, "Cluster2", {
       engine: engine,
       removalPolicy: RemovalPolicy.DESTROY,
@@ -56,6 +74,7 @@ export class TestStack extends Stack {
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
+      parameterGroup: parameterGroup, // Use our custom parameter group
     })
 
     const provider = new Provider(this, "Provider", {
