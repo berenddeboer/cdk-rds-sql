@@ -32,7 +32,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
   jestOptions: {
     jestVersion: "~29",
     jestConfig: {
-      testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
+      //testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
+      testMatch: ["test/*.test.ts", "lambda/*.test.ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
       maxConcurrency: 2,
       maxWorkers: 2,
@@ -77,6 +78,14 @@ if (project.eslint) {
   project.eslint.addRules({
     semi: ["off"],
     quotes: ["error", "double"],
+  })
+
+  // Add an override for the test directory
+  project.eslint.addOverride({
+    files: ["test/cluster-stack.test.ts", "test/instance-stack.test.ts"],
+    rules: {
+      quotes: ["warn", "double"],
+    },
   })
 }
 

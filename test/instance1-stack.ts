@@ -17,7 +17,7 @@ export class TestInstanceStack extends Stack {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_13_4,
+        version: rds.PostgresEngineVersion.VER_17_2,
       }),
       databaseName: "example",
       credentials: rds.Credentials.fromGeneratedSecret("pgroot"),

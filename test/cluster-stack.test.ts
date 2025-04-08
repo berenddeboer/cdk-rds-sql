@@ -66,17 +66,22 @@ test("serverless v2", () => {
     },
   })
   let template = Template.fromStack(stack)
-  //console.debug("TEMPLATE", template.toJSON())
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
-  /*
+
+  // Check for engine property
   template.hasResourceProperties("AWS::SecretsManager::Secret", {
     GenerateSecretString: {
-      SecretStringTemplate: "{\"username\":\"myrole\"}",
+      SecretStringTemplate: {
+        "Fn::Join": [
+          "", // First element is an empty string (the separator)
+          Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"postgres"')]), // Second element is the array of strings to join
+        ],
+      },
     },
-    })
-   */
+  })
+
   template.hasResourceProperties("AWS::EC2::SecurityGroupIngress", {
     FromPort: {
       "Fn::GetAtt": ["Cluster2720FF351", "Endpoint.Port"],
@@ -288,5 +293,77 @@ test("timeout can be set on function properties", () => {
   const template = Template.fromStack(stack)
   template.hasResourceProperties("AWS::Lambda::Function", {
     Timeout: 200,
+  })
+})
+
+test("mysql cluster engine is set in secret", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      {
+        cidrMask: 28,
+        name: "nat",
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "MySqlCluster", {
+    engine: rds.DatabaseClusterEngine.auroraMysql({
+      version: rds.AuroraMysqlEngineVersion.VER_3_08_0,
+    }),
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    defaultDatabaseName: "example",
+    writer: rds.ClusterInstance.serverlessV2("writer", {
+      instanceIdentifier: "writer",
+      publiclyAccessible: false,
+      enablePerformanceInsights: false,
+    }),
+    serverlessV2MinCapacity: 0.5,
+    serverlessV2MaxCapacity: 1,
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+    },
+  })
+
+  const provider = new Provider(stack, "Provider", {
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+    },
+    cluster: cluster,
+    secret: cluster.secret!,
+  })
+
+  new Role(stack, "Role", {
+    provider: provider,
+    roleName: "myrole",
+    databaseName: "mydb",
+  })
+
+  let template = Template.fromStack(stack)
+
+  // Check for engine property
+  template.hasResourceProperties("AWS::SecretsManager::Secret", {
+    GenerateSecretString: {
+      SecretStringTemplate: {
+        "Fn::Join": [
+          "", // First element is an empty string (the separator)
+          Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"mysql"')]), // Second element is the array of strings to join
+        ],
+      },
+    },
   })
 })

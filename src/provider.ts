@@ -89,7 +89,22 @@ export class Provider extends Construct {
     super(scope, id)
     this.secret = props.secret
     this.cluster = props.cluster
-    this.engine = "postgres"
+
+    // Determine engine from cluster/instance instead of hardcoding
+    if ("clusterIdentifier" in props.cluster) {
+      // It's a DatabaseCluster
+      const clusterEngine = (props.cluster as IDatabaseCluster).engine
+      this.engine =
+        clusterEngine && clusterEngine.engineFamily === "MYSQL" ? "mysql" : "postgres"
+    } else if ("instanceIdentifier" in props.cluster) {
+      // It's a DatabaseInstance
+      const instanceEngine = (props.cluster as IDatabaseInstance).engine
+      this.engine =
+        instanceEngine && instanceEngine.engineFamily === "MYSQL" ? "mysql" : "postgres"
+    } else {
+      // Fallback to postgres if engine hasn't been provided
+      this.engine = "postgres"
+    }
 
     const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
     this.handler =

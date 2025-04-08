@@ -101,11 +101,18 @@
   "jest": {
     "coverageProvider": "v8",
     "testMatch": [
-      "<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts",
+      "test/*.test.ts",
+      "lambda/*.test.ts",
       "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
       "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/cdk.out/",
+      "/.github/",
+      "/dist/"
     ],
     "maxConcurrency": 2,
     "maxWorkers": 2,
@@ -120,10 +127,10 @@
     ],
     "coverageDirectory": "coverage",
     "coveragePathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/"
+      "/node_modules/",
+      "/cdk.out/",
+      "/.github/",
+      "/dist/"
     ],
     "watchPathIgnorePatterns": [
       "/node_modules/"

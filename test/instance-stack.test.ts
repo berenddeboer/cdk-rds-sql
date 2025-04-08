@@ -1,5 +1,5 @@
 import * as cdk from "aws-cdk-lib"
-import { Template } from "aws-cdk-lib/assertions"
+import { Match, Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as serverlessInstancev1 from "./instance1-stack"
@@ -16,17 +16,21 @@ test("serverless instance v1", () => {
     },
   })
   let template = Template.fromStack(stack)
-  //console.debug("TEMPLATE", template.toJSON())
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
-  /*
+
+  // Check for engine property
   template.hasResourceProperties("AWS::SecretsManager::Secret", {
     GenerateSecretString: {
-      SecretStringTemplate: "{\"username\":\"myrole\"}",
+      SecretStringTemplate: {
+        "Fn::Join": [
+          "", // First element is an empty string (the separator)
+          Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"postgres"')]), // Second element is the array of strings to join
+        ],
+      },
     },
-    })
-  */
+  })
 })
 
 test("instance role without database", () => {
@@ -68,7 +72,7 @@ test("instance role without database", () => {
       provider: provider,
       roleName: "role",
     })
-  }).toThrowError()
+  }).toThrow()
 })
 
 test("serverless instance v2", () => {
@@ -80,7 +84,6 @@ test("serverless instance v2", () => {
     },
   })
   let template = Template.fromStack(stack)
-  //console.debug("TEMPLATE", template.toJSON())
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
@@ -176,5 +179,74 @@ test("vpcSubnet selection can be specified", () => {
       provider: provider,
       roleName: "role",
     })
-  }).toThrowError()
+  }).toThrow()
+})
+
+test("mysql database instance engine is set in secret", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+      {
+        cidrMask: 28,
+        name: "nat",
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+    ],
+  })
+
+  const instance = new rds.DatabaseInstance(stack, "Instance", {
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+    engine: rds.DatabaseInstanceEngine.mariaDb({
+      version: rds.MariaDbEngineVersion.VER_11_4_3,
+    }),
+    databaseName: "example",
+    credentials: rds.Credentials.fromGeneratedSecret("admin"),
+    instanceType: ec2.InstanceType.of(
+      ec2.InstanceClass.BURSTABLE3,
+      ec2.InstanceSize.MICRO
+    ),
+  })
+
+  const provider = new Provider(stack, "Provider", {
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+    cluster: instance,
+    secret: instance.secret!,
+  })
+
+  new Role(stack, "Role", {
+    provider: provider,
+    roleName: "myrole",
+    databaseName: "mydb",
+  })
+
+  const template = Template.fromStack(stack)
+
+  // Check for engine property
+  template.hasResourceProperties("AWS::SecretsManager::Secret", {
+    GenerateSecretString: {
+      SecretStringTemplate: {
+        "Fn::Join": [
+          "", // First element is an empty string (the separator)
+          Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"mysql"')]), // Second element is the array of strings to join
+        ],
+      },
+    },
+  })
 })
