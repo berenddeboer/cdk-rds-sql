@@ -76,11 +76,17 @@ test("serverless v2", () => {
       SecretStringTemplate: {
         "Fn::Join": [
           "", // First element is an empty string (the separator)
-          Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"postgres"')]), // Second element is the array of strings to join
+          Match.arrayWith([Match.stringLikeRegexp('"engine":s*"postgres"')]), // Second element is the array of strings to join
         ],
       },
     },
   })
+
+  // Verify no parameters are created
+  template.resourceCountIs("AWS::SSM::Parameter", 0)
+
+  // Verify no custom resource for password parameter is created
+  template.resourceCountIs("Custom::SecretParameter", 0)
 
   template.hasResourceProperties("AWS::EC2::SecurityGroupIngress", {
     FromPort: {
@@ -129,6 +135,94 @@ test("absence of security group is detected", () => {
         "GroupId",
       ],
     },
+  })
+})
+
+test("credentials stored in parameters", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "Cluster", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_14_5,
+    }),
+    writer: rds.ClusterInstance.serverlessV2("writer"),
+    vpc: vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+  })
+
+  const provider = new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: cluster,
+    secret: cluster.secret!,
+  })
+
+  new Role(stack, "RoleWithParams", {
+    provider: provider,
+    roleName: "role-with-params",
+    databaseName: "mydb",
+    parameterPrefix: "/my/params/path/",
+  })
+
+  const template = Template.fromStack(stack)
+  // Verify secret is created
+  template.hasResourceProperties("AWS::SecretsManager::Secret", {
+    Description: "Generated secret for postgres role role-with-params",
+  })
+
+  // Verify parameters are created
+  template.hasResourceProperties("AWS::SSM::Parameter", {
+    Name: "/my/params/path/engine",
+    Value: "postgres",
+  })
+
+  template.hasResourceProperties("AWS::SSM::Parameter", {
+    Name: "/my/params/path/username",
+    Value: "role-with-params",
+  })
+
+  template.hasResourceProperties("AWS::SSM::Parameter", {
+    Name: "/my/params/path/dbname",
+    Value: "mydb",
+  })
+
+  // Verify custom resource for password parameter is created
+  template.hasResourceProperties("AWS::Lambda::Function", {
+    Handler: "index.handler",
+    Runtime: "nodejs20.x",
+  })
+
+  template.hasResourceProperties("AWS::IAM::Policy", {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Action: ["ssm:PutParameter", "ssm:DeleteParameter"],
+          Effect: "Allow",
+          Resource: "arn:aws:ssm:us-east-1:123456789:parameter/my/params/path/password",
+        }),
+      ]),
+    },
+  })
+
+  template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
+    Resource: "parameter_password",
+    ParameterName: "/my/params/path/password",
   })
 })
 

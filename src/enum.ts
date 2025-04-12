@@ -3,4 +3,5 @@ export enum RdsSqlResource {
   ROLE = "role",
   SQL = "sql",
   DATABASE = "database",
+  PARAMETER_PASSWORD = "parameter_password",
 }

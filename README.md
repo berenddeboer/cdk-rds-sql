@@ -1,8 +1,8 @@
 # About
 
 This CDK construct library makes it possible to create databases,
-schemas, and roles in an Aurora Serverless (v1 and v2 are supported), RDS Database Cluster or Database Instance created
-in that stack.
+schemas, and roles in an Aurora Serverless v2, RDS Database Cluster or
+Database Instance. Both PostgreSQL and MySQL databases are supported.
 
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
@@ -281,6 +281,23 @@ There are a lot of concerns when using `Sql`:
 - Currently the `Sql` constructs has less than 5 minutes to execute
   its work.
 - It is unknown how large your SQL can be.
+
+# Parameters
+
+Some lambda constructs, in particular [Bref](https://bref.sh/), do not
+support secrets out of the box. This construct allows you to create
+SSM parameters in addition to a secret:
+
+```ts
+const role = new Role(this, "Role", {
+  provider: provider,
+  roleName: "myrole",
+  databaseName: "mydb",
+  parameterPrefix: "/app/",
+})
+```
+
+This will create `/app/username`, `/app/password` and such.
 
 ## Dependencies
 

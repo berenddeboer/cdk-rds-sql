@@ -29,9 +29,15 @@ export class Vpc extends Construct {
         ],
       })
 
-      // Add VPC endpoint for Secrets Manager to allow Lambda to access secrets without internet access
+      // Add VPC endpoint for Secrets Manager to allow Lambda to
+      // access secrets without internet access
       this.vpc.addInterfaceEndpoint("SecretsManagerEndpoint", {
         service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      })
+      // Add VPC endpoint for SSM to allow Lambda to
+      // access secrets without internet access
+      this.vpc.addInterfaceEndpoint("SSMEndpoint", {
+        service: ec2.InterfaceVpcEndpointAwsService.SSM,
       })
     }
   }

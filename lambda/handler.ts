@@ -4,6 +4,11 @@ import {
   GetSecretValueCommandOutput,
 } from "@aws-sdk/client-secrets-manager"
 import {
+  SSMClient,
+  PutParameterCommand,
+  DeleteParameterCommand,
+} from "@aws-sdk/client-ssm"
+import {
   CloudFormationCustomResourceCreateEvent,
   CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
@@ -71,7 +76,7 @@ export const handler = async (
   const engine = secretValues.engine || "postgresql" // Default to postgresql if not specified
   const dbEngine = EngineFactory.createEngine(engine)
 
-  let sql: string | string[] | void
+  let sql: string | string[] | undefined
   switch (requestType) {
     case "Create": {
       switch (resource) {
@@ -86,6 +91,9 @@ export const handler = async (
           break
         case RdsSqlResource.SQL:
           sql = dbEngine.createSql(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.PARAMETER_PASSWORD:
+          await handleParameterPassword(event.ResourceProperties)
           break
       }
       break
@@ -113,6 +121,10 @@ export const handler = async (
         case RdsSqlResource.SQL:
           sql = dbEngine.updateSql(resourceId, oldResourceId, event.ResourceProperties)
           break
+        case RdsSqlResource.PARAMETER_PASSWORD:
+          await handleParameterPassword(event.ResourceProperties)
+          sql = undefined // No SQL to execute
+          break
       }
       break
     }
@@ -129,6 +141,9 @@ export const handler = async (
           break
         case RdsSqlResource.SQL:
           sql = dbEngine.deleteSql(resourceId, event.ResourceProperties)
+          break
+        case RdsSqlResource.PARAMETER_PASSWORD:
+          await deleteParameterPassword(event.ResourceProperties)
           break
       }
       break
@@ -190,4 +205,45 @@ const errorFilter = (error: any, nextAttemptNumber: number) => {
     error
   )
   return willRetry
+}
+
+/**
+ * Copy password generated in secret to our password parameter.
+ */
+async function handleParameterPassword(props: any): Promise<void> {
+  const secretArn = props.SecretArn
+  const parameterName = props.ParameterName
+
+  // Get the secret
+  const secrets_client = new SecretsManagerClient({})
+  const secretData = await secrets_client.send(
+    new GetSecretValueCommand({ SecretId: secretArn })
+  )
+
+  if (!secretData.SecretString) throw "No secret string for parameter"
+  const secretObj = JSON.parse(secretData.SecretString)
+
+  // Put the password in SSM
+  const ssmClient = new SSMClient({})
+  await ssmClient.send(
+    new PutParameterCommand({
+      Name: parameterName,
+      Value: secretObj.password,
+      Type: "SecureString",
+      Overwrite: true,
+    })
+  )
+}
+
+/**
+ * Cleanup: remove generated password parameter.
+ */
+async function deleteParameterPassword(props: any): Promise<void> {
+  const parameterName = props.ParameterName
+  const ssmClient = new SSMClient({})
+  await ssmClient.send(
+    new DeleteParameterCommand({
+      Name: parameterName,
+    })
+  )
 }
