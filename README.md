@@ -157,6 +157,17 @@ has been created.
 If you want to make the role the owner of a new database, just specify
 the `databaseName` here, and create the database later.
 
+### MySQL support
+
+In MySQL users are created with '%' as value for the host. It is hard
+to do this better:
+
+- Determine the CIDR blocks used by a VPC is not trivial.
+- For imported VPCs you cannot specify the IPv6 CIDR.
+- CIDRs might change without the system knowing, meaning applications
+  could lose access to the database at random times, such as when a
+  container is restarted.
+
 ## Database
 
 Create a database as follows:
@@ -302,10 +313,21 @@ const role = new Role(this, "Role", {
 
 This will create `/app/username`, `/app/password` and such.
 
-## Dependencies
+# IPv6
 
-This library manages dependencies, there is no need to specify
-dependencies except possibly for `Sql` constructs.
+If you use the provider in an IPv6 subnet you probably need these settings:
+
+```ts
+import { Provider } from "cdk-rds-sql"
+
+const provider = new Provider(this, "Provider", {
+  ...
+  functionProps: {
+	ipv6AllowedForDualStack: true,
+	allowAllIpv6Outbound: true,
+  },
+}
+```
 
 # Working on this code
 
