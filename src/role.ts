@@ -79,10 +79,11 @@ class Parameters extends Construct {
     scope: Construct,
     id: string,
     props: {
-      parameterPrefix: string
-      secretArn: string
-      providerServiceToken: string
       provider: Provider
+      secretArn: string
+      parameterPrefix: string
+      passwordArn: string
+      providerServiceToken: string
       paramData: Record<string, any>
     }
   ) {
@@ -103,8 +104,9 @@ class Parameters extends Construct {
     new CustomResource(this, "PasswordParameter", {
       serviceToken: props.providerServiceToken,
       properties: {
-        Resource: RdsSqlResource.PARAMETER_PASSWORD,
         SecretArn: props.secretArn,
+        Resource: RdsSqlResource.PARAMETER_PASSWORD,
+        PasswordArn: props.passwordArn,
         ParameterName: passwordParameterName,
       },
     })
@@ -191,8 +193,9 @@ export class Role extends Construct {
       }
 
       new Parameters(this, "Parameters", {
+        secretArn: props.provider.secret.secretArn,
         parameterPrefix: props.parameterPrefix,
-        secretArn: this.secret.secretArn,
+        passwordArn: this.secret.secretArn,
         providerServiceToken: props.provider.serviceToken,
         provider: props.provider,
         paramData,

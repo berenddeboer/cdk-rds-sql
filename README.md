@@ -121,7 +121,7 @@ const provider = new Provider(this, "Provider", {
 
 ## Roles
 
-Create a postgres role (user) for a cluster as follows:
+Create a postgres role (or mysql user) for a cluster as follows:
 
 ```ts
 import { Role } from "cdk-rds-sql"
@@ -153,6 +153,9 @@ You can access the secret via `role.secret`.
 Instead of `databaseName` you can also specify `database` to reference
 an existing database. The role will not be created until the database
 has been created.
+
+If you want to make the role the owner of a new database, just specify
+the `databaseName` here, and create the database later.
 
 ## Database
 

@@ -31,6 +31,8 @@ const log =
     ? console.debug
     : (_message?: any, ..._optionalParams: any[]) => {}
 
+const secrets_client = new SecretsManagerClient({})
+
 export const handler = async (
   event:
     | CloudFormationCustomResourceCreateEvent
@@ -47,13 +49,15 @@ export const handler = async (
   if (!Object.values(RdsSqlResource).includes(resource)) {
     throw `Resource type '${resource}' not recognised.`
   }
+  if (!event.ResourceProperties.SecretArn) {
+    throw "SecretArn is a required property"
+  }
 
-  const secrets_client = new SecretsManagerClient({})
   const command = new GetSecretValueCommand({
     SecretId: event.ResourceProperties.SecretArn,
   })
 
-  log("Fetching secret")
+  log(`Fetching secret ${event.ResourceProperties.SecretArn}`)
   const secret: GetSecretValueCommandOutput = await backOff(
     async () => {
       try {
@@ -69,7 +73,8 @@ export const handler = async (
       startingDelay: 500,
     }
   )
-  if (!secret.SecretString) throw "No secret string"
+  if (!secret.SecretString)
+    throw `No secret string in ${event.ResourceProperties.SecretArn}`
   const secretValues = JSON.parse(secret.SecretString)
 
   // Determine the database engine type
@@ -211,11 +216,10 @@ const errorFilter = (error: any, nextAttemptNumber: number) => {
  * Copy password generated in secret to our password parameter.
  */
 async function handleParameterPassword(props: any): Promise<void> {
-  const secretArn = props.SecretArn
+  const secretArn = props.PasswordArn
   const parameterName = props.ParameterName
 
   // Get the secret
-  const secrets_client = new SecretsManagerClient({})
   const secretData = await secrets_client.send(
     new GetSecretValueCommand({ SecretId: secretArn })
   )

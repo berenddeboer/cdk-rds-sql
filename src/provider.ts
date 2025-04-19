@@ -188,7 +188,6 @@ export class Provider extends Construct {
       },
       environment: {
         LOGGER: logger.toString(),
-        NODE_OPTIONS: "--enable-source-maps",
         ...ssl_options,
       },
     })
