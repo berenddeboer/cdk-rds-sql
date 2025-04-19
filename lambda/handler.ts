@@ -112,7 +112,8 @@ export const handler = async (
           sql = await dbEngine.updateRole(
             resourceId,
             oldResourceId,
-            event.ResourceProperties
+            event.ResourceProperties,
+            (event as CloudFormationCustomResourceUpdateEvent).OldResourceProperties
           )
           break
         case RdsSqlResource.SCHEMA:

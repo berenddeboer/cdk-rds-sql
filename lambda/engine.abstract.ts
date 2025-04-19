@@ -35,7 +35,8 @@ export abstract class AbstractEngine {
   abstract updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props?: any,
+    oldProps?: any
   ): Promise<string | string[]>
   abstract deleteRole(resourceId: string, props?: any): string | string[]
 

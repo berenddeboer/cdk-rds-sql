@@ -85,7 +85,8 @@ END$$;`,
   async updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props?: any,
+    oldProps?: any
   ): Promise<string[]> {
     if (props?.PasswordArn) {
       const password = await this.getPassword(props.PasswordArn)
@@ -95,6 +96,28 @@ END$$;`,
           sql.push(pgFormat("alter role %I rename to %I", oldResourceId, resourceId))
         }
         sql.push(pgFormat("alter role %I with password %L", resourceId, password))
+        // Check if database name has changed
+        if (
+          oldProps?.DatabaseName &&
+          props.DatabaseName &&
+          oldProps.DatabaseName !== props.DatabaseName
+        ) {
+          // Revoke from old database
+          sql.push(
+            pgFormat(
+              `DO $$
+  BEGIN
+    IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
+      revoke connect on database %I from %I;
+    END IF;
+  END$$;`,
+              oldProps.DatabaseName,
+              oldProps.DatabaseName,
+              resourceId
+            )
+          )
+        }
+
         if (props.DatabaseName) {
           sql.push(
             pgFormat("grant connect on database %I to %I", props.DatabaseName, resourceId)
@@ -109,6 +132,27 @@ END$$;`,
       const sql = ["start transaction"]
       if (oldResourceId !== resourceId) {
         sql.push(pgFormat("alter role %I rename to %I", oldResourceId, resourceId))
+      }
+      // Check if database name has changed
+      if (
+        oldProps?.DatabaseName &&
+        props.DatabaseName &&
+        oldProps.DatabaseName !== props.DatabaseName
+      ) {
+        // Revoke from old database
+        sql.push(
+          pgFormat(
+            `DO $$
+BEGIN
+  IF EXISTS (select from pg_database where datname = '%s' and datistemplate = false) THEN
+  revoke connect on database %I from %I;
+  END IF;
+END$$;`,
+            oldProps.DatabaseName,
+            oldProps.DatabaseName,
+            resourceId
+          )
+        )
       }
       sql.push(
         pgFormat(

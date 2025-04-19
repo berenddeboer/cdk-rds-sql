@@ -43,7 +43,8 @@ export class MysqlEngine extends AbstractEngine {
   async updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props?: any,
+    oldProps?: any
   ): Promise<string[]> {
     const sql: string[] = []
 
@@ -70,6 +71,18 @@ export class MysqlEngine extends AbstractEngine {
       if (!password) throw `Cannot parse password from ${props.PasswordArn}`
 
       sql.push(`ALTER USER '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
+    }
+
+    // Check if database name has changed
+    if (
+      oldProps?.DatabaseName &&
+      props?.DatabaseName &&
+      oldProps.DatabaseName !== props.DatabaseName
+    ) {
+      // Revoke from old database
+      sql.push(
+        `REVOKE ALL PRIVILEGES ON \`${oldProps.DatabaseName}\`.* FROM '${resourceId}'@'%'`
+      )
     }
 
     if (props?.DatabaseName) {

@@ -55,6 +55,39 @@ describe("MySQL Engine", () => {
       expect(sql[0]).toContain("REVOKE ALL PRIVILEGES")
       expect(sql[1]).toContain("DROP USER IF EXISTS")
     })
+
+    it("should generate SQL to revoke privileges on old database when database is changed", async () => {
+      // Mock getPassword implementation
+      jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+      const oldProps = {
+        DatabaseName: "olddb",
+        PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+      }
+
+      const newProps = {
+        DatabaseName: "newdb",
+        PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+      }
+
+      const sql = await engine.updateRole("testrole", "testrole", newProps, oldProps)
+
+      expect(Array.isArray(sql)).toBe(true)
+
+      // Check for revoke statement for the old database
+      const revokeStatement = sql.find(
+        (statement) =>
+          statement.includes("REVOKE ALL PRIVILEGES") && statement.includes("`olddb`")
+      )
+      expect(revokeStatement).toBeDefined()
+
+      // Check for grant statement for the new database
+      const grantStatement = sql.find(
+        (statement) =>
+          statement.includes("GRANT ALL PRIVILEGES") && statement.includes("`newdb`")
+      )
+      expect(grantStatement).toBeDefined()
+    })
   })
 
   describe("Schema", () => {
