@@ -101,7 +101,7 @@ class Parameters extends Construct {
 
     // For password, use the existing provider to store it in SSM
     const passwordParameterName = `${props.parameterPrefix}password`
-    new CustomResource(this, "PasswordParameter", {
+    const password_parameter = new CustomResource(this, "PasswordParameter", {
       serviceToken: props.providerServiceToken,
       properties: {
         SecretArn: props.secretArn,
@@ -110,6 +110,7 @@ class Parameters extends Construct {
         ParameterName: passwordParameterName,
       },
     })
+    password_parameter.node.addDependency(props.provider)
 
     const paramArn = `arn:aws:ssm:${Stack.of(this).region}:${
       Stack.of(this).account

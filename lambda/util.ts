@@ -4,13 +4,19 @@ import {
   CloudFormationCustomResourceDeleteEvent,
 } from "aws-lambda"
 import { Client } from "pg"
+import { ResourceProperties } from "./types"
 
-export interface ResourceProperties {
+// Helper interface to simplify test request creation
+export interface ResourcePropertiesInput {
+  readonly SecretArn?: string
   readonly PasswordArn?: string
   readonly DatabaseName?: string
   readonly Owner?: string
   readonly Statement?: string
+  readonly Rollback?: string
   readonly RoleName?: string
+  readonly ParameterName?: string
+  [key: string]: any
 }
 
 /**
@@ -19,8 +25,8 @@ export interface ResourceProperties {
 export const createRequest = (
   resource: string,
   resourceId: string,
-  props?: ResourceProperties
-): CloudFormationCustomResourceCreateEvent => {
+  props?: ResourcePropertiesInput
+): CloudFormationCustomResourceCreateEvent<ResourceProperties> => {
   return {
     ServiceToken: "",
     ResponseURL: "",
@@ -30,10 +36,12 @@ export const createRequest = (
     ResourceType: "",
     ResourceProperties: {
       ServiceToken: "",
-      Resource: resource,
+      Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: resourceId,
+      SecretArn:
+        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
-    },
+    } as unknown as ResourceProperties,
     RequestType: "Create",
   }
 }
@@ -42,8 +50,8 @@ export const updateRequest = (
   resource: string,
   oldResourceId: string,
   newResourceId: string,
-  props?: Record<string, any>
-): CloudFormationCustomResourceUpdateEvent => {
+  props?: ResourcePropertiesInput
+): CloudFormationCustomResourceUpdateEvent<ResourceProperties> => {
   return {
     ServiceToken: "",
     ResponseURL: "",
@@ -53,25 +61,29 @@ export const updateRequest = (
     ResourceType: "",
     ResourceProperties: {
       ServiceToken: "",
-      Resource: resource,
+      Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: newResourceId,
+      SecretArn:
+        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
-    },
+    } as unknown as ResourceProperties,
     RequestType: "Update",
     PhysicalResourceId: oldResourceId,
     OldResourceProperties: {
       ServiceToken: "",
-      Resource: resource,
+      Resource: resource as any,
       ResourceId: oldResourceId,
-    },
+      SecretArn:
+        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+    } as unknown as ResourceProperties,
   }
 }
 
 export const deleteRequest = (
   resource: string,
   resourceId: string,
-  props?: Record<string, any>
-): CloudFormationCustomResourceDeleteEvent => {
+  props?: ResourcePropertiesInput
+): CloudFormationCustomResourceDeleteEvent<ResourceProperties> => {
   return {
     ServiceToken: "",
     ResponseURL: "",
@@ -81,10 +93,12 @@ export const deleteRequest = (
     ResourceType: "",
     ResourceProperties: {
       ServiceToken: "",
-      Resource: resource,
+      Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: resourceId,
+      SecretArn:
+        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
-    },
+    } as unknown as ResourceProperties,
     RequestType: "Delete",
     PhysicalResourceId: resourceId,
   }

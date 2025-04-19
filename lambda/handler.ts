@@ -17,12 +17,7 @@ import { backOff } from "exponential-backoff"
 import { EngineFactory } from "./engine.factory"
 import { EngineConnectionConfig } from "./engine.abstract"
 import { RdsSqlResource } from "../src/enum"
-
-interface CustomResourceResponse {
-  PhysicalResourceId?: string
-  Data?: any
-  NoEcho?: boolean
-}
+import { ResourceProperties, CustomResourceResponse } from "./types"
 
 const maxAttempts = 20
 
@@ -35,10 +30,10 @@ const secrets_client = new SecretsManagerClient({})
 
 export const handler = async (
   event:
-    | CloudFormationCustomResourceCreateEvent
-    | CloudFormationCustomResourceUpdateEvent
-    | CloudFormationCustomResourceDeleteEvent
-): Promise<any> => {
+    | CloudFormationCustomResourceCreateEvent<ResourceProperties>
+    | CloudFormationCustomResourceUpdateEvent<ResourceProperties>
+    | CloudFormationCustomResourceDeleteEvent<ResourceProperties>
+): Promise<CustomResourceResponse> => {
   log(event)
 
   const requestType = event.RequestType
