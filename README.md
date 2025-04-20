@@ -313,6 +313,8 @@ const role = new Role(this, "Role", {
 
 This will create `/app/username`, `/app/password` and such.
 
+Note that your VPC will need an SSM Parameters interface endpoint to support this.
+
 # IPv6
 
 If you use the provider in an IPv6 subnet you probably need these settings:

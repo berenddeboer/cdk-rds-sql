@@ -26,9 +26,9 @@ export interface RoleProps {
    *
    * If the database exists, connect privileges are granted.
    *
-   * Specify none of `database` or `databaseName` or only one of them.
-   *
-   * @default no connection to any database is granted
+   * Specify one of `database` or `databaseName`. This is the name
+   * that will be stored in the role's secret as the database name to
+   * use.
    */
   readonly database?: IDatabase
 
@@ -37,9 +37,9 @@ export interface RoleProps {
    *
    * If the database exists, connect privileges are granted.
    *
-   * Specify none of `database` or `databaseName` or only one of them.
-   *
-   * @default no connection to any database is granted
+   * Specify one of `database` or `databaseName`. This is the name
+   * that will be stored in the role's secret as the database name to
+   * use.
    */
   readonly databaseName?: string
 
