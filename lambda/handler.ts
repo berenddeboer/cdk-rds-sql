@@ -7,6 +7,7 @@ import {
   SSMClient,
   PutParameterCommand,
   DeleteParameterCommand,
+  AddTagsToResourceCommand,
 } from "@aws-sdk/client-ssm"
 import {
   CloudFormationCustomResourceCreateEvent,
@@ -231,6 +232,15 @@ async function handleParameterPassword(props: any): Promise<void> {
       Value: secretObj.password,
       Type: "SecureString",
       Overwrite: true,
+    })
+  )
+
+  // Tag the parameter so that only parameters created by this construct can be deleted
+  await ssmClient.send(
+    new AddTagsToResourceCommand({
+      ResourceType: "Parameter",
+      ResourceId: parameterName,
+      Tags: [{ Key: "created-by", Value: "cdk-rds-sql" }],
     })
   )
 }

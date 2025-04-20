@@ -212,7 +212,7 @@ test("credentials stored in parameters", () => {
     PolicyDocument: {
       Statement: Match.arrayWith([
         Match.objectLike({
-          Action: ["ssm:PutParameter", "ssm:DeleteParameter"],
+          Action: ["ssm:PutParameter", "ssm:AddTagsToResource"],
           Effect: "Allow",
           Resource: "arn:aws:ssm:us-east-1:123456789:parameter/my/params/path/password",
         }),

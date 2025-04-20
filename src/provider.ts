@@ -2,6 +2,7 @@ import { existsSync } from "fs"
 import * as path from "path"
 import { Duration, Stack } from "aws-cdk-lib"
 import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
+import * as iam from "aws-cdk-lib/aws-iam"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
@@ -158,6 +159,19 @@ export class Provider extends Construct {
       }
     }
     const logger = props.logger ?? false
+
+    const deleteParameterPolicy = new iam.PolicyStatement({
+      actions: ["ssm:DeleteParameter"],
+      resources: [
+        `arn:aws:ssm:${Stack.of(scope).region}:${Stack.of(scope).account}:parameter/*`,
+      ],
+      conditions: {
+        StringEquals: {
+          "ssm:ResourceTag/created-by": "cdk-rds-sql",
+        },
+      },
+    })
+
     const fn = new lambda.NodejsFunction(scope, id, {
       ...props.functionProps,
       vpc: props.vpc,
@@ -190,6 +204,10 @@ export class Provider extends Construct {
         LOGGER: logger.toString(),
         ...ssl_options,
       },
+      initialPolicy: [
+        deleteParameterPolicy,
+        ...(props.functionProps?.initialPolicy ?? []),
+      ],
     })
 
     if (
