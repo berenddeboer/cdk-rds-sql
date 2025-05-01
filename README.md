@@ -307,11 +307,26 @@ const role = new Role(this, "Role", {
   provider: provider,
   roleName: "myrole",
   databaseName: "mydb",
-  parameterPrefix: "/app/",
+  parameterPrefix: "/my-app/",
 })
 ```
 
-This will create `/app/username`, `/app/password` and such.
+This will create `/my-app/username`, `/my-app/password` and such.
+
+To access parameters you will need IAM permissions such as:
+
+```ts
+initialPolicy: [
+  new iam.PolicyStatement({
+	actions: ["ssm:GetParameter", "ssm:GetParameters"],
+	resources: [
+	  // Grant access to all parameters under the base path
+	  `arn:aws:ssm:${this.region}:${this.account}:parameter/my-app/*`,
+	],
+	effect: iam.Effect.ALLOW,
+  })
+],
+```
 
 Note that your VPC will need an SSM Parameters interface endpoint to support this.
 

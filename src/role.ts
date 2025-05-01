@@ -120,7 +120,7 @@ class Parameters extends Construct {
 
     props.provider.handler.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["ssm:PutParameter", "ssm:AddTagsToResource"],
+        actions: ["ssm:PutParameter", "ssm:AddTagsToResource", "ssm:GetParameters"],
         resources: [paramArn],
       })
     )
