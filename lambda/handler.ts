@@ -224,15 +224,22 @@ async function handleParameterPassword(props: any): Promise<void> {
   if (!secretData.SecretString) throw "No secret string for parameter"
   const secretObj = JSON.parse(secretData.SecretString)
 
-  // Put the password in SSM
+  // Put the password in SSM – retry while IAM perms propagate
   const ssmClient = new SSMClient({})
-  await ssmClient.send(
-    new PutParameterCommand({
-      Name: parameterName,
-      Value: secretObj.password,
-      Type: "SecureString",
-      Overwrite: true,
-    })
+  await backOff(
+    () =>
+      ssmClient.send(
+        new PutParameterCommand({
+          Name: parameterName,
+          Value: secretObj.password,
+          Type: "SecureString",
+          Overwrite: true,
+        })
+      ),
+    {
+      numOfAttempts: maxAttempts,
+      startingDelay: 500,
+    }
   )
 
   // Tag the parameter so that only parameters created by this construct can be deleted
