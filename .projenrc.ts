@@ -72,7 +72,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "source-map-support",
     "testcontainers@10",
   ],
-  keywords: ["aws", "aws-cdk", "rds", "aurora"],
+  keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql"],
   minMajorVersion: 1,
 })
 if (project.eslint) {

@@ -238,7 +238,7 @@ async function handleParameterPassword(props: any): Promise<void> {
       ),
     {
       numOfAttempts: maxAttempts,
-      startingDelay: 500,
+      startingDelay: 1000,
     }
   )
 

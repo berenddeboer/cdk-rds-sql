@@ -88,6 +88,8 @@
     "aws",
     "aws-cdk",
     "cdk",
+    "mysql",
+    "postgres",
     "rds"
   ],
   "engines": {
