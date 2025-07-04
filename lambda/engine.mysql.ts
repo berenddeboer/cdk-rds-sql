@@ -22,21 +22,31 @@ export class MysqlEngine extends AbstractEngine {
   }
 
   async createRole(resourceId: string, props?: any): Promise<string[]> {
-    if (!props.PasswordArn) throw new Error("No PasswordArn provided")
-    const password = await this.getPassword(props.PasswordArn)
-    if (!password) throw `Cannot parse password from ${props.PasswordArn}`
-
-    const sql = [
-      `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`,
-    ]
+    const sql: string[] = []
+    
+    if (props.EnableIamAuth) {
+      // Create user for IAM authentication
+      sql.push(
+        `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`
+      )
+    } else {
+      // Create user with password authentication
+      if (!props.PasswordArn) throw new Error("No PasswordArn provided")
+      const password = await this.getPassword(props.PasswordArn)
+      if (!password) throw `Cannot parse password from ${props.PasswordArn}`
+      
+      sql.push(
+        `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`
+      )
+    }
 
     if (props.DatabaseName) {
       sql.push(
         `GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`
       )
-      sql.push(`FLUSH PRIVILEGES`)
     }
-
+    
+    sql.push(`FLUSH PRIVILEGES`)
     return sql
   }
 
@@ -50,7 +60,13 @@ export class MysqlEngine extends AbstractEngine {
 
     if (oldResourceId !== resourceId) {
       // MySQL doesn't allow renaming users directly, we need to create a new one and drop the old one
-      if (props?.PasswordArn) {
+      if (props?.EnableIamAuth) {
+        // Create new user with IAM auth
+        sql.push(
+          `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`
+        )
+      } else if (props?.PasswordArn) {
+        // Create new user with password auth
         const password = await this.getPassword(props.PasswordArn)
         if (!password) throw `Cannot parse password from ${props.PasswordArn}`
 
@@ -65,12 +81,28 @@ export class MysqlEngine extends AbstractEngine {
 
       // Drop the old user
       sql.push(`DROP USER IF EXISTS '${oldResourceId}'@'%'`)
-    } else if (props?.PasswordArn) {
-      // Just update the password
-      const password = await this.getPassword(props.PasswordArn)
-      if (!password) throw `Cannot parse password from ${props.PasswordArn}`
-
-      sql.push(`ALTER USER '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
+    } else {
+      // Handle authentication method changes for existing user
+      if (props?.EnableIamAuth && !oldProps?.EnableIamAuth) {
+        // Switching from password to IAM auth - need to recreate user
+        sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
+        sql.push(
+          `CREATE USER '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`
+        )
+      } else if (!props?.EnableIamAuth && oldProps?.EnableIamAuth) {
+        // Switching from IAM to password auth - need to recreate user
+        sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
+        if (props?.PasswordArn) {
+          const password = await this.getPassword(props.PasswordArn)
+          if (!password) throw `Cannot parse password from ${props.PasswordArn}`
+          sql.push(`CREATE USER '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
+        }
+      } else if (!props?.EnableIamAuth && props?.PasswordArn) {
+        // Just update the password for password auth
+        const password = await this.getPassword(props.PasswordArn)
+        if (!password) throw `Cannot parse password from ${props.PasswordArn}`
+        sql.push(`ALTER USER '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
+      }
     }
 
     // Check if database name has changed
