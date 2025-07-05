@@ -157,6 +157,63 @@ has been created.
 If you want to make the role the owner of a new database, just specify
 the `databaseName` here, and create the database later.
 
+### IAM Authentication
+
+Instead of password-based authentication, you can create roles that use AWS IAM database authentication. This eliminates the need to store database passwords and provides enhanced security through AWS IAM policies.
+
+```ts
+import { Role } from "cdk-rds-sql"
+
+const iamRole = new Role(this, "IamRole", {
+  provider: provider,
+  roleName: "myiamrole",
+  databaseName: "mydb",
+  enableIamAuth: true,
+})
+```
+
+For IAM-authenticated roles, the secret will not contain a password field:
+
+```json
+{
+  "dbClusterIdentifier": "teststack-clustereb1186t9-sh4wpqfdyfvu",
+  "dbname": "mydb",
+  "engine": "postgres",
+  "port": 5432,
+  "host": "teststack-clustereb1186t9-sh4wpqfdyfvu.cluster-cgudolabssna.us-east-1.rds.amazonaws.com",
+  "username": "myiamrole"
+}
+```
+
+**Requirements for IAM Authentication:**
+
+- SSL connections are required (enabled by default in this library)
+- Your application must have IAM permissions to connect to the database
+- The database user/role name must match the IAM identity
+
+**IAM Policy Example:**
+
+Your application will need an IAM policy like this to connect:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "rds-db:connect"
+      ],
+      "Resource": [
+        "arn:aws:rds-db:region:account-id:dbuser:cluster-resource-id/myiamrole"
+      ]
+    }
+  ]
+}
+```
+
+Both PostgreSQL and MySQL databases support IAM authentication. For more details, see the [AWS RDS IAM Database Authentication documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html).
+
 ### MySQL support
 
 In MySQL users are created with '%' as value for the host. It is hard
