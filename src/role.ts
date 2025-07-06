@@ -71,6 +71,17 @@ export interface RoleProps {
    * @default - credentials are only stored in Secrets Manager
    */
   readonly parameterPrefix?: string
+
+  /**
+   * Enable IAM authentication for this role.
+   *
+   * When enabled, the role will be created without a password and
+   * configured for AWS IAM database authentication. The secret
+   * will not contain a password field.
+   *
+   * @default false - use password authentication
+   */
+  readonly enableIamAuth?: boolean
 }
 
 // Private Parameters construct (not exported)
@@ -162,23 +173,33 @@ export class Role extends Construct {
       ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
       : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
 
+    const secretTemplate = {
+      dbClusterIdentifier: identifier,
+      engine: props.provider.engine,
+      host: host,
+      port: port,
+      username: props.roleName,
+      dbname: props.database ? props.database.databaseName : props.databaseName,
+    }
+
     this.secret = new Secret(this, "Secret", {
       secretName: props.secretName,
       encryptionKey: props.encryptionKey,
-      description: `Generated secret for postgres role ${props.roleName}`,
-      generateSecretString: {
-        passwordLength: 30, // Oracle password cannot have more than 30 characters
-        secretStringTemplate: JSON.stringify({
-          dbClusterIdentifier: identifier,
-          engine: props.provider.engine,
-          host: host,
-          port: port,
-          username: props.roleName,
-          dbname: props.database ? props.database.databaseName : props.databaseName,
-        }),
-        generateStringKey: "password",
-        excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
-      },
+      description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
+      ...(props.enableIamAuth
+        ? {
+            // For IAM auth, create secret without password generation
+            secretStringTemplate: JSON.stringify(secretTemplate),
+          }
+        : {
+            // For password auth, generate password
+            generateSecretString: {
+              passwordLength: 30, // Oracle password cannot have more than 30 characters
+              secretStringTemplate: JSON.stringify(secretTemplate),
+              generateStringKey: "password",
+              excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+            },
+          }),
       removalPolicy: RemovalPolicy.DESTROY,
     })
 
@@ -196,7 +217,7 @@ export class Role extends Construct {
       new Parameters(this, "Parameters", {
         secretArn: props.provider.secret.secretArn,
         parameterPrefix: props.parameterPrefix,
-        passwordArn: this.secret.secretArn,
+        passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
         providerServiceToken: props.provider.serviceToken,
         provider: props.provider,
         paramData,
@@ -206,9 +227,10 @@ export class Role extends Construct {
     const role = new CustomResourceRole(this, "PostgresRole", {
       provider: props.provider,
       roleName: props.roleName,
-      passwordArn: this.secret.secretArn,
+      passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
       database: props.database,
       databaseName: props.databaseName,
+      enableIamAuth: props.enableIamAuth,
     })
     role.node.addDependency(this.secret)
     this.roleName = props.roleName

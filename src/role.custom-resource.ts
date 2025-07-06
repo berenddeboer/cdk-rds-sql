@@ -39,6 +39,13 @@ export interface RoleProps {
    * @default no connection to any database is granted
    */
   readonly databaseName?: string
+
+  /**
+   * Enable IAM authentication for this role.
+   *
+   * @default false - use password authentication
+   */
+  readonly enableIamAuth?: boolean
 }
 
 export class Role extends CustomResource {
@@ -53,6 +60,7 @@ export class Role extends CustomResource {
         SecretArn: props.provider.secret.secretArn,
         PasswordArn: props.passwordArn,
         DatabaseName: props.database ? props.database.databaseName : props.databaseName,
+        EnableIamAuth: props.enableIamAuth || false,
       },
     })
     this.node.addDependency(props.provider)

@@ -62,9 +62,10 @@ export abstract class AbstractEngine {
   ): Promise<any>
 
   /**
-   * Parse password field from secret. Returns void on error.
+   * Parse password field from secret. Returns void on error or if no password field exists.
    */
   protected async getPassword(arn: string): Promise<string | void> {
+    if (!arn) return
     const secrets_client = new SecretsManagerClient({})
     const command = new GetSecretValueCommand({
       SecretId: arn,
