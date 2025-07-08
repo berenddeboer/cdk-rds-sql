@@ -49,7 +49,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
       noUnusedLocals: false,
       target: "es2022",
       noImplicitOverride: true,
-      noUncheckedIndexedAccess: false,
+      noUncheckedIndexedAccess: true,
     },
     include: ["lambda/**/*.ts"],
   },
