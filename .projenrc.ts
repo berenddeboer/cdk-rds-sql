@@ -46,7 +46,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   tsconfigDev: {
     compilerOptions: {
       esModuleInterop: true,
-      noUnusedLocals: false,
+      noUnusedLocals: true,
       target: "es2022",
       noImplicitOverride: true,
       noUncheckedIndexedAccess: true,

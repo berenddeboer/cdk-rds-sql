@@ -20,10 +20,6 @@ import { EngineFactory } from "./engine.factory"
 import {
   ResourceProperties,
   CustomResourceResponse,
-  DatabaseProperties,
-  RoleProperties,
-  SchemaProperties,
-  SqlProperties,
   EngineDatabaseProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
