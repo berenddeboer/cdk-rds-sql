@@ -54,7 +54,7 @@ export class PostgresqlEngine extends AbstractEngine {
 
   async createRole(resourceId: string, props?: any): Promise<string[]> {
     const sql = ["start transaction"]
-    
+
     if (props.EnableIamAuth) {
       // Create role for IAM authentication
       sql.push(pgFormat("create role %I with login", resourceId))
@@ -68,7 +68,7 @@ export class PostgresqlEngine extends AbstractEngine {
       }
       sql.push(pgFormat("create role %I with login password %L", resourceId, password))
     }
-    
+
     if (props.DatabaseName) {
       sql.push(
         pgFormat(
@@ -84,7 +84,7 @@ END$$;`,
         )
       )
     }
-    
+
     sql.push("commit")
     return sql
   }
@@ -96,11 +96,11 @@ END$$;`,
     oldProps?: any
   ): Promise<string[]> {
     const sql = ["start transaction"]
-    
+
     if (oldResourceId !== resourceId) {
       sql.push(pgFormat("alter role %I rename to %I", oldResourceId, resourceId))
     }
-    
+
     // Handle authentication method changes
     if (props?.EnableIamAuth && !oldProps?.EnableIamAuth) {
       // Switching from password to IAM auth
@@ -123,7 +123,7 @@ END$$;`,
       }
       sql.push(pgFormat("alter role %I with password %L", resourceId, password))
     }
-    
+
     // Check if database name has changed
     if (
       oldProps?.DatabaseName &&
@@ -161,7 +161,7 @@ END$$;`,
         )
       )
     }
-    
+
     sql.push("commit")
     return sql
   }
