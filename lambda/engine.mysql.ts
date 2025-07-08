@@ -23,7 +23,7 @@ export class MysqlEngine extends AbstractEngine {
 
   async createRole(resourceId: string, props?: any): Promise<string[]> {
     const sql: string[] = []
-    
+
     if (props.EnableIamAuth) {
       // Create user for IAM authentication
       sql.push(
@@ -34,7 +34,7 @@ export class MysqlEngine extends AbstractEngine {
       if (!props.PasswordArn) throw new Error("No PasswordArn provided")
       const password = await this.getPassword(props.PasswordArn)
       if (!password) throw `Cannot parse password from ${props.PasswordArn}`
-      
+
       sql.push(
         `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`
       )
@@ -45,7 +45,7 @@ export class MysqlEngine extends AbstractEngine {
         `GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`
       )
     }
-    
+
     sql.push(`FLUSH PRIVILEGES`)
     return sql
   }
