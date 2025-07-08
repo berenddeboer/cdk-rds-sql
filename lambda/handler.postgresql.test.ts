@@ -1,6 +1,7 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { Client, ClientConfig } from "pg"
 import { GenericContainer, StartedTestContainer } from "testcontainers"
+import { handler } from "./handler"
 import {
   createRequest,
   updateRequest,
@@ -12,7 +13,6 @@ import {
   rowCount,
   roleGrantedForSchema,
 } from "./util"
-import { handler } from "./handler"
 
 jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<

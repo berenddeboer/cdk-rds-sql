@@ -3,9 +3,15 @@ import { ConnectionOptions } from "tls"
 import { format as pgFormat } from "node-pg-format"
 import { Client, ClientConfig } from "pg"
 import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
+import {
+  EngineDatabaseProperties,
+  EngineRoleProperties,
+  EngineSchemaProperties,
+  EngineSqlProperties,
+} from "./types"
 
 export class PostgresqlEngine extends AbstractEngine {
-  createDatabase(resourceId: string, props?: any): string | string[] {
+  createDatabase(resourceId: string, props: EngineDatabaseProperties): string | string[] {
     const owner = props?.Owner
     if (owner) {
       return [
@@ -17,7 +23,11 @@ export class PostgresqlEngine extends AbstractEngine {
     }
   }
 
-  updateDatabase(resourceId: string, oldResourceId: string, props?: any): string[] {
+  updateDatabase(
+    resourceId: string,
+    oldResourceId: string,
+    props: EngineDatabaseProperties
+  ): string[] {
     const statements: string[] = []
     if (resourceId !== oldResourceId) {
       if (props?.MasterOwner) {
@@ -52,16 +62,16 @@ export class PostgresqlEngine extends AbstractEngine {
     ]
   }
 
-  async createRole(resourceId: string, props?: any): Promise<string[]> {
+  async createRole(resourceId: string, props: EngineRoleProperties): Promise<string[]> {
     const sql = ["start transaction"]
 
-    if (props.EnableIamAuth) {
+    if (props?.EnableIamAuth) {
       // Create role for IAM authentication
       sql.push(pgFormat("create role %I with login", resourceId))
       sql.push(pgFormat("grant rds_iam to %I", resourceId))
     } else {
       // Create role with password authentication
-      if (!props.PasswordArn) throw "No PasswordArn provided"
+      if (!props?.PasswordArn) throw "No PasswordArn provided"
       const password = await this.getPassword(props.PasswordArn)
       if (!password) {
         throw `Cannot parse password from ${props.PasswordArn}`
@@ -69,7 +79,7 @@ export class PostgresqlEngine extends AbstractEngine {
       sql.push(pgFormat("create role %I with login password %L", resourceId, password))
     }
 
-    if (props.DatabaseName) {
+    if (props?.DatabaseName) {
       sql.push(
         pgFormat(
           `DO $$
@@ -92,8 +102,8 @@ END$$;`,
   async updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any,
-    oldProps?: any
+    props: EngineRoleProperties,
+    oldProps: EngineRoleProperties
   ): Promise<string[]> {
     const sql = ["start transaction"]
 
@@ -166,7 +176,7 @@ END$$;`,
     return sql
   }
 
-  deleteRole(resourceId: string, props?: any): string[] {
+  deleteRole(resourceId: string, props: EngineRoleProperties): string[] {
     return [
       "start transaction",
       pgFormat(
@@ -186,7 +196,7 @@ END$$;`,
     ]
   }
 
-  createSchema(resourceId: string, props?: any): string[] {
+  createSchema(resourceId: string, props: EngineSchemaProperties): string[] {
     const sql: string[] = [pgFormat("create schema if not exists %I", resourceId)]
     if (props?.RoleName) {
       this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
@@ -196,7 +206,11 @@ END$$;`,
     return sql
   }
 
-  updateSchema(resourceId: string, oldResourceId: string, props?: any): string[] {
+  updateSchema(
+    resourceId: string,
+    oldResourceId: string,
+    props: EngineSchemaProperties
+  ): string[] {
     const sql: string[] = []
     if (props?.RoleName) {
       this.revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
@@ -212,7 +226,7 @@ END$$;`,
     return sql
   }
 
-  deleteSchema(resourceId: string, props?: any): string[] {
+  deleteSchema(resourceId: string, props: EngineSchemaProperties): string[] {
     const sql: string[] = []
     if (props?.RoleName) {
       this.revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) =>
@@ -223,16 +237,20 @@ END$$;`,
     return sql
   }
 
-  createSql(_resourceId: string, props?: any): string {
-    return props.Statement
+  createSql(_resourceId: string, props: EngineSqlProperties): string {
+    return props?.Statement || ""
   }
 
-  updateSql(_resourceId: string, _oldResourceId: string, props?: any): string {
-    return props.Statement
+  updateSql(
+    _resourceId: string,
+    _oldResourceId: string,
+    props: EngineSqlProperties
+  ): string {
+    return props?.Statement || ""
   }
 
-  deleteSql(_resourceId: string, props?: any): string {
-    return props.Rollback
+  deleteSql(_resourceId: string, props: EngineSqlProperties): string {
+    return props?.Rollback || ""
   }
 
   private grantRoleForSchema(schema: string, roleName: string): string[] {

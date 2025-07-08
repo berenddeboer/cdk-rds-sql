@@ -39,9 +39,14 @@ describe("MySQL Engine", () => {
       // Mock getPassword implementation
       jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
 
-      const sql = await engine.updateRole("newrole", "oldrole", {
-        PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
-      })
+      const sql = await engine.updateRole(
+        "newrole",
+        "oldrole",
+        {
+          PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+        },
+        {}
+      )
 
       expect(Array.isArray(sql)).toBe(true)
       expect(sql[0]).toContain("CREATE USER IF NOT EXISTS")
@@ -99,7 +104,9 @@ describe("MySQL Engine", () => {
         const sql = await engine.createRole("iamuser", props)
 
         expect(Array.isArray(sql)).toBe(true)
-        expect(sql[0]).toContain("CREATE USER IF NOT EXISTS 'iamuser'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'")
+        expect(sql[0]).toContain(
+          "CREATE USER IF NOT EXISTS 'iamuser'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+        )
         expect(sql[1]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'iamuser'@'%'")
         expect(sql[2]).toBe("FLUSH PRIVILEGES")
       })
@@ -116,8 +123,12 @@ describe("MySQL Engine", () => {
         const sql = await engine.createRole("passworduser", props)
 
         expect(Array.isArray(sql)).toBe(true)
-        expect(sql[0]).toContain("CREATE USER IF NOT EXISTS 'passworduser'@'%' IDENTIFIED BY 'test-password'")
-        expect(sql[1]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'passworduser'@'%'")
+        expect(sql[0]).toContain(
+          "CREATE USER IF NOT EXISTS 'passworduser'@'%' IDENTIFIED BY 'test-password'"
+        )
+        expect(sql[1]).toContain(
+          "GRANT ALL PRIVILEGES ON `testdb`.* TO 'passworduser'@'%'"
+        )
         expect(sql[2]).toBe("FLUSH PRIVILEGES")
       })
 
@@ -132,11 +143,18 @@ describe("MySQL Engine", () => {
           DatabaseName: "testdb",
         }
 
-        const sql = await engine.updateRole("switchuser", "switchuser", newProps, oldProps)
+        const sql = await engine.updateRole(
+          "switchuser",
+          "switchuser",
+          newProps,
+          oldProps
+        )
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toContain("DROP USER IF EXISTS 'switchuser'@'%'")
-        expect(sql[1]).toContain("CREATE USER 'switchuser'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'")
+        expect(sql[1]).toContain(
+          "CREATE USER 'switchuser'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+        )
         expect(sql[2]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'switchuser'@'%'")
         expect(sql[3]).toBe("FLUSH PRIVILEGES")
       })
@@ -154,11 +172,18 @@ describe("MySQL Engine", () => {
           DatabaseName: "testdb",
         }
 
-        const sql = await engine.updateRole("switchuser", "switchuser", newProps, oldProps)
+        const sql = await engine.updateRole(
+          "switchuser",
+          "switchuser",
+          newProps,
+          oldProps
+        )
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toContain("DROP USER IF EXISTS 'switchuser'@'%'")
-        expect(sql[1]).toContain("CREATE USER 'switchuser'@'%' IDENTIFIED BY 'new-password'")
+        expect(sql[1]).toContain(
+          "CREATE USER 'switchuser'@'%' IDENTIFIED BY 'new-password'"
+        )
         expect(sql[2]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'switchuser'@'%'")
         expect(sql[3]).toBe("FLUSH PRIVILEGES")
       })

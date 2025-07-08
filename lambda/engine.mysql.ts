@@ -1,13 +1,19 @@
 import * as fs from "fs"
 import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
+import {
+  EngineDatabaseProperties,
+  EngineRoleProperties,
+  EngineSchemaProperties,
+  EngineSqlProperties,
+} from "./types"
 
 export class MysqlEngine extends AbstractEngine {
-  createDatabase(resourceId: string, props?: any): string[] {
+  createDatabase(resourceId: string, props: EngineDatabaseProperties): string[] {
     const sql = [`CREATE DATABASE IF NOT EXISTS \`${resourceId}\``]
 
-    if (props?.Owner) {
+    if (props.Owner) {
       sql.push(`GRANT ALL PRIVILEGES ON \`${resourceId}\`.* TO '${props.Owner}'@'%'`)
-      sql.push(`FLUSH PRIVILEGES`)
+      sql.push("FLUSH PRIVILEGES")
     }
 
     return sql
@@ -21,7 +27,7 @@ export class MysqlEngine extends AbstractEngine {
     return [`DROP DATABASE IF EXISTS \`${resourceId}\``]
   }
 
-  async createRole(resourceId: string, props?: any): Promise<string[]> {
+  async createRole(resourceId: string, props: EngineRoleProperties): Promise<string[]> {
     const sql: string[] = []
 
     if (props.EnableIamAuth) {
@@ -46,21 +52,21 @@ export class MysqlEngine extends AbstractEngine {
       )
     }
 
-    sql.push(`FLUSH PRIVILEGES`)
+    sql.push("FLUSH PRIVILEGES")
     return sql
   }
 
   async updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any,
-    oldProps?: any
+    props: EngineRoleProperties,
+    oldProps: EngineRoleProperties
   ): Promise<string[]> {
     const sql: string[] = []
 
     if (oldResourceId !== resourceId) {
       // MySQL doesn't allow renaming users directly, we need to create a new one and drop the old one
-      if (props?.EnableIamAuth) {
+      if (props.EnableIamAuth) {
         // Create new user with IAM auth
         sql.push(
           `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`
@@ -124,13 +130,13 @@ export class MysqlEngine extends AbstractEngine {
     }
 
     if (sql.length > 0) {
-      sql.push(`FLUSH PRIVILEGES`)
+      sql.push("FLUSH PRIVILEGES")
     }
 
     return sql
   }
 
-  deleteRole(resourceId: string, props?: any): string[] {
+  deleteRole(resourceId: string, props: EngineRoleProperties): string[] {
     const sql: string[] = []
 
     if (props?.DatabaseName) {
@@ -140,33 +146,41 @@ export class MysqlEngine extends AbstractEngine {
     }
 
     sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
-    sql.push(`FLUSH PRIVILEGES`)
+    sql.push("FLUSH PRIVILEGES")
 
     return sql
   }
 
-  createSchema(_resourceId: string, _props?: any): string[] {
+  createSchema(_resourceId: string, _props: EngineSchemaProperties): string[] {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
-  updateSchema(_resourceId: string, _oldResourceId: string, _props?: any): string[] {
+  updateSchema(
+    _resourceId: string,
+    _oldResourceId: string,
+    _props: EngineSchemaProperties
+  ): string[] {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
-  deleteSchema(_resourceId: string, _props?: any): string[] {
+  deleteSchema(_resourceId: string, _props: EngineSchemaProperties): string[] {
     throw new Error("Schemas are not supported in MySQL/MariaDB")
   }
 
-  createSql(_resourceId: string, props?: any): string {
-    return props.Statement
+  createSql(_resourceId: string, props: EngineSqlProperties): string {
+    return props?.Statement || ""
   }
 
-  updateSql(_resourceId: string, _oldResourceId: string, props?: any): string {
-    return props.Statement
+  updateSql(
+    _resourceId: string,
+    _oldResourceId: string,
+    props: EngineSqlProperties
+  ): string {
+    return props?.Statement || ""
   }
 
-  deleteSql(_resourceId: string, props?: any): string {
-    return props.Rollback
+  deleteSql(_resourceId: string, props: EngineSqlProperties): string {
+    return props?.Rollback || ""
   }
 
   async executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any> {
@@ -207,9 +221,9 @@ export class MysqlEngine extends AbstractEngine {
     const connection = await createConnection(connectionConfig)
     try {
       if (typeof sql === "string") {
-        return connection.query(sql)
+        return await connection.query(sql)
       } else if (sql) {
-        return Promise.all(sql.map((statement) => connection.query(statement)))
+        return await Promise.all(sql.map((statement) => connection.query(statement)))
       }
     } finally {
       await connection.end()

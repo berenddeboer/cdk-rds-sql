@@ -1,7 +1,30 @@
 import { CloudFormationCustomResourceResourcePropertiesCommon } from "aws-lambda"
 import { RdsSqlResource } from "../src/enum"
 
-// Common properties shared by all resources
+// Engine-specific interfaces (business logic properties only)
+export interface EngineDatabaseProperties {
+  readonly Owner?: string
+  readonly MasterOwner?: string
+}
+
+export interface EngineRoleProperties {
+  readonly PasswordArn?: string
+  readonly DatabaseName?: string
+  readonly EnableIamAuth?: boolean
+}
+
+export interface EngineSchemaProperties {
+  readonly DatabaseName?: string
+  readonly RoleName?: string
+}
+
+export interface EngineSqlProperties {
+  readonly DatabaseName?: string
+  readonly Statement?: string
+  readonly Rollback?: string
+}
+
+// Common CloudFormation properties shared by all resources
 export interface CommonProperties
   extends CloudFormationCustomResourceResourcePropertiesCommon {
   readonly Resource: RdsSqlResource
@@ -9,32 +32,21 @@ export interface CommonProperties
   readonly SecretArn: string
 }
 
-// Database specific properties
-export interface DatabaseProperties extends CommonProperties {
+// CloudFormation-specific properties (engine properties + CloudFormation metadata)
+export interface DatabaseProperties extends CommonProperties, EngineDatabaseProperties {
   readonly Resource: RdsSqlResource.DATABASE
-  readonly Owner?: string
 }
 
-// Role specific properties
-export interface RoleProperties extends CommonProperties {
+export interface RoleProperties extends CommonProperties, EngineRoleProperties {
   readonly Resource: RdsSqlResource.ROLE
-  readonly PasswordArn?: string
-  readonly DatabaseName?: string
 }
 
-// Schema specific properties
-export interface SchemaProperties extends CommonProperties {
+export interface SchemaProperties extends CommonProperties, EngineSchemaProperties {
   readonly Resource: RdsSqlResource.SCHEMA
-  readonly DatabaseName?: string
-  readonly RoleName?: string
 }
 
-// SQL specific properties
-export interface SqlProperties extends CommonProperties {
+export interface SqlProperties extends CommonProperties, EngineSqlProperties {
   readonly Resource: RdsSqlResource.SQL
-  readonly DatabaseName?: string
-  readonly Statement?: string
-  readonly Rollback?: string
 }
 
 // Parameter password specific properties

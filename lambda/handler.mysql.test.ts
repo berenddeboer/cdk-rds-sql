@@ -1,8 +1,8 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { createConnection } from "mysql2/promise"
 import { GenericContainer, StartedTestContainer } from "testcontainers"
-import { createRequest, updateRequest, deleteRequest } from "./util"
 import { handler } from "./handler"
+import { createRequest, updateRequest, deleteRequest } from "./util"
 
 jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
@@ -57,14 +57,14 @@ afterEach(async () => {
 // Helper functions for MySQL tests
 async function databaseExists(connection: any, dbName: string): Promise<boolean> {
   const [rows] = await connection.query(
-    `SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?`,
+    "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?",
     [dbName]
   )
   return rows.length > 0
 }
 
 async function userExists(connection: any, username: string): Promise<boolean> {
-  const [rows] = await connection.query(`SELECT User FROM mysql.user WHERE User = ?`, [
+  const [rows] = await connection.query("SELECT User FROM mysql.user WHERE User = ?", [
     username,
   ])
   return rows.length > 0
@@ -76,7 +76,7 @@ async function tableExists(
   tableName: string
 ): Promise<boolean> {
   const [rows] = await connection.query(
-    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+    "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
     [dbName, tableName]
   )
   return rows.length > 0

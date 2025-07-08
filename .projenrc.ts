@@ -47,11 +47,15 @@ const project = new awscdk.AwsCdkConstructLibrary({
     compilerOptions: {
       esModuleInterop: true,
       noUnusedLocals: false,
+      target: "es2022",
+      noImplicitOverride: true,
+      noUncheckedIndexedAccess: false,
     },
+    include: ["lambda/**/*.ts"],
   },
   eslint: true,
   eslintOptions: {
-    dirs: ["src"],
+    dirs: ["src", "lambda"],
     prettier: true,
   },
   gitignore: tmpDirectories,
@@ -88,6 +92,14 @@ if (project.eslint) {
       quotes: ["warn", "double"],
     },
   })
+
+  // Add an override for lambda directory to disable import/no-extraneous-dependencies
+  project.eslint.addOverride({
+    files: ["lambda/*.ts"],
+    rules: {
+      "import/no-extraneous-dependencies": "off",
+    },
+  })
 }
 
 project.addTask("integ:deploy:postgresql:serverless", {
@@ -114,6 +126,11 @@ project.addTask("build:handler", {
 project.addTask("copy:handler", {
   description: "Copy transpiled handler into lib",
   exec: "cp src/handler/handler.js lib/handler/handler.js",
+})
+
+project.addTask("typecheck", {
+  description: "Typecheck typescript",
+  exec: "npx tsc --project tsconfig.dev.json --noEmit",
 })
 
 // Hook these tasks into the build process

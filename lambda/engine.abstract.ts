@@ -3,6 +3,12 @@ import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager"
+import {
+  EngineDatabaseProperties,
+  EngineRoleProperties,
+  EngineSchemaProperties,
+  EngineSqlProperties,
+} from "./types"
 
 export interface EngineConnectionConfig {
   host: string
@@ -23,38 +29,50 @@ export abstract class AbstractEngine {
         : (_message?: any, ..._optionalParams: any[]) => {}
   }
 
-  abstract createDatabase(resourceId: string, props?: any): string | string[]
+  abstract createDatabase(
+    resourceId: string,
+    props: EngineDatabaseProperties
+  ): string | string[]
   abstract updateDatabase(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props: EngineDatabaseProperties
   ): string | string[]
   abstract deleteDatabase(resourceId: string, masterUser: string): string | string[]
 
-  abstract createRole(resourceId: string, props?: any): Promise<string | string[]>
+  abstract createRole(
+    resourceId: string,
+    props: EngineRoleProperties
+  ): Promise<string | string[]>
   abstract updateRole(
     resourceId: string,
     oldResourceId: string,
-    props?: any,
-    oldProps?: any
+    props: EngineRoleProperties,
+    oldProps: EngineRoleProperties
   ): Promise<string | string[]>
-  abstract deleteRole(resourceId: string, props?: any): string | string[]
+  abstract deleteRole(resourceId: string, props: EngineRoleProperties): string | string[]
 
-  abstract createSchema(resourceId: string, props?: any): string | string[]
+  abstract createSchema(
+    resourceId: string,
+    props: EngineSchemaProperties
+  ): string | string[]
   abstract updateSchema(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props: EngineSchemaProperties
   ): string | string[]
-  abstract deleteSchema(resourceId: string, props?: any): string | string[]
+  abstract deleteSchema(
+    resourceId: string,
+    props: EngineSchemaProperties
+  ): string | string[]
 
-  abstract createSql(resourceId: string, props?: any): string | string[]
+  abstract createSql(resourceId: string, props: EngineSqlProperties): string | string[]
   abstract updateSql(
     resourceId: string,
     oldResourceId: string,
-    props?: any
+    props: EngineSqlProperties
   ): string | string[]
-  abstract deleteSql(resourceId: string, props?: any): string | string[]
+  abstract deleteSql(resourceId: string, props: EngineSqlProperties): string | string[]
 
   abstract executeSQL(
     sql: string | string[],

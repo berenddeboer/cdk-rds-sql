@@ -15,10 +15,21 @@ import {
   CloudFormationCustomResourceDeleteEvent,
 } from "aws-lambda"
 import { backOff } from "exponential-backoff"
-import { EngineFactory } from "./engine.factory"
 import { EngineConnectionConfig } from "./engine.abstract"
+import { EngineFactory } from "./engine.factory"
+import {
+  ResourceProperties,
+  CustomResourceResponse,
+  DatabaseProperties,
+  RoleProperties,
+  SchemaProperties,
+  SqlProperties,
+  EngineDatabaseProperties,
+  EngineRoleProperties,
+  EngineSchemaProperties,
+  EngineSqlProperties,
+} from "./types"
 import { RdsSqlResource } from "../src/enum"
-import { ResourceProperties, CustomResourceResponse } from "./types"
 
 const maxAttempts = 20
 
@@ -28,6 +39,36 @@ const log =
     : (_message?: any, ..._optionalParams: any[]) => {}
 
 const secrets_client = new SecretsManagerClient({})
+
+// Helper functions to extract engine properties from CloudFormation properties
+// These functions throw if the resource type doesn't match the expected type
+function toDatabaseEngineProps(props: ResourceProperties): EngineDatabaseProperties {
+  if (props.Resource !== RdsSqlResource.DATABASE) {
+    throw new Error(`Expected DATABASE resource, got ${props.Resource}`)
+  }
+  return props
+}
+
+function toRoleEngineProps(props: ResourceProperties): EngineRoleProperties {
+  if (props.Resource !== RdsSqlResource.ROLE) {
+    throw new Error(`Expected ROLE resource, got ${props.Resource}`)
+  }
+  return props
+}
+
+function toSchemaEngineProps(props: ResourceProperties): EngineSchemaProperties {
+  if (props.Resource !== RdsSqlResource.SCHEMA) {
+    throw new Error(`Expected SCHEMA resource, got ${props.Resource}`)
+  }
+  return props
+}
+
+function toSqlEngineProps(props: ResourceProperties): EngineSqlProperties {
+  if (props.Resource !== RdsSqlResource.SQL) {
+    throw new Error(`Expected SQL resource, got ${props.Resource}`)
+  }
+  return props
+}
 
 export const handler = async (
   event:
@@ -82,16 +123,25 @@ export const handler = async (
     case "Create": {
       switch (resource) {
         case RdsSqlResource.DATABASE:
-          sql = dbEngine.createDatabase(resourceId, event.ResourceProperties)
+          sql = dbEngine.createDatabase(
+            resourceId,
+            toDatabaseEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.ROLE:
-          sql = await dbEngine.createRole(resourceId, event.ResourceProperties)
+          sql = await dbEngine.createRole(
+            resourceId,
+            toRoleEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.SCHEMA:
-          sql = dbEngine.createSchema(resourceId, event.ResourceProperties)
+          sql = dbEngine.createSchema(
+            resourceId,
+            toSchemaEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.SQL:
-          sql = dbEngine.createSql(resourceId, event.ResourceProperties)
+          sql = dbEngine.createSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
@@ -104,24 +154,35 @@ export const handler = async (
         .PhysicalResourceId
       switch (resource) {
         case RdsSqlResource.DATABASE:
+          const dbProps = toDatabaseEngineProps(event.ResourceProperties)
           sql = dbEngine.updateDatabase(resourceId, oldResourceId, {
-            ...event.ResourceProperties,
+            ...dbProps,
             MasterOwner: secretValues.username,
           })
           break
         case RdsSqlResource.ROLE:
+          const updateEvent =
+            event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
           sql = await dbEngine.updateRole(
             resourceId,
             oldResourceId,
-            event.ResourceProperties,
-            (event as CloudFormationCustomResourceUpdateEvent).OldResourceProperties
+            toRoleEngineProps(event.ResourceProperties),
+            toRoleEngineProps(updateEvent.OldResourceProperties)
           )
           break
         case RdsSqlResource.SCHEMA:
-          sql = dbEngine.updateSchema(resourceId, oldResourceId, event.ResourceProperties)
+          sql = dbEngine.updateSchema(
+            resourceId,
+            oldResourceId,
+            toSchemaEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.SQL:
-          sql = dbEngine.updateSql(resourceId, oldResourceId, event.ResourceProperties)
+          sql = dbEngine.updateSql(
+            resourceId,
+            oldResourceId,
+            toSqlEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
@@ -136,13 +197,19 @@ export const handler = async (
           sql = dbEngine.deleteDatabase(resourceId, secretValues.username)
           break
         case RdsSqlResource.ROLE:
-          sql = dbEngine.deleteRole(resourceId, event.ResourceProperties)
+          sql = dbEngine.deleteRole(
+            resourceId,
+            toRoleEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.SCHEMA:
-          sql = dbEngine.deleteSchema(resourceId, event.ResourceProperties)
+          sql = dbEngine.deleteSchema(
+            resourceId,
+            toSchemaEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.SQL:
-          sql = dbEngine.deleteSql(resourceId, event.ResourceProperties)
+          sql = dbEngine.deleteSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await deleteParameterPassword(event.ResourceProperties)

@@ -58,8 +58,8 @@ describe("PostgreSQL Engine", () => {
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
-        expect(sql).toContain('create role iamrole with login')
-        expect(sql).toContain('grant rds_iam to iamrole')
+        expect(sql).toContain("create role iamrole with login")
+        expect(sql).toContain("grant rds_iam to iamrole")
         expect(sql[sql.length - 1]).toBe("commit")
       })
 
@@ -76,7 +76,9 @@ describe("PostgreSQL Engine", () => {
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
-        expect(sql).toContain('create role passwordrole with login password \'test-password\'')
+        expect(sql).toContain(
+          "create role passwordrole with login password 'test-password'"
+        )
         expect(sql[sql.length - 1]).toBe("commit")
       })
 
@@ -90,11 +92,16 @@ describe("PostgreSQL Engine", () => {
           EnableIamAuth: true,
         }
 
-        const sql = await engine.updateRole("switchrole", "switchrole", newProps, oldProps)
+        const sql = await engine.updateRole(
+          "switchrole",
+          "switchrole",
+          newProps,
+          oldProps
+        )
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
-        expect(sql).toContain('grant rds_iam to switchrole')
+        expect(sql).toContain("grant rds_iam to switchrole")
         expect(sql[sql.length - 1]).toBe("commit")
       })
 
@@ -110,12 +117,17 @@ describe("PostgreSQL Engine", () => {
           PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
         }
 
-        const sql = await engine.updateRole("switchrole", "switchrole", newProps, oldProps)
+        const sql = await engine.updateRole(
+          "switchrole",
+          "switchrole",
+          newProps,
+          oldProps
+        )
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
-        expect(sql).toContain('revoke rds_iam from switchrole')
-        expect(sql).toContain('alter role switchrole with password \'new-password\'')
+        expect(sql).toContain("revoke rds_iam from switchrole")
+        expect(sql).toContain("alter role switchrole with password 'new-password'")
         expect(sql[sql.length - 1]).toBe("commit")
       })
     })
@@ -125,7 +137,7 @@ describe("PostgreSQL Engine", () => {
   describe("Database", () => {
     it("should generate correct SQL for creating a database", () => {
       const sql = engine.createDatabase("testdb", {})
-      expect(sql).toContain('create database testdb')
+      expect(sql).toContain("create database testdb")
     })
   })
 

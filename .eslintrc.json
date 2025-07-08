@@ -148,6 +148,14 @@
     },
     {
       "files": [
+        "lambda/*.ts"
+      ],
+      "rules": {
+        "import/no-extraneous-dependencies": "off"
+      }
+    },
+    {
+      "files": [
         ".projenrc.ts"
       ],
       "rules": {
