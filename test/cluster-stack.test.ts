@@ -101,7 +101,7 @@ test("serverless v2", () => {
     },
   })
   template.hasResourceProperties("AWS::Lambda::Function", {
-    Runtime: "nodejs20.x",
+    Runtime: "nodejs22.x",
     Environment: {
       Variables: {
         LOGGER: "false",
@@ -205,7 +205,7 @@ test("credentials stored in parameters", () => {
   // Verify custom resource for password parameter is created
   template.hasResourceProperties("AWS::Lambda::Function", {
     Handler: "index.handler",
-    Runtime: "nodejs20.x",
+    Runtime: "nodejs22.x",
   })
 
   template.hasResourceProperties("AWS::IAM::Policy", {
@@ -296,7 +296,7 @@ test("ssl can be disabled", () => {
   })
   const template = Template.fromStack(stack)
   template.hasResourceProperties("AWS::Lambda::Function", {
-    Runtime: "nodejs20.x",
+    Runtime: "nodejs22.x",
     Environment: {
       Variables: {
         LOGGER: "false",

@@ -178,7 +178,7 @@ export class Provider extends Construct {
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
       entry: entry,
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_22_X,
       timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
       bundling: {
         // Include the migrations directory in the bundle
