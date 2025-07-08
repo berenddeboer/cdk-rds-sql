@@ -37,8 +37,11 @@ export interface DatabaseProperties extends CommonProperties, EngineDatabaseProp
   readonly Resource: RdsSqlResource.DATABASE
 }
 
-export interface RoleProperties extends CommonProperties, EngineRoleProperties {
+export interface RoleProperties extends CommonProperties {
   readonly Resource: RdsSqlResource.ROLE
+  readonly PasswordArn?: string
+  readonly DatabaseName?: string
+  readonly EnableIamAuth?: string // CloudFormation passes boolean as string
 }
 
 export interface SchemaProperties extends CommonProperties, EngineSchemaProperties {

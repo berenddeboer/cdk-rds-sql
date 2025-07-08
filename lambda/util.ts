@@ -25,7 +25,7 @@ export interface ResourcePropertiesInput {
 export const createRequest = (
   resource: string,
   resourceId: string,
-  props?: ResourcePropertiesInput
+  props?: Partial<ResourceProperties>
 ): CloudFormationCustomResourceCreateEvent<ResourceProperties> => {
   return {
     ServiceToken: "",
@@ -41,7 +41,7 @@ export const createRequest = (
       SecretArn:
         props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
-    } as unknown as ResourceProperties,
+    },
     RequestType: "Create",
   }
 }

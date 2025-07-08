@@ -49,7 +49,11 @@ function toRoleEngineProps(props: ResourceProperties): EngineRoleProperties {
   if (props.Resource !== RdsSqlResource.ROLE) {
     throw new Error(`Expected ROLE resource, got ${props.Resource}`)
   }
-  return props
+  // Convert string 'true'/'false' to boolean for EnableIamAuth
+  return {
+    ...props,
+    EnableIamAuth: props.EnableIamAuth === "true" || props.EnableIamAuth === "1",
+  }
 }
 
 function toSchemaEngineProps(props: ResourceProperties): EngineSchemaProperties {

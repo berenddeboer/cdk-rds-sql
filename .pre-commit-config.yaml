@@ -56,5 +56,5 @@ repos:
         exclude: .projenrc.ts
         name: test
         language: system
-        entry: sh -c 'npx projen test'
+        entry: sh -c 'npx projen test --coverage=false'
         files: \.ts$
