@@ -8,19 +8,6 @@ jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
   typeof SecretsManagerClient
 >
-SecretsManagerClientMock.prototype.send.mockImplementation(() => {
-  return {
-    SecretString: JSON.stringify({
-      host: mysqlHost,
-      port: mysqlPort,
-      username: DB_MASTER_USERNAME,
-      password: DB_MASTER_PASSWORD,
-      dbname: DB_DEFAULT_DB,
-      engine: "mysql",
-      dbClusterIdentifier: "dummy",
-    }),
-  }
-})
 
 const DB_PORT = 3306
 const DB_MASTER_USERNAME = "root"
@@ -45,6 +32,21 @@ beforeEach(async () => {
     .start()
   mysqlHost = mysqlContainer.getHost()
   mysqlPort = mysqlContainer.getMappedPort(DB_PORT)
+
+  // Set up the mock after we have the host and port values
+  SecretsManagerClientMock.prototype.send.mockImplementation(() => {
+    return {
+      SecretString: JSON.stringify({
+        host: mysqlHost,
+        port: mysqlPort,
+        username: DB_MASTER_USERNAME,
+        password: DB_MASTER_PASSWORD,
+        dbname: DB_DEFAULT_DB,
+        engine: "mysql",
+        dbClusterIdentifier: "dummy",
+      }),
+    }
+  })
 }, 30000)
 
 afterEach(async () => {
@@ -103,7 +105,7 @@ test("database", async () => {
   const newDatabaseName = "mydb2"
   const create = createRequest("database", oldDatabaseName)
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(1)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(1)
   const connection = await newConnection()
   try {
     expect(await databaseExists(connection, oldDatabaseName)).toEqual(true)
@@ -188,7 +190,7 @@ describe("User creation", () => {
       DatabaseName: DB_DEFAULT_DB,
     })
     await handler(create)
-    expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+    expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(2)
 
     const connection = await newConnection()
     try {
@@ -227,7 +229,7 @@ describe("User creation", () => {
       DatabaseName: DB_DEFAULT_DB,
     })
     await handler(create)
-    expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+    expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(2)
 
     const connection = await newConnection()
     try {

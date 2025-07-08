@@ -32,8 +32,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   jestOptions: {
     jestVersion: "~29",
     jestConfig: {
-      //testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
-      testMatch: ["test/*.test.ts", "lambda/*.test.ts"],
+      testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
       maxConcurrency: 2,
       maxWorkers: 2,
@@ -61,7 +60,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   gitignore: tmpDirectories,
   npmignore: tmpDirectories,
   docgen: false,
-  workflowNodeVersion: "20.x",
+  workflowNodeVersion: "22.x",
   deps: ["@types/aws-lambda"],
   bundledDeps: ["@types/aws-lambda"],
   devDeps: [

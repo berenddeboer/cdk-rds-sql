@@ -105,8 +105,7 @@
   "jest": {
     "coverageProvider": "v8",
     "testMatch": [
-      "test/*.test.ts",
-      "lambda/*.test.ts",
+      "<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts",
       "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
       "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",

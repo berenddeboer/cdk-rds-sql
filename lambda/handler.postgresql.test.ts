@@ -71,7 +71,7 @@ test("schema", async () => {
   const newSchemaName = "test2"
   const create = createRequest("schema", oldSchemaName)
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(1)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(1)
 
   const client = await newClient()
   try {
@@ -128,7 +128,7 @@ test("role with existing database", async () => {
     DatabaseName: "postgres",
   })
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(2)
   const client = await newClient()
   try {
     expect(await roleExists(client, oldRoleName)).toEqual(true)
@@ -165,7 +165,7 @@ test("role without database", async () => {
     PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
   })
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(2)
   const client = await newClient()
   try {
     expect(await roleExists(client, roleName)).toEqual(true)
@@ -180,7 +180,7 @@ test("change role password", async () => {
     PasswordArn: "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
   })
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(2)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(2)
   const client = await newClient()
   try {
     expect(await roleExists(client, roleName)).toEqual(true)
@@ -198,7 +198,7 @@ test("database", async () => {
   const newDatabaseName = "mydb2"
   const create = createRequest("database", oldDatabaseName)
   await handler(create)
-  expect(SecretsManagerClientMock).toHaveBeenCalledTimes(1)
+  expect(SecretsManagerClientMock.prototype.send).toHaveBeenCalledTimes(1)
   const client = await newClient()
   try {
     expect(await databaseExists(client, oldDatabaseName)).toEqual(true)
