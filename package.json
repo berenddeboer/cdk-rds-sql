@@ -117,8 +117,8 @@
       "/.github/",
       "/dist/"
     ],
-    "maxConcurrency": 2,
-    "maxWorkers": 2,
+    "maxConcurrency": 4,
+    "maxWorkers": 4,
     "clearMocks": true,
     "collectCoverage": true,
     "coverageReporters": [

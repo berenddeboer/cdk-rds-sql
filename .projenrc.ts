@@ -29,13 +29,20 @@ const project = new awscdk.AwsCdkConstructLibrary({
     workflow: false,
   },
   minNodeVersion: "22.14",
+  githubOptions: {
+    pullRequestLintOptions: {
+      semanticTitleOptions: {
+        types: ["feat", "fix", "chore", "test"],
+      },
+    },
+  },
   jestOptions: {
     jestVersion: "~29",
     jestConfig: {
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
-      maxConcurrency: 2,
-      maxWorkers: 2,
+      maxConcurrency: 4,
+      maxWorkers: 4,
     },
   },
   typescriptVersion: "~5.8",
