@@ -28,4 +28,5 @@ jobs:
             fix
             chore
             test
+            vendor
           requireScope: false

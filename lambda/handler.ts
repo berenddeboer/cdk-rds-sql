@@ -110,8 +110,9 @@ export const handler = async (
       startingDelay: 500,
     }
   )
-  if (!secret.SecretString)
+  if (!secret.SecretString) {
     throw `No secret string in ${event.ResourceProperties.SecretArn}`
+  }
   const secretValues = JSON.parse(secret.SecretString)
 
   // Determine the database engine type

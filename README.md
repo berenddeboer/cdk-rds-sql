@@ -201,9 +201,7 @@ Your application will need an IAM policy like this to connect:
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "rds-db:connect"
-      ],
+      "Action": ["rds-db:connect"],
       "Resource": [
         "arn:aws:rds-db:region:account-id:dbuser:cluster-resource-id/myiamrole"
       ]
@@ -434,6 +432,3 @@ If you want to use an existing vpc:
 # To do
 
 - Update role: will not revoke connect to previous database if database name has changed.
-- If the cluster is configured for autopausing, wake cluster up before doing any SQL operations.
-- We rename roles and database on update: is that actually the best
-  thing? More change to get us into an irrecoverable situation??

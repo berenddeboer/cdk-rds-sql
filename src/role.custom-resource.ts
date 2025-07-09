@@ -50,8 +50,9 @@ export interface RoleProps {
 
 export class Role extends CustomResource {
   constructor(scope: Construct, id: string, props: RoleProps) {
-    if (props.database && props.databaseName)
+    if (props.database && props.databaseName) {
       throw "Specify either database or databaseName"
+    }
     super(scope, id, {
       serviceToken: props.provider.serviceToken,
       properties: {

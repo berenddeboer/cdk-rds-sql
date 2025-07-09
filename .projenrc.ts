@@ -19,7 +19,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   authorEmail: "berend@pobox.com",
   name: "cdk-rds-sql",
   description:
-    "A CDK construct that allows creating roles and databases an on Aurora Serverless Postgresql cluster.",
+    "A CDK construct that allows creating roles or users and databases an on Aurora Serverless Postgresql or Mysql/MariaDB cluster.",
   defaultReleaseBranch: "main",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
@@ -32,7 +32,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   githubOptions: {
     pullRequestLintOptions: {
       semanticTitleOptions: {
-        types: ["feat", "fix", "chore", "test"],
+        types: ["feat", "fix", "chore", "test", "vendor"],
       },
     },
   },
@@ -47,7 +47,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   },
   typescriptVersion: "~5.8",
   constructsVersion: "10.3.0",
-  cdkVersion: "2.171.1",
+  cdkVersion: "2.189.1",
   jsiiVersion: "~5.7.0",
   tsconfigDev: {
     compilerOptions: {
@@ -80,7 +80,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "node-pg-format",
     "pg@^8.13.3",
     "source-map-support",
-    "testcontainers@10",
+    "testcontainers@11",
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql"],
   minMajorVersion: 1,

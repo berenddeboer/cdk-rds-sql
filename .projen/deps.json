@@ -122,7 +122,7 @@
     },
     {
       "name": "testcontainers",
-      "version": "10",
+      "version": "11",
       "type": "build"
     },
     {
@@ -145,7 +145,7 @@
     },
     {
       "name": "aws-cdk-lib",
-      "version": "^2.171.1",
+      "version": "^2.189.1",
       "type": "peer"
     },
     {
