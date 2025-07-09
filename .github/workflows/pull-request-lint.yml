@@ -27,4 +27,5 @@ jobs:
             feat
             fix
             chore
+            test
           requireScope: false

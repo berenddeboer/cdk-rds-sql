@@ -73,7 +73,7 @@ npm run package-all
 
 - **Framework**: Jest with TypeScript support
 - **Test Files**: Located in `test/` and `lambda/` directories
-- **Configuration**: Max 2 concurrent workers for database tests
+- **Configuration**: See `jestOptions` in `.projenrc.ts`.
 - **Coverage**: Enabled with multiple reporters (json, lcov, clover, cobertura, text)
 
 ## Database Engine Support
@@ -92,7 +92,13 @@ npm run package-all
 
 ## Build Process
 
-The project uses projen for build management. Do not change files managed by projen, but instead change `.projenrc.ts`
+The project uses projen for build management. Do not change files
+managed by projen, but instead change `.projenrc.ts`. After changing
+`.projenrc.ts` run `npx projen`.
+
+In particular:
+
+1. Do not change `package.json`.
 
 Projen tasks:
 
