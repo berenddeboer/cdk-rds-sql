@@ -18,7 +18,7 @@ let mysqlContainer: StartedTestContainer
 let mysqlHost: string
 let mysqlPort: number
 
-beforeEach(async () => {
+beforeAll(async () => {
   process.env.LOGGER = "true"
   process.env.SSL = "false"
   process.env.CONNECTION_TIMEOUT = "5000"
@@ -47,12 +47,41 @@ beforeEach(async () => {
       }),
     }
   })
-}, 30000)
+}, 60000)
 
-afterEach(async () => {
-  jest.clearAllMocks()
+afterAll(async () => {
   if (mysqlContainer) {
     await mysqlContainer.stop()
+  }
+})
+
+beforeEach(async () => {
+  jest.clearAllMocks()
+
+  // Clean up databases and users created by tests
+  const connection = await newConnection()
+
+  try {
+    // Drop all databases except system ones and default
+    const [databases] = await connection.query(
+      "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys', ?)",
+      [DB_DEFAULT_DB]
+    )
+
+    for (const db of databases) {
+      await connection.query(`DROP DATABASE IF EXISTS \`${db.SCHEMA_NAME}\``)
+    }
+
+    // Drop all users except system ones
+    const [users] = await connection.query(
+      "SELECT User FROM mysql.user WHERE User NOT IN ('mysql.sys', 'mysql.session', 'mysql.infoschema', 'root')"
+    )
+
+    for (const user of users) {
+      await connection.query(`DROP USER IF EXISTS '${user.User}'@'%'`)
+    }
+  } finally {
+    await connection.end()
   }
 })
 

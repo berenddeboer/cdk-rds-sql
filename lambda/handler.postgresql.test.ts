@@ -41,7 +41,7 @@ let pgContainer: StartedTestContainer
 let pgHost: string
 let pgPort: number
 
-beforeEach(async () => {
+beforeAll(async () => {
   process.env.LOGGER = "true"
   process.env.SSL = "false"
   process.env.CONNECTION_TIMEOUT = "5000"
@@ -55,12 +55,59 @@ beforeEach(async () => {
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
-}, 30000)
+}, 60000)
 
-afterEach(async () => {
-  jest.clearAllMocks()
+afterAll(async () => {
   if (pgContainer) {
     await pgContainer.stop()
+  }
+})
+
+beforeEach(async () => {
+  jest.clearAllMocks()
+
+  // Clean up databases, schemas, and roles created by tests
+  const client = new Client({
+    host: pgHost,
+    port: pgPort,
+    database: DB_DEFAULT_DB,
+    user: DB_MASTER_USERNAME,
+    password: DB_MASTER_PASSWORD,
+  })
+
+  await client.connect()
+
+  try {
+    // Drop all databases except system ones and default
+    const databases = await client.query(
+      "SELECT datname FROM pg_database WHERE datistemplate = false AND datname != $1",
+      [DB_DEFAULT_DB]
+    )
+
+    for (const db of databases.rows) {
+      await client.query(`DROP DATABASE IF EXISTS "${db.datname}"`)
+    }
+
+    // Drop all schemas except system ones
+    const schemas = await client.query(
+      "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast', 'public')"
+    )
+
+    for (const schema of schemas.rows) {
+      await client.query(`DROP SCHEMA IF EXISTS "${schema.schema_name}" CASCADE`)
+    }
+
+    // Drop all roles except system ones
+    const roles = await client.query(
+      "SELECT rolname FROM pg_roles WHERE rolname NOT LIKE 'pg_%' AND rolname != $1",
+      [DB_MASTER_USERNAME]
+    )
+
+    for (const role of roles.rows) {
+      await client.query(`DROP ROLE IF EXISTS "${role.rolname}"`)
+    }
+  } finally {
+    await client.end()
   }
 })
 
