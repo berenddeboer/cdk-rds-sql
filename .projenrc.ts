@@ -42,7 +42,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
       maxConcurrency: 4,
-      maxWorkers: 4,
+      maxWorkers: "75%",
     },
   },
   typescriptVersion: "~5.8",

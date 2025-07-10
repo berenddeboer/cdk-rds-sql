@@ -118,7 +118,7 @@
       "/dist/"
     ],
     "maxConcurrency": 4,
-    "maxWorkers": 4,
+    "maxWorkers": "75%",
     "clearMocks": true,
     "collectCoverage": true,
     "coverageReporters": [
