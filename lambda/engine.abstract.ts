@@ -84,7 +84,12 @@ export abstract class AbstractEngine {
    */
   protected async getPassword(arn: string): Promise<string | void> {
     if (!arn) return
-    const secrets_client = new SecretsManagerClient({})
+    const secrets_client = new SecretsManagerClient({
+      requestHandler: {
+        connectionTimeout: 5000,
+        requestTimeout: 10000,
+      },
+    })
     const command = new GetSecretValueCommand({
       SecretId: arn,
     })

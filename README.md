@@ -159,7 +159,10 @@ the `databaseName` here, and create the database later.
 
 ### IAM Authentication
 
-Instead of password-based authentication, you can create roles that use AWS IAM database authentication. This eliminates the need to store database passwords and provides enhanced security through AWS IAM policies.
+Instead of password-based authentication, you can create roles that
+use AWS IAM database authentication. This eliminates the need to store
+database passwords and provides enhanced security through AWS IAM
+policies.
 
 ```ts
 import { Role } from "cdk-rds-sql"
@@ -346,7 +349,8 @@ There are a lot of concerns when using `Sql`:
 - When you update your Sql, your previous Sql is not "rolled back",
   the new Sql is simply executed again.
 - When you delete your `Sql` construct the rollback is executed if specified
-- When permission are granted via `Sql` they must be removed via rollback to succesfully remove the role
+- When permission are granted via `Sql` they must be removed via
+  rollback to succesfully remove the role
 - Currently the `Sql` constructs has less than 5 minutes to execute
   its work.
 - It is unknown how large your SQL can be.
@@ -354,8 +358,8 @@ There are a lot of concerns when using `Sql`:
 # Parameters
 
 Some lambda constructs, in particular [Bref](https://bref.sh/), do not
-support secrets out of the box. This construct allows you to create
-SSM parameters in addition to a secret:
+support secrets out of the box. Use the `parameterPrefix` property to
+create SSM parameters in addition to a secret:
 
 ```ts
 const role = new Role(this, "Role", {
