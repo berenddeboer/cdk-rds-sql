@@ -1,4 +1,4 @@
-default_stages: [commit]
+default_stages: [pre-commit]
 default_language_version:
   node: system
 fail_fast: true
@@ -26,7 +26,7 @@ repos:
       - id: prettier
         exclude: (.mergify.yml|.projen/|.github|tsconfig.dev.json|.gitignore|LICENSE|.gitattributes|.eslintrc.json)
         stages:
-          - commit
+          - pre-commit
   - repo: local
     hooks:
       - id: build-typescript
