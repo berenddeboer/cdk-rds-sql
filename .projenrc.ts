@@ -45,10 +45,10 @@ const project = new awscdk.AwsCdkConstructLibrary({
       maxWorkers: "75%",
     },
   },
-  typescriptVersion: "~5.8",
+  typescriptVersion: "~5.9",
   constructsVersion: "10.3.0",
   cdkVersion: "2.189.1",
-  jsiiVersion: "~5.7.0",
+  jsiiVersion: "~5.9.0",
   tsconfigDev: {
     compilerOptions: {
       esModuleInterop: true,
@@ -67,7 +67,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   gitignore: tmpDirectories,
   npmignore: tmpDirectories,
   docgen: false,
-  workflowNodeVersion: "22.x",
+  workflowNodeVersion: "24.x",
   deps: ["@types/aws-lambda"],
   bundledDeps: ["@types/aws-lambda"],
   devDeps: [
