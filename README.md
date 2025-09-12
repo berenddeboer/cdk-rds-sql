@@ -105,10 +105,8 @@ const provider = new Provider(this, "Provider", {
 
 ### Disabling SSL
 
-The default connection to RDS is ssl enabled (this used to be disabled
-in versions below 4).
-
-You can disable ssl by setting the `ssl` option to `false`:
+The default connection to RDS is ssl enabled. You can disable ssl by
+setting the `ssl` option to `false`:
 
 ```ts
 const provider = new Provider(this, "Provider", {
@@ -134,7 +132,8 @@ const role = new Role(this, "Role", {
 ```
 
 This will automatically create a secret just like `ServerlessCluster`
-does, with all the connection info needed for this user. It's secret value is a JSON like:
+does, with all the connection info needed for this user. It's secret
+value is a JSON like:
 
 ```json
 {

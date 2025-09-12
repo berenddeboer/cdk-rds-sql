@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a CDK construct library for creating databases, schemas, and roles in Aurora Serverless v2, RDS Database Cluster, or Database Instance. It supports both PostgreSQL and MySQL databases and is designed for enterprise environments with isolated subnets.
+This is a projen managed project. It contains a CDK construct library for creating databases, schemas, and roles in Aurora Serverless v2, RDS Database Cluster, or Database Instance. It supports both PostgreSQL and MySQL databases and is designed for enterprise environments with isolated subnets.
 
 ## Key Architecture
 
@@ -30,43 +30,36 @@ The Lambda handler supports both PostgreSQL and MySQL databases, auto-detecting 
 ### Build and Test
 
 ```bash
+# After changing .projenrc.ts
+npx projen
+
 # Build the project
-npm run build
+npx projen build
 
 # Run all tests
-npm run test
+npx projen test
 
 # Run tests in watch mode
-npm run test:watch
+npx projen test:watch
 
 # Run linting
-npm run eslint
+npx projen eslint
 
 # Build only the Lambda handler
-npm run build:handler
+npx projen build:handler
 ```
 
 ### Integration Testing
 
 ```bash
 # Deploy PostgreSQL serverless test stack
-npm run integ:deploy:postgresql:serverless
+npx projen integ:deploy:postgresql:serverless
 
 # Deploy MySQL serverless test stack
-npm run integ:deploy:mysql:serverless
+npx projen integ:deploy:mysql:serverless
 
 # Destroy test stack
-npm run integ:destroy:serverless
-```
-
-### Package Management
-
-```bash
-# Package for distribution
-npm run package
-
-# Build all packages
-npm run package-all
+npx projen integ:destroy:serverless
 ```
 
 ## Testing Setup
@@ -99,6 +92,7 @@ managed by projen, but instead change `.projenrc.ts`. After changing
 In particular:
 
 1. Do not change `package.json`.
+2. Do not change any of the github workflow files.
 
 Projen tasks:
 

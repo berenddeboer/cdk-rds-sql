@@ -143,4 +143,14 @@ project.addTask("typecheck", {
 project.tasks.tryFind("pre-compile")?.spawn(project.tasks.tryFind("build:handler")!)
 project.tasks.tryFind("compile")?.spawn(project.tasks.tryFind("copy:handler")!)
 
+// Override release workflow to remove NPM_TOKEN and add NPM_TRUSTED_PUBLISHER
+const releaseWorkflow = project.github?.tryFindWorkflow("release")
+if (releaseWorkflow?.file) {
+  // Target the Release step's environment variables specifically
+  releaseWorkflow.file.addOverride("jobs.release_npm.steps.9.env", {
+    NPM_TRUSTED_PUBLISHER: "true",
+    NPM_TOKEN: undefined,
+  })
+}
+
 project.synth()
