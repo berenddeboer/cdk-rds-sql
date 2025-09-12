@@ -68,7 +68,7 @@ export interface RdsSqlProps {
   /**
    * Use SSL?
    *
-   * @default - false
+   * @default - true
    */
   readonly ssl?: boolean
 }
