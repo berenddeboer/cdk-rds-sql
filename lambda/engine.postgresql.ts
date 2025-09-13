@@ -8,6 +8,7 @@ import {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
+  EngineIamGrantProperties,
 } from "./types"
 
 export class PostgresqlEngine extends AbstractEngine {
@@ -265,6 +266,29 @@ END$$;`,
       pgFormat("REVOKE CREATE ON SCHEMA %I FROM %I", schema, roleName),
       pgFormat("REVOKE ALL ON SCHEMA %I FROM %I", schema, roleName),
     ]
+  }
+
+  createIamGrant(
+    _resourceId: string,
+    _props: EngineIamGrantProperties
+  ): string | string[] {
+    throw new Error("IAM grants are only supported with DSQL clusters")
+  }
+
+  updateIamGrant(
+    _resourceId: string,
+    _oldResourceId: string,
+    _props: EngineIamGrantProperties,
+    _oldProps: EngineIamGrantProperties
+  ): string | string[] {
+    throw new Error("IAM grants are only supported with DSQL clusters")
+  }
+
+  deleteIamGrant(
+    _resourceId: string,
+    _props: EngineIamGrantProperties
+  ): string | string[] {
+    throw new Error("IAM grants are only supported with DSQL clusters")
   }
 
   async executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any> {

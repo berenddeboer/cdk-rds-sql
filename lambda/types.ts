@@ -24,6 +24,10 @@ export interface EngineSqlProperties {
   readonly Rollback?: string
 }
 
+export interface EngineIamGrantProperties {
+  readonly ResourceArn?: string
+}
+
 // Common CloudFormation properties shared by all resources
 export interface CommonProperties
   extends CloudFormationCustomResourceResourcePropertiesCommon {
@@ -52,6 +56,11 @@ export interface SqlProperties extends CommonProperties, EngineSqlProperties {
   readonly Resource: RdsSqlResource.SQL
 }
 
+export interface IamGrantProperties extends CommonProperties, EngineIamGrantProperties {
+  readonly Resource: RdsSqlResource.IAM_GRANT
+  readonly ResourceArn: string
+}
+
 // Parameter password specific properties
 export interface ParameterPasswordProperties extends CommonProperties {
   readonly Resource: RdsSqlResource.PARAMETER_PASSWORD
@@ -65,6 +74,7 @@ export type ResourceProperties =
   | RoleProperties
   | SchemaProperties
   | SqlProperties
+  | IamGrantProperties
   | ParameterPasswordProperties
 
 // Custom resource response interface

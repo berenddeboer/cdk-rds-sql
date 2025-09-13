@@ -35,6 +35,7 @@ repos:
         language: system
         entry: sh -c 'npx tsc --noEmit'
         files: \.ts$
+        pass_filenames: false
   - repo: local
     hooks:
       - id: synth
@@ -42,6 +43,7 @@ repos:
         language: system
         entry: sh -c 'npx cdk synth --quiet --context vpc-id=$VPC_ID'
         files: src/.*\.ts$
+        pass_filenames: false
   - repo: local
     hooks:
       - id: compile-project
@@ -50,6 +52,7 @@ repos:
         language: system
         entry: sh -c 'npx projen compile'
         files: \.ts$
+        pass_filenames: false
   - repo: local
     hooks:
       - id: test
@@ -58,3 +61,4 @@ repos:
         language: system
         entry: sh -c 'npx jest --coverage=false'
         files: \.ts$
+        pass_filenames: false

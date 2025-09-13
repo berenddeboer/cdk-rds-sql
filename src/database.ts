@@ -1,8 +1,19 @@
 import { CustomResource } from "aws-cdk-lib"
+import * as dsql from "aws-cdk-lib/aws-dsql"
+import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
 import { Provider } from "./provider"
 import { Role } from "./role"
+
+/**
+ * Helper function to determine if a cluster is a DSQL cluster
+ */
+function isDsqlCluster(
+  cluster: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+): cluster is dsql.CfnCluster {
+  return cluster instanceof dsql.CfnCluster
+}
 
 interface DatabaseAttributes {
   /**
@@ -49,12 +60,19 @@ export class Database extends CustomResource implements IDatabase {
   public readonly databaseName: string
 
   constructor(scope: Construct, id: string, props: DatabaseProps) {
+    // Check if using DSQL provider and forbid database creation
+    if (isDsqlCluster(props.provider.cluster)) {
+      throw new Error(
+        "Database creation is not supported with DSQL. DSQL always uses 'postgres' database."
+      )
+    }
+
     super(scope, id, {
       serviceToken: props.provider.serviceToken,
       properties: {
         Resource: RdsSqlResource.DATABASE,
         ResourceId: props.databaseName,
-        SecretArn: props.provider.secret.secretArn,
+        ...(props.provider.secret ? { SecretArn: props.provider.secret.secretArn } : {}),
         Owner: props.owner?.roleName,
       },
     })

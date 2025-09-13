@@ -79,6 +79,9 @@ export interface RoleProps {
    * configured for AWS IAM database authentication. The secret
    * will not contain a password field.
    *
+   * Note: For DSQL clusters, this property is ignored as DSQL always
+   * uses IAM authentication.
+   *
    * @default false - use password authentication
    */
   readonly enableIamAuth?: boolean
@@ -146,66 +149,40 @@ export class Role extends Construct {
 
   /**
    * The generated secret.
+   * Only available for non-DSQL clusters as DSQL uses IAM authentication.
    */
-  public readonly secret: ISecret
+  public readonly secret?: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
-    if (props.database && props.databaseName) {
-      throw "Specify either database or databaseName"
-    }
-    if (!props.database && !props.databaseName) {
-      // If neither is specified, we might need a default or throw an error depending on desired behavior.
-      // For now, let's assume it's allowed but the secret won't have a dbname.
-      // If it should be required, uncomment the line below:
-      throw "Specify either database or databaseName"
+    if (props.provider.engine !== "dsql") {
+      if (props.database && props.databaseName) {
+        throw "Specify either database or databaseName"
+      }
+      if (!props.database && !props.databaseName) {
+        // If neither is specified, we might need a default or throw an error depending on desired behavior.
+        // For now, let's assume it's allowed but the secret won't have a dbname.
+        // If it should be required, uncomment the line below:
+        throw "Specify either database or databaseName"
+      }
     }
     super(scope, id)
 
-    const host = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
-      ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.hostname
-      : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.hostname
+    // DSQL doesn't use secrets - it always uses IAM authentication
+    if (props.provider.engine !== "dsql") {
+      // For RDS/Aurora clusters and instances, get endpoint details
+      const host = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+        ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.hostname
+        : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.hostname
 
-    const port = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
-      ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.port
-      : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.port
+      const port = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+        ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.port
+        : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.port
 
-    const identifier = (props.provider.cluster as IDatabaseCluster).clusterIdentifier
-      ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
-      : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
+      const identifier = (props.provider.cluster as IDatabaseCluster).clusterIdentifier
+        ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
+        : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
 
-    const secretTemplate = {
-      dbClusterIdentifier: identifier,
-      engine: props.provider.engine,
-      host: host,
-      port: port,
-      username: props.roleName,
-      dbname: props.database ? props.database.databaseName : props.databaseName,
-    }
-
-    this.secret = new Secret(this, "Secret", {
-      secretName: props.secretName,
-      encryptionKey: props.encryptionKey,
-      description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
-      ...(props.enableIamAuth
-        ? {
-            // For IAM auth, create secret without password generation
-            secretStringTemplate: JSON.stringify(secretTemplate),
-          }
-        : {
-            // For password auth, generate password
-            generateSecretString: {
-              passwordLength: 30, // Oracle password cannot have more than 30 characters
-              secretStringTemplate: JSON.stringify(secretTemplate),
-              generateStringKey: "password",
-              excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
-            },
-          }),
-      removalPolicy: RemovalPolicy.DESTROY,
-    })
-
-    // Create Parameters if parameterPrefix is provided
-    if (props.parameterPrefix) {
-      const paramData = {
+      const secretTemplate = {
         dbClusterIdentifier: identifier,
         engine: props.provider.engine,
         host: host,
@@ -214,30 +191,70 @@ export class Role extends Construct {
         dbname: props.database ? props.database.databaseName : props.databaseName,
       }
 
-      new Parameters(this, "Parameters", {
-        secretArn: props.provider.secret.secretArn,
-        parameterPrefix: props.parameterPrefix,
-        passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
-        providerServiceToken: props.provider.serviceToken,
-        provider: props.provider,
-        paramData,
+      this.secret = new Secret(this, "Secret", {
+        secretName: props.secretName,
+        encryptionKey: props.encryptionKey,
+        description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
+        ...(props.enableIamAuth
+          ? {
+              // For IAM auth, create secret without password generation
+              secretStringTemplate: JSON.stringify(secretTemplate),
+            }
+          : {
+              // For password auth, generate password
+              generateSecretString: {
+                passwordLength: 30, // Oracle password cannot have more than 30 characters
+                secretStringTemplate: JSON.stringify(secretTemplate),
+                generateStringKey: "password",
+                excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+              },
+            }),
+        removalPolicy: RemovalPolicy.DESTROY,
       })
+
+      // Create Parameters if parameterPrefix is provided
+      if (props.parameterPrefix) {
+        const paramData = {
+          dbClusterIdentifier: identifier,
+          engine: props.provider.engine,
+          host: host,
+          port: port,
+          username: props.roleName,
+          dbname: props.database ? props.database.databaseName : props.databaseName,
+        }
+
+        new Parameters(this, "Parameters", {
+          secretArn: props.provider.secret?.secretArn || "",
+          parameterPrefix: props.parameterPrefix,
+          passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
+          providerServiceToken: props.provider.serviceToken,
+          provider: props.provider,
+          paramData,
+        })
+      }
     }
 
     const role = new CustomResourceRole(this, "PostgresRole", {
       provider: props.provider,
       roleName: props.roleName,
-      passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
+      passwordArn:
+        props.enableIamAuth || props.provider.engine === "dsql"
+          ? ""
+          : this.secret!.secretArn,
       database: props.database,
       databaseName: props.databaseName,
-      enableIamAuth: props.enableIamAuth,
+      enableIamAuth: props.enableIamAuth || props.provider.engine === "dsql",
     })
-    role.node.addDependency(this.secret)
-    this.roleName = props.roleName
-    this.secret.grantRead(props.provider.handler)
-    if (this.secret.encryptionKey) {
-      // It seems we need to grant explicit permission
-      this.secret.encryptionKey.grantDecrypt(props.provider.handler)
+
+    if (this.secret) {
+      role.node.addDependency(this.secret)
+      this.secret.grantRead(props.provider.handler)
+      if (this.secret.encryptionKey) {
+        // It seems we need to grant explicit permission
+        this.secret.encryptionKey.grantDecrypt(props.provider.handler)
+      }
     }
+
+    this.roleName = props.roleName
   }
 }

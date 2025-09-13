@@ -9,8 +9,12 @@
       "type": "build"
     },
     {
+      "name": "@aws-sdk/dsql-signer",
+      "type": "build"
+    },
+    {
       "name": "@types/jest",
-      "version": "~29",
+      "version": "~30",
       "type": "build"
     },
     {
@@ -74,7 +78,7 @@
     },
     {
       "name": "jest",
-      "version": "~29",
+      "version": "~30",
       "type": "build"
     },
     {
@@ -127,7 +131,7 @@
     },
     {
       "name": "ts-jest",
-      "version": "~29",
+      "version": "^29",
       "type": "build"
     },
     {
@@ -145,12 +149,12 @@
     },
     {
       "name": "aws-cdk-lib",
-      "version": "^2.189.1",
+      "version": "^2.214.0",
       "type": "peer"
     },
     {
       "name": "constructs",
-      "version": "^10.3.0",
+      "version": "^10.4.2",
       "type": "peer"
     },
     {

@@ -165,6 +165,18 @@
         }
       ]
     },
+    "integ:deploy:dsql": {
+      "name": "integ:deploy:dsql",
+      "description": "Deploy the DSQL integration test stack",
+      "steps": [
+        {
+          "exec": "npx cdk deploy TestRdsSqlDsqlStack --require-approval never"
+        },
+        {
+          "spawn": "build:handler"
+        }
+      ]
+    },
     "integ:deploy:mysql:serverless": {
       "name": "integ:deploy:mysql:serverless",
       "description": "Deploy the Aurora Serverless V2 integration test stack",
@@ -180,6 +192,15 @@
       "steps": [
         {
           "exec": "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never"
+        }
+      ]
+    },
+    "integ:destroy:dsql": {
+      "name": "integ:destroy:dsql",
+      "description": "Destroy the DSQL integration test stack",
+      "steps": [
+        {
+          "exec": "npx cdk destroy TestRdsSqlDsqlStack --force"
         }
       ]
     },
@@ -322,13 +343,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@aws-sdk/client-secrets-manager,@aws-sdk/client-ssm,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,exponential-backoff,jsii-diff,jsii-pacmak,mysql2,node-pg-format,prettier,projen,source-map-support,ts-node,@types/aws-lambda"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@aws-sdk/client-secrets-manager,@aws-sdk/client-ssm,@aws-sdk/dsql-signer,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,exponential-backoff,jsii-diff,jsii-pacmak,mysql2,node-pg-format,prettier,projen,source-map-support,ts-node,@types/aws-lambda"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @aws-sdk/client-secrets-manager @aws-sdk/client-ssm @types/jest @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser commit-and-tag-version esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint exponential-backoff jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii mysql2 node-pg-format pg prettier projen source-map-support testcontainers ts-jest ts-node typescript @types/aws-lambda aws-cdk-lib constructs"
+          "exec": "npm update @aws-sdk/client-secrets-manager @aws-sdk/client-ssm @aws-sdk/dsql-signer @types/jest @types/node @types/pg @typescript-eslint/eslint-plugin @typescript-eslint/parser commit-and-tag-version esbuild eslint-config-prettier eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-prettier eslint exponential-backoff jest-junit jest jsii-diff jsii-pacmak jsii-rosetta jsii mysql2 node-pg-format pg prettier projen source-map-support testcontainers ts-jest ts-node typescript @types/aws-lambda aws-cdk-lib constructs"
         },
         {
           "exec": "npx projen"

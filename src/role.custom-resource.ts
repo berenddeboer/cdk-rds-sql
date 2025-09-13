@@ -58,7 +58,7 @@ export class Role extends CustomResource {
       properties: {
         Resource: RdsSqlResource.ROLE,
         ResourceId: props.roleName,
-        SecretArn: props.provider.secret.secretArn,
+        ...(props.provider.secret ? { SecretArn: props.provider.secret.secretArn } : {}),
         PasswordArn: props.passwordArn,
         DatabaseName: props.database ? props.database.databaseName : props.databaseName,
         EnableIamAuth: props.enableIamAuth,

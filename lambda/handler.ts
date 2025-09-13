@@ -24,6 +24,7 @@ import {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
+  EngineIamGrantProperties,
 } from "./types"
 import { RdsSqlResource } from "../src/enum"
 
@@ -70,6 +71,13 @@ function toSqlEngineProps(props: ResourceProperties): EngineSqlProperties {
   return props
 }
 
+function toIamGrantEngineProps(props: ResourceProperties): EngineIamGrantProperties {
+  if (props.Resource !== RdsSqlResource.IAM_GRANT) {
+    throw new Error(`Expected IAM_GRANT resource, got ${props.Resource}`)
+  }
+  return props
+}
+
 export const handler = async (
   event:
     | CloudFormationCustomResourceCreateEvent<ResourceProperties>
@@ -86,37 +94,58 @@ export const handler = async (
   if (!Object.values(RdsSqlResource).includes(resource)) {
     throw `Resource type '${resource}' not recognised.`
   }
-  if (!event.ResourceProperties.SecretArn) {
-    throw "SecretArn is a required property"
-  }
+  // Check if we're dealing with DSQL based on environment variables
+  const dsqlEndpoint = process.env.DSQL_ENDPOINT
+  const dsqlPort = process.env.DSQL_PORT
 
-  const command = new GetSecretValueCommand({
-    SecretId: event.ResourceProperties.SecretArn,
-  })
+  let engine: string
+  let secretValues: any = {}
 
-  log(`Fetching secret ${event.ResourceProperties.SecretArn}`)
-  const secret: GetSecretValueCommandOutput = await backOff(
-    async () => {
-      try {
-        const result = await secrets_client.send(command)
-        return result
-      } catch (e) {
-        log("Error fetching secret %o", e)
-        throw e
-      }
-    },
-    {
-      numOfAttempts: 10,
-      startingDelay: 500,
+  if (dsqlEndpoint) {
+    // DSQL configuration - use environment variables
+    log(`Using DSQL endpoint: ${dsqlEndpoint}`)
+    engine = "dsql"
+    secretValues = {
+      host: dsqlEndpoint,
+      port: parseInt(dsqlPort || "5432", 10),
+      username: "admin", // DSQL always uses admin user
+      engine: "dsql",
     }
-  )
-  if (!secret.SecretString) {
-    throw `No secret string in ${event.ResourceProperties.SecretArn}`
-  }
-  const secretValues = JSON.parse(secret.SecretString)
+  } else {
+    // Traditional RDS configuration - use secrets
+    if (!event.ResourceProperties.SecretArn) {
+      throw "SecretArn is a required property"
+    }
 
-  // Determine the database engine type
-  const engine = secretValues.engine || "postgresql" // Default to postgresql if not specified
+    const command = new GetSecretValueCommand({
+      SecretId: event.ResourceProperties.SecretArn,
+    })
+
+    log(`Fetching secret ${event.ResourceProperties.SecretArn}`)
+    const secret: GetSecretValueCommandOutput = await backOff(
+      async () => {
+        try {
+          const result = await secrets_client.send(command)
+          return result
+        } catch (e) {
+          log("Error fetching secret %o", e)
+          throw e
+        }
+      },
+      {
+        numOfAttempts: 10,
+        startingDelay: 500,
+      }
+    )
+    if (!secret.SecretString) {
+      throw `No secret string in ${event.ResourceProperties.SecretArn}`
+    }
+    secretValues = JSON.parse(secret.SecretString)
+
+    // Determine the database engine type
+    engine = secretValues.engine || "postgresql" // Default to postgresql if not specified
+  }
+
   const dbEngine = EngineFactory.createEngine(engine)
 
   let sql: string | string[] | undefined
@@ -143,6 +172,12 @@ export const handler = async (
           break
         case RdsSqlResource.SQL:
           sql = dbEngine.createSql(resourceId, toSqlEngineProps(event.ResourceProperties))
+          break
+        case RdsSqlResource.IAM_GRANT:
+          sql = dbEngine.createIamGrant(
+            resourceId,
+            toIamGrantEngineProps(event.ResourceProperties)
+          )
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
@@ -185,6 +220,16 @@ export const handler = async (
             toSqlEngineProps(event.ResourceProperties)
           )
           break
+        case RdsSqlResource.IAM_GRANT:
+          const iamUpdateEvent =
+            event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
+          sql = dbEngine.updateIamGrant(
+            resourceId,
+            oldResourceId,
+            toIamGrantEngineProps(event.ResourceProperties),
+            toIamGrantEngineProps(iamUpdateEvent.OldResourceProperties)
+          )
+          break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
           sql = undefined // No SQL to execute
@@ -212,6 +257,12 @@ export const handler = async (
         case RdsSqlResource.SQL:
           sql = dbEngine.deleteSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
+        case RdsSqlResource.IAM_GRANT:
+          sql = dbEngine.deleteIamGrant(
+            resourceId,
+            toIamGrantEngineProps(event.ResourceProperties)
+          )
+          break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await deleteParameterPassword(event.ResourceProperties)
           break
@@ -222,7 +273,10 @@ export const handler = async (
 
   if (sql) {
     let database: string
-    if (resource === RdsSqlResource.ROLE) {
+    if (engine === "dsql") {
+      // DSQL always uses 'postgres' database
+      database = "postgres"
+    } else if (resource === RdsSqlResource.ROLE) {
       database = secretValues.dbname
     } else {
       database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
@@ -232,7 +286,7 @@ export const handler = async (
       host: secretValues.host,
       port: secretValues.port,
       user: secretValues.username,
-      password: secretValues.password,
+      password: secretValues.password || "", // DSQL will generate token in engine
       database: database,
     }
 

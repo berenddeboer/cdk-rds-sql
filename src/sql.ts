@@ -34,7 +34,7 @@ export class Sql extends CustomResource {
       serviceToken: props.provider.serviceToken,
       properties: {
         Resource: RdsSqlResource.SQL,
-        SecretArn: props.provider.secret.secretArn,
+        ...(props.provider.secret ? { SecretArn: props.provider.secret.secretArn } : {}),
         DatabaseName: props.database ? props.database.databaseName : undefined,
         Statement: props.statement,
         Rollback: props.rollback,

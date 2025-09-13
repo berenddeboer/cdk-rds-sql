@@ -1,8 +1,9 @@
 # About
 
 This CDK construct library makes it possible to create databases,
-schemas, and roles in an Aurora Serverless v2, RDS Database Cluster or
-Database Instance. Both PostgreSQL and MySQL databases are supported.
+schemas, and roles in an Aurora Serverless v2, RDS Database Cluster,
+Database Instance, or AWS DSQL clusters. PostgreSQL, MySQL, and DSQL
+databases are supported.
 
 This construct library is intended to be used in enterprise
 environments, and works in isolated subnets.
@@ -100,20 +101,6 @@ const provider = new Provider(this, "Provider", {
   },
   cluster: cluster,
   secret: cluster.secret!,
-})
-```
-
-### Disabling SSL
-
-The default connection to RDS is ssl enabled. You can disable ssl by
-setting the `ssl` option to `false`:
-
-```ts
-const provider = new Provider(this, "Provider", {
-  vpc: vpc,
-  instance: instance,
-  secret: cluster.secret!,
-  ssl: false, // default is true
 })
 ```
 
@@ -388,6 +375,92 @@ initialPolicy: [
 
 Note that your VPC will need an SSM Parameters interface endpoint to support this.
 
+# AWS DSQL Support
+
+This construct also supports AWS DSQL. DSQL is a great number of
+limitations around it's postgresql support, so there is some learing
+curve. This library supports creating roles, schemas, and executing
+SQL on DSQL clusters. Creating databases is not supported by DSQL.
+
+## DSQL Provider Setup
+
+DSQL clusters don't require a VPC or secrets since they use IAM authentication:
+
+```ts
+import * as dsql from "aws-cdk-lib/aws-dsql"
+import { Provider } from "cdk-rds-sql"
+
+const dsqlCluster = new dsql.CfnCluster(this, "DsqlCluster", {
+  deletionProtectionEnabled: false,
+})
+
+const provider = new Provider(this, "Provider", {
+  cluster: dsqlCluster,
+  // No VPC or secret needed for DSQL
+})
+```
+
+You can access DSQL from within a VPC, but cdk-rds-sql has not been
+specifically tested with that scenario.
+
+## DSQL Roles
+
+DSQL always uses IAM authentication, so the `enableIamAuth` property is ignored:
+
+```ts
+import { Role } from "cdk-rds-sql"
+
+const role = new Role(this, "Role", {
+  provider: provider,
+  roleName: "myrole",
+})
+```
+
+## Using DSQL
+
+Connecting to DSQL requires a couple of things:
+
+1. Your IAM role needs the `dsql:DbConnect` IAM permission to connect to the cluster.
+2. You probably want a normal postgres role (not "admin") to use from your apps.
+3. Your IAM role needs to be connected to your postgres role: use the `IamGrant` construct for that:
+
+   ```ts
+   new IamGrant(this, "LambdaIamGrant", {
+     provider: provider,
+     roleName: role.roleName,
+     resourceArn: queryLambda.role!.roleArn,
+   })
+   ```
+
+4. From your code use the Dsql signer to create the password:
+
+   ```ts
+   import { DsqlSigner } from "@aws-sdk/dsql-signer"
+   import { Client } from "pg"
+
+   const region =
+     process.env["AWS_REGION"] || process.env["AWS_DEFAULT_REGION"] || "us-west-2"
+
+   // Generate DSQL auth token using AWS SDK
+   const signer = new DsqlSigner({
+     hostname: host,
+     region,
+   })
+
+   const authToken = await signer.getDbConnectAuthToken()
+
+   const client = new Client({
+     host,
+     port: 5432,
+     user: dbUser,
+     database: dbName,
+     password: authToken,
+     ssl: { rejectUnauthorized: false },
+   })
+
+   await client.connect()
+   ```
+
 # IPv6
 
 If you use the provider in an IPv6 subnet you probably need these settings:
@@ -402,6 +475,20 @@ const provider = new Provider(this, "Provider", {
 	allowAllIpv6Outbound: true,
   },
 }
+```
+
+# Disabling SSL
+
+The default connection to RDS is ssl enabled. You can disable ssl by
+setting the `ssl` option to `false`:
+
+```ts
+const provider = new Provider(this, "Provider", {
+  vpc: vpc,
+  instance: instance,
+  secret: cluster.secret!,
+  ssl: false, // default is true
+})
 ```
 
 # Working on this code
@@ -431,6 +518,10 @@ You can run the sample stack with:
 If you want to use an existing vpc:
 
     npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV2Stack
+
+You can also test DSQL support with:
+
+    npx projen integ:deploy:dsql
 
 # To do
 

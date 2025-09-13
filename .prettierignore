@@ -10,3 +10,9 @@ tsconfig.json
 .projen/
 .eslintrc.json
 API.md
+cdk.out
+.claude/
+lib/
+cdk.context.json
+src/handler/handler.js
+tsconfig.dev.json

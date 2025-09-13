@@ -24,7 +24,9 @@ export interface SchemaProps {
   readonly schemaName: string
 
   /**
-   * Optional role to be granted for managing tables in schema
+   * Optional role which will be granted usage and create permissions
+   * to this schema. This way the role can read its own tables, but
+   * cannot see or access tables created by others.
    */
   readonly role?: Role
 }
@@ -38,7 +40,7 @@ export class Schema extends CustomResource {
       properties: {
         Resource: RdsSqlResource.SCHEMA,
         ResourceId: props.schemaName,
-        SecretArn: props.provider.secret.secretArn,
+        ...(props.provider.secret ? { SecretArn: props.provider.secret.secretArn } : {}),
         DatabaseName: props.database ? props.database.databaseName : undefined,
         RoleName: props.role ? props.role.roleName : undefined,
       },

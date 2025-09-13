@@ -19,7 +19,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   authorEmail: "berend@pobox.com",
   name: "cdk-rds-sql",
   description:
-    "A CDK construct that allows creating roles or users and databases an on Aurora Serverless Postgresql or Mysql/MariaDB cluster.",
+    "A CDK construct that allows creating roles or users and databases on Aurora Serverless PostgreSQL or MySQL/MariaDB clusters, as well as AWS DSQL clusters.",
   defaultReleaseBranch: "main",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
@@ -37,7 +37,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     },
   },
   jestOptions: {
-    jestVersion: "~29",
+    jestVersion: "~30",
     jestConfig: {
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
@@ -46,8 +46,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
     },
   },
   typescriptVersion: "~5.9",
-  constructsVersion: "10.3.0",
-  cdkVersion: "2.189.1",
+  constructsVersion: "10.4.2",
+  cdkVersion: "2.214.0",
   jsiiVersion: "~5.9.0",
   tsconfigDev: {
     compilerOptions: {
@@ -73,6 +73,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   devDeps: [
     "@aws-sdk/client-secrets-manager",
     "@aws-sdk/client-ssm",
+    "@aws-sdk/dsql-signer",
     "@types/pg@^8.11.11",
     "esbuild",
     "exponential-backoff",
@@ -82,7 +83,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "source-map-support",
     "testcontainers@11",
   ],
-  keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql"],
+  keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql", "dsql"],
   minMajorVersion: 1,
 })
 if (project.eslint) {
@@ -121,6 +122,16 @@ project.addTask("integ:deploy:mysql:serverless", {
 project.addTask("integ:destroy:serverless", {
   description: "Destroy the Aurora Serverless V2 integration test stack",
   exec: "npx cdk destroy TestRdsSqlServerlessV2Stack --force",
+})
+
+project.addTask("integ:deploy:dsql", {
+  description: "Deploy the DSQL integration test stack",
+  exec: "npx cdk deploy TestRdsSqlDsqlStack --require-approval never",
+})
+
+project.addTask("integ:destroy:dsql", {
+  description: "Destroy the DSQL integration test stack",
+  exec: "npx cdk destroy TestRdsSqlDsqlStack --force",
 })
 
 // Add build tasks for transpiling the Lambda handler

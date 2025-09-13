@@ -1,6 +1,6 @@
 {
   "name": "cdk-rds-sql",
-  "description": "A CDK construct that allows creating roles or users and databases an on Aurora Serverless Postgresql or Mysql/MariaDB cluster.",
+  "description": "A CDK construct that allows creating roles or users and databases on Aurora Serverless PostgreSQL or MySQL/MariaDB clusters, as well as AWS DSQL clusters.",
   "repository": {
     "type": "git",
     "url": "https://github.com/berenddeboer/cdk-rds-sql.git"
@@ -16,8 +16,10 @@
     "default": "npx projen default",
     "eject": "npx projen eject",
     "eslint": "npx projen eslint",
+    "integ:deploy:dsql": "npx projen integ:deploy:dsql",
     "integ:deploy:mysql:serverless": "npx projen integ:deploy:mysql:serverless",
     "integ:deploy:postgresql:serverless": "npx projen integ:deploy:postgresql:serverless",
+    "integ:destroy:dsql": "npx projen integ:destroy:dsql",
     "integ:destroy:serverless": "npx projen integ:destroy:serverless",
     "package": "npx projen package",
     "package-all": "npx projen package-all",
@@ -42,14 +44,15 @@
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.888.0",
     "@aws-sdk/client-ssm": "^3.888.0",
-    "@types/jest": "~29",
+    "@aws-sdk/dsql-signer": "^3.888.0",
+    "@types/jest": "~30",
     "@types/node": "^22",
     "@types/pg": "^8.11.11",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
-    "aws-cdk-lib": "2.189.1",
+    "aws-cdk-lib": "2.214.0",
     "commit-and-tag-version": "^12",
-    "constructs": "10.3.0",
+    "constructs": "10.4.2",
     "esbuild": "0.25.9",
     "eslint": "^9",
     "eslint-config-prettier": "^8.10.2",
@@ -57,7 +60,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^4.2.5",
     "exponential-backoff": "^3.1.2",
-    "jest": "~29",
+    "jest": "~30",
     "jest-junit": "^16",
     "jsii": "~5.9.0",
     "jsii-diff": "^1.114.1",
@@ -70,13 +73,13 @@
     "projen": "^0.96.1",
     "source-map-support": "^0.5.21",
     "testcontainers": "11",
-    "ts-jest": "~29",
+    "ts-jest": "^29",
     "ts-node": "^10.9.2",
     "typescript": "~5.9"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.189.1",
-    "constructs": "^10.3.0"
+    "aws-cdk-lib": "^2.214.0",
+    "constructs": "^10.4.2"
   },
   "dependencies": {
     "@types/aws-lambda": "^8.10.152"
@@ -89,6 +92,7 @@
     "aws",
     "aws-cdk",
     "cdk",
+    "dsql",
     "mysql",
     "postgres",
     "rds"

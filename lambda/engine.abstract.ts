@@ -8,6 +8,7 @@ import {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
+  EngineIamGrantProperties,
 } from "./types"
 
 export interface EngineConnectionConfig {
@@ -73,6 +74,21 @@ export abstract class AbstractEngine {
     props: EngineSqlProperties
   ): string | string[]
   abstract deleteSql(resourceId: string, props: EngineSqlProperties): string | string[]
+
+  abstract createIamGrant(
+    resourceId: string,
+    props: EngineIamGrantProperties
+  ): string | string[]
+  abstract updateIamGrant(
+    resourceId: string,
+    oldResourceId: string,
+    props: EngineIamGrantProperties,
+    oldProps: EngineIamGrantProperties
+  ): string | string[]
+  abstract deleteIamGrant(
+    resourceId: string,
+    props: EngineIamGrantProperties
+  ): string | string[]
 
   abstract executeSQL(
     sql: string | string[],

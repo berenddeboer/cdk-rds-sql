@@ -1,6 +1,6 @@
 import { Duration, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
-import { RetentionDays } from "aws-cdk-lib/aws-logs"
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
 import { Construct } from "constructs"
@@ -82,7 +82,9 @@ export class TestStack extends Stack {
       cluster: cluster,
       secret: cluster.secret!,
       functionProps: {
-        logRetention: RetentionDays.ONE_WEEK,
+        logGroup: new LogGroup(this, "ProviderLogGroup", {
+          retention: RetentionDays.ONE_WEEK,
+        }),
         timeout: Duration.seconds(30),
       },
       logger: props.logger,

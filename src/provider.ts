@@ -1,6 +1,7 @@
 import { existsSync } from "fs"
 import * as path from "path"
 import { Duration, Stack } from "aws-cdk-lib"
+import * as dsql from "aws-cdk-lib/aws-dsql"
 import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import * as iam from "aws-cdk-lib/aws-iam"
 import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
@@ -11,15 +12,26 @@ import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
 
+/**
+ * Helper function to determine if a cluster is a DSQL cluster
+ */
+function isDsqlCluster(
+  cluster: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+): cluster is dsql.CfnCluster {
+  return cluster instanceof dsql.CfnCluster
+}
+
 export interface RdsSqlProps {
   /**
    * VPC network to place the provider lambda.
    *
    * Normally this is the VPC of your database.
+   * Required when your database is only accessible in a VPC.
+   * Not required for DSQL as it uses public endpoints with IAM authentication.
    *
    * @default - Function is not placed within a VPC.
    */
-  readonly vpc: IVpc
+  readonly vpc?: IVpc
 
   /**
    * Where to place the network provider lambda within the VPC.
@@ -29,16 +41,22 @@ export interface RdsSqlProps {
   readonly vpcSubnets?: SubnetSelection
 
   /**
-   * Your database.
+   * Your database cluster or instance.
+   * Supports both traditional RDS/Aurora clusters and DSQL clusters.
+   * - For RDS/Aurora: security groups will be configured to allow access
+   * - For DSQL: IAM authentication will be used instead of secrets
    */
-  readonly cluster: IDatabaseCluster | IDatabaseInstance
+  readonly cluster: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
 
   /**
    * Secret that grants access to your database.
    *
    * Usually this is your cluster's master secret.
+   * Not required when relying on IAM authentication (such as DSQL).
+   *
+   * @default - undefined for DSQL clusters using IAM authentication
    */
-  readonly secret: ISecret
+  readonly secret?: ISecret
 
   /**
    * Timeout for lambda to do its work.
@@ -75,9 +93,9 @@ export interface RdsSqlProps {
 
 export class Provider extends Construct {
   public readonly serviceToken: string
-  public readonly secret: ISecret
+  public readonly secret?: ISecret
   public readonly handler: IFunction
-  public readonly cluster: IDatabaseCluster | IDatabaseInstance
+  public readonly cluster: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
 
   /**
    * The engine like "postgres" or "mysql"
@@ -88,11 +106,31 @@ export class Provider extends Construct {
 
   constructor(scope: Construct, id: string, props: RdsSqlProps) {
     super(scope, id)
+
+    // Validate configuration
+    const isDsql = isDsqlCluster(props.cluster)
+    if (!isDsql && !props.secret) {
+      throw new Error(
+        "Either secret (for traditional RDS) or cluster with DSQL must be provided"
+      )
+    }
+    if (!isDsql && !props.vpc) {
+      throw new Error("VPC is required for traditional RDS databases")
+    }
+    if (isDsql && props.secret) {
+      throw new Error(
+        "secret should not be provided when using DSQL cluster (uses IAM authentication)"
+      )
+    }
+
     this.secret = props.secret
     this.cluster = props.cluster
 
     // Determine engine from cluster/instance instead of hardcoding
-    if ("clusterIdentifier" in props.cluster) {
+    if (isDsql) {
+      // DSQL is always PostgreSQL-compatible
+      this.engine = "dsql"
+    } else if ("clusterIdentifier" in props.cluster) {
       // It's a DatabaseCluster
       const clusterEngine = (props.cluster as IDatabaseCluster).engine
       this.engine =
@@ -116,16 +154,31 @@ export class Provider extends Construct {
       onEventHandler: this.handler,
     })
     this.serviceToken = provider.serviceToken
-    this.secret.grantRead(this.handler)
-    if (this.secret.encryptionKey) {
-      // It seems we need to grant explicit permission
-      this.secret.encryptionKey.grantDecrypt(this.handler)
-    }
-    if (props.cluster.connections.securityGroups.length === 0) {
-      throw new Error("Cluster does not have a security group.")
+
+    // Handle database connection setup
+    if (isDsql) {
+      // For DSQL, grant IAM permissions instead of VPC security groups
+      const dsqlCluster = props.cluster as dsql.CfnCluster
+      this.handler.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["dsql:DbConnectAdmin"],
+          resources: [dsqlCluster.attrResourceArn],
+        })
+      )
     } else {
-      const securityGroup = props.cluster.connections.securityGroups[0]!
-      this.handler.node.defaultChild?.node.addDependency(securityGroup)
+      // Traditional RDS setup with security groups and secrets
+      this.secret!.grantRead(this.handler)
+      if (this.secret!.encryptionKey) {
+        // It seems we need to grant explicit permission
+        this.secret!.encryptionKey.grantDecrypt(this.handler)
+      }
+      if (props.cluster.connections.securityGroups.length === 0) {
+        throw new Error("Cluster does not have a security group.")
+      } else {
+        const securityGroup = props.cluster.connections.securityGroups[0]!
+        this.handler.node.defaultChild?.node.addDependency(securityGroup)
+      }
     }
     this.node.addDependency(props.cluster)
   }
@@ -135,6 +188,7 @@ export class Provider extends Construct {
     id: string,
     props: RdsSqlProps
   ): lambda.NodejsFunction {
+    const isDsql = isDsqlCluster(props.cluster)
     const handlerDir = path.join(__dirname, "handler")
     const index_ts = path.join(handlerDir, "index.ts")
     const index_js = path.join(handlerDir, "index.js")
@@ -159,6 +213,21 @@ export class Provider extends Construct {
     }
     const logger = props.logger ?? false
 
+    // Build environment variables
+    const environment: Record<string, string> = {
+      LOGGER: logger.toString(),
+      ...ssl_options,
+    }
+
+    // Add DSQL-specific environment variables
+    if (isDsql) {
+      const dsqlCluster = props.cluster as dsql.CfnCluster
+      const clusterId = dsqlCluster.attrIdentifier
+      const region = Stack.of(scope).region
+      environment.DSQL_ENDPOINT = `${clusterId}.dsql.${region}.on.aws`
+      environment.DSQL_PORT = "5432"
+    }
+
     const deleteParameterPolicy = new iam.PolicyStatement({
       actions: ["ssm:DeleteParameter"],
       resources: [
@@ -173,10 +242,15 @@ export class Provider extends Construct {
 
     const fn = new lambda.NodejsFunction(scope, id, {
       ...props.functionProps,
-      vpc: props.vpc,
-      vpcSubnets: props.vpcSubnets ?? {
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-      },
+      // Only configure VPC for traditional RDS
+      ...(isDsql
+        ? {}
+        : {
+            vpc: props.vpc,
+            vpcSubnets: props.vpcSubnets ?? {
+              subnetType: SubnetType.PRIVATE_ISOLATED,
+            },
+          }),
       entry: entry,
       runtime: Runtime.NODEJS_22_X,
       timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
@@ -199,21 +273,21 @@ export class Provider extends Construct {
           },
         },
       },
-      environment: {
-        LOGGER: logger.toString(),
-        ...ssl_options,
-      },
+      environment,
       initialPolicy: [
         deleteParameterPolicy,
         ...(props.functionProps?.initialPolicy ?? []),
       ],
     })
 
+    // Only configure security groups for traditional RDS (not DSQL)
     if (
-      !props.functionProps?.securityGroups ||
-      props.functionProps?.securityGroups.length === 0
+      !isDsql &&
+      (!props.functionProps?.securityGroups ||
+        props.functionProps?.securityGroups.length === 0)
     ) {
-      props.cluster.connections.allowDefaultPortFrom(
+      const rdsCluster = props.cluster as IDatabaseCluster | IDatabaseInstance
+      rdsCluster.connections.allowDefaultPortFrom(
         fn,
         "Allow the rds sql handler to connect to db"
       )

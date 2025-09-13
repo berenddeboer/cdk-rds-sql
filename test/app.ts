@@ -2,6 +2,7 @@
 import "source-map-support/register"
 import * as cdk from "aws-cdk-lib"
 import * as rds from "aws-cdk-lib/aws-rds"
+import * as dsqlStack from "./dsql-stack"
 import * as serverlessv2 from "./serverlessv2-stack"
 
 const app = new cdk.App()
@@ -40,4 +41,14 @@ new serverlessv2.TestStack(app, "TestRdsSqlServerlessV2Stack", {
   logger: true,
   ssl: true,
   engine: engine,
+})
+
+// Create DSQL test stack
+new dsqlStack.TestDsqlStack(app, "TestRdsSqlDsqlStack", {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+  description: "DSQL test stack - feel free to delete",
+  logger: true,
 })
