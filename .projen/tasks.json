@@ -171,9 +171,6 @@
       "steps": [
         {
           "exec": "npx cdk deploy TestRdsSqlDsqlStack --require-approval never"
-        },
-        {
-          "spawn": "build:handler"
         }
       ]
     },
