@@ -29,6 +29,10 @@ policies:
           - "schema"
           - "role"
           - "sql"
+          - "iam-grant"
+          - "dsql"
+          - "postgres"
+          - "mysql"
         descriptionLength: 160
   - type: license
     spec:

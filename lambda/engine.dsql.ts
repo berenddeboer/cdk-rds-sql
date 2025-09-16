@@ -61,39 +61,62 @@ export class DsqlEngine extends AbstractEngine {
     const sql = ["BEGIN"]
 
     if (oldResourceId !== resourceId) {
-      sql.push(pgFormat("ALTER ROLE %I RENAME TO %I", oldResourceId, resourceId))
+      // DSQL doesn't support RENAME, so we need to create new role and drop old one
+      // First create the new role
+      sql.push(pgFormat("CREATE ROLE %I WITH LOGIN", resourceId))
+
+      // Transfer database permissions from old to new role
+      if (oldProps?.DatabaseName) {
+        sql.push(
+          pgFormat(
+            "GRANT CONNECT ON DATABASE %I TO %I",
+            oldProps.DatabaseName,
+            resourceId
+          )
+        )
+      }
+
+      // Drop the old role
+      sql.push(pgFormat("DROP ROLE IF EXISTS %I", oldResourceId))
     }
 
-    // Handle database permission changes
-    if (
-      oldProps?.DatabaseName &&
-      props?.DatabaseName &&
-      oldProps.DatabaseName !== props.DatabaseName
-    ) {
-      // Revoke from old database and grant to new
-      sql.push(
-        pgFormat(
-          "REVOKE CONNECT ON DATABASE %I FROM %I",
-          oldProps.DatabaseName,
-          resourceId
+    // Handle database permission changes (only if role wasn't renamed, otherwise already handled above)
+    if (oldResourceId === resourceId) {
+      if (
+        oldProps?.DatabaseName &&
+        props?.DatabaseName &&
+        oldProps.DatabaseName !== props.DatabaseName
+      ) {
+        // Revoke from old database and grant to new
+        sql.push(
+          pgFormat(
+            "REVOKE CONNECT ON DATABASE %I FROM %I",
+            oldProps.DatabaseName,
+            resourceId
+          )
         )
-      )
+        sql.push(
+          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
+        )
+      } else if (props?.DatabaseName && !oldProps?.DatabaseName) {
+        // Grant to new database
+        sql.push(
+          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
+        )
+      } else if (!props?.DatabaseName && oldProps?.DatabaseName) {
+        // Revoke from old database
+        sql.push(
+          pgFormat(
+            "REVOKE CONNECT ON DATABASE %I FROM %I",
+            oldProps.DatabaseName,
+            resourceId
+          )
+        )
+      }
+    } else if (props?.DatabaseName && props.DatabaseName !== oldProps?.DatabaseName) {
+      // If role was renamed AND database changed, grant to new database
       sql.push(
         pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-      )
-    } else if (props?.DatabaseName && !oldProps?.DatabaseName) {
-      // Grant to new database
-      sql.push(
-        pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-      )
-    } else if (!props?.DatabaseName && oldProps?.DatabaseName) {
-      // Revoke from old database
-      sql.push(
-        pgFormat(
-          "REVOKE CONNECT ON DATABASE %I FROM %I",
-          oldProps.DatabaseName,
-          resourceId
-        )
       )
     }
 
