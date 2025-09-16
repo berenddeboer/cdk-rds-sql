@@ -58,14 +58,17 @@ export class DsqlEngine extends AbstractEngine {
     props: EngineRoleProperties,
     oldProps: EngineRoleProperties
   ): Promise<string[]> {
-    const sql = ["BEGIN"]
+    const sql: string[] = []
 
     if (oldResourceId !== resourceId) {
       // DSQL doesn't support RENAME, so we need to create new role and drop old one
-      // First create the new role
+      // Use separate transactions for each DDL operation
+
+      // First transaction: Create the new role with permissions
+      sql.push("BEGIN")
       sql.push(pgFormat("CREATE ROLE %I WITH LOGIN", resourceId))
 
-      // Transfer database permissions from old to new role
+      // Transfer database permissions to new role
       if (oldProps?.DatabaseName) {
         sql.push(
           pgFormat(
@@ -75,13 +78,17 @@ export class DsqlEngine extends AbstractEngine {
           )
         )
       }
+      sql.push("COMMIT")
 
-      // Drop the old role
+      // Second transaction: Drop the old role
+      sql.push("BEGIN")
       sql.push(pgFormat("DROP ROLE IF EXISTS %I", oldResourceId))
-    }
+      sql.push("COMMIT")
+    } else {
+      // If only permissions are changing (no rename), single transaction is fine
+      sql.push("BEGIN")
 
-    // Handle database permission changes (only if role wasn't renamed, otherwise already handled above)
-    if (oldResourceId === resourceId) {
+      // Handle database permission changes
       if (
         oldProps?.DatabaseName &&
         props?.DatabaseName &&
@@ -113,14 +120,23 @@ export class DsqlEngine extends AbstractEngine {
           )
         )
       }
-    } else if (props?.DatabaseName && props.DatabaseName !== oldProps?.DatabaseName) {
-      // If role was renamed AND database changed, grant to new database
+
+      sql.push("COMMIT")
+    }
+
+    // Handle case where role was renamed AND database changed to a different one
+    if (
+      oldResourceId !== resourceId &&
+      props?.DatabaseName &&
+      props.DatabaseName !== oldProps?.DatabaseName
+    ) {
+      sql.push("BEGIN")
       sql.push(
         pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
       )
+      sql.push("COMMIT")
     }
 
-    sql.push("COMMIT")
     return sql
   }
 
