@@ -2,13 +2,13 @@ import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
+import { IProvider } from "./provider"
 
 export interface SqlProps {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: IProvider
 
   /**
    * Optional database.

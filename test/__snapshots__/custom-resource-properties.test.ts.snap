@@ -1,0 +1,156 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Custom Resource Properties Database resource properties database properties remain consistent across builds 1`] = `
+{
+  "Resource": "database",
+  "ResourceId": "test_db",
+  "SecretArn": {
+    "Ref": "ClusterSecretAttachment769E6258",
+  },
+  "ServiceToken": {
+    "Fn::GetAtt": [
+      "ProviderRdsSqlframeworkonEventD3D137B7",
+      "Arn",
+    ],
+  },
+}
+`;
+
+exports[`Custom Resource Properties Property validation across all resource types comprehensive property validation 1`] = `
+{
+  "database": [
+    {
+      "key": "TestDatabase",
+      "properties": {
+        "Resource": "database",
+        "ResourceId": "test_db",
+        "SecretArn": {
+          "Ref": "ClusterSecretAttachment769E6258",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ProviderRdsSqlframeworkonEventD3D137B7",
+            "Arn",
+          ],
+        },
+      },
+    },
+  ],
+  "role": [
+    {
+      "key": "TestRolePostgresRole3AD07047",
+      "properties": {
+        "DatabaseName": "test_db",
+        "EnableIamAuth": false,
+        "PasswordArn": {
+          "Ref": "TestRoleSecret0CBCDF24",
+        },
+        "Resource": "role",
+        "ResourceId": "test_role",
+        "SecretArn": {
+          "Ref": "ClusterSecretAttachment769E6258",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ProviderRdsSqlframeworkonEventD3D137B7",
+            "Arn",
+          ],
+        },
+      },
+    },
+  ],
+  "schema": [
+    {
+      "key": "TestSchema",
+      "properties": {
+        "DatabaseName": "test_db",
+        "Resource": "schema",
+        "ResourceId": "test_schema",
+        "RoleName": "test_role",
+        "SecretArn": {
+          "Ref": "ClusterSecretAttachment769E6258",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ProviderRdsSqlframeworkonEventD3D137B7",
+            "Arn",
+          ],
+        },
+      },
+    },
+  ],
+  "sql": [
+    {
+      "key": "TestSql",
+      "properties": {
+        "DatabaseName": "test_db",
+        "Resource": "sql",
+        "Rollback": "DROP TABLE test;",
+        "SecretArn": {
+          "Ref": "ClusterSecretAttachment769E6258",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ProviderRdsSqlframeworkonEventD3D137B7",
+            "Arn",
+          ],
+        },
+        "Statement": "CREATE TABLE test (id INTEGER);",
+      },
+    },
+  ],
+}
+`;
+
+exports[`Custom Resource Properties Role resource properties role properties remain consistent across builds 1`] = `
+{
+  "DatabaseName": "test_db",
+  "EnableIamAuth": false,
+  "PasswordArn": {
+    "Ref": "TestRoleSecret0CBCDF24",
+  },
+  "Resource": "role",
+  "ResourceId": "test_role",
+  "SecretArn": {
+    "Ref": "ClusterSecretAttachment769E6258",
+  },
+  "ServiceToken": {
+    "Fn::GetAtt": [
+      "ProviderRdsSqlframeworkonEventD3D137B7",
+      "Arn",
+    ],
+  },
+}
+`;
+
+exports[`Custom Resource Properties SQL resource properties sql properties remain consistent across builds 1`] = `
+{
+  "Resource": "sql",
+  "SecretArn": {
+    "Ref": "ClusterSecretAttachment769E6258",
+  },
+  "ServiceToken": {
+    "Fn::GetAtt": [
+      "ProviderRdsSqlframeworkonEventD3D137B7",
+      "Arn",
+    ],
+  },
+  "Statement": "CREATE TABLE test (id INTEGER);",
+}
+`;
+
+exports[`Custom Resource Properties Schema resource properties schema properties remain consistent across builds 1`] = `
+{
+  "Resource": "schema",
+  "ResourceId": "test_schema",
+  "SecretArn": {
+    "Ref": "ClusterSecretAttachment769E6258",
+  },
+  "ServiceToken": {
+    "Fn::GetAtt": [
+      "ProviderRdsSqlframeworkonEventD3D137B7",
+      "Arn",
+    ],
+  },
+}
+`;

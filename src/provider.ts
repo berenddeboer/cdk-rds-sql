@@ -4,7 +4,7 @@ import { Duration, Stack } from "aws-cdk-lib"
 import * as dsql from "aws-cdk-lib/aws-dsql"
 import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import * as iam from "aws-cdk-lib/aws-iam"
-import { IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
+import { Function, IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
 import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
@@ -91,11 +91,62 @@ export interface RdsSqlProps {
   readonly ssl?: boolean
 }
 
-export class Provider extends Construct {
+/**
+ * Supported database engines
+ */
+export enum DatabaseEngine {
+  POSTGRES = "postgres",
+  MYSQL = "mysql",
+  DSQL = "dsql",
+}
+
+export interface IProvider {
+  readonly serviceToken: string
+  readonly handler: IFunction
+  readonly secret?: ISecret
+  readonly engine: string
+  readonly cluster?: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+}
+
+export interface ProviderAttributes {
+  /**
+   * Either the ARN or name of the Lambda function.
+   * Use functionArn for cross-account or cross-region scenarios.
+   * Use functionName for same-account, same-region scenarios.
+   */
+  readonly functionArn?: string
+  readonly functionName?: string
+  readonly engine: DatabaseEngine
+  /**
+   * Optional cluster information for role creation.
+   *
+   * When importing a provider, cluster details are often not available.
+   * However, some operations like role creation require cluster endpoint
+   * information to build connection secrets.
+   *
+   * If you plan to create roles with the imported provider, you must
+   * provide the cluster reference. If you only plan to use existing
+   * roles, databases, schemas, or SQL operations, this can be omitted.
+   */
+  readonly cluster?: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+}
+
+export class Provider extends Construct implements IProvider {
+  /**
+   * Import an existing provider Lambda function
+   */
+  static fromProviderAttributes(
+    scope: Construct,
+    id: string,
+    attrs: ProviderAttributes
+  ): IProvider {
+    return new ImportedProvider(scope, id, attrs)
+  }
+
   public readonly serviceToken: string
   public readonly secret?: ISecret
   public readonly handler: IFunction
-  public readonly cluster: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+  public readonly cluster?: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
 
   /**
    * The engine like "postgres" or "mysql"
@@ -129,20 +180,24 @@ export class Provider extends Construct {
     // Determine engine from cluster/instance instead of hardcoding
     if (isDsql) {
       // DSQL is always PostgreSQL-compatible
-      this.engine = "dsql"
+      this.engine = DatabaseEngine.DSQL
     } else if ("clusterIdentifier" in props.cluster) {
       // It's a DatabaseCluster
       const clusterEngine = (props.cluster as IDatabaseCluster).engine
       this.engine =
-        clusterEngine && clusterEngine.engineFamily === "MYSQL" ? "mysql" : "postgres"
+        clusterEngine && clusterEngine.engineFamily === "MYSQL"
+          ? DatabaseEngine.MYSQL
+          : DatabaseEngine.POSTGRES
     } else if ("instanceIdentifier" in props.cluster) {
       // It's a DatabaseInstance
       const instanceEngine = (props.cluster as IDatabaseInstance).engine
       this.engine =
-        instanceEngine && instanceEngine.engineFamily === "MYSQL" ? "mysql" : "postgres"
+        instanceEngine && instanceEngine.engineFamily === "MYSQL"
+          ? DatabaseEngine.MYSQL
+          : DatabaseEngine.POSTGRES
     } else {
       // Fallback to postgres if engine hasn't been provided
-      this.engine = "postgres"
+      this.engine = DatabaseEngine.POSTGRES
     }
 
     const functionName = "RdsSql" + slugify("28b9e791-af60-4a33-bca8-ffb6f30ef8c5")
@@ -226,6 +281,9 @@ export class Provider extends Construct {
       const region = Stack.of(scope).region
       environment.DSQL_ENDPOINT = `${clusterId}.dsql.${region}.on.aws`
       environment.DSQL_PORT = "5432"
+    } else if (props.secret) {
+      // Add secret ARN to environment for traditional RDS
+      environment.SECRET_ARN = props.secret.secretArn
     }
 
     const deleteParameterPolicy = new iam.PolicyStatement({
@@ -294,6 +352,41 @@ export class Provider extends Construct {
     }
 
     return fn
+  }
+}
+
+class ImportedProvider extends Construct implements IProvider {
+  public readonly serviceToken: string
+  public readonly handler: IFunction
+  public readonly secret?: ISecret
+  public readonly engine: string
+  public readonly cluster?: IDatabaseCluster | IDatabaseInstance | dsql.CfnCluster
+
+  constructor(scope: Construct, id: string, attrs: ProviderAttributes) {
+    super(scope, id)
+
+    // Validate that either functionArn or functionName is provided
+    if (!attrs.functionArn && !attrs.functionName) {
+      throw new Error("Either functionArn or functionName must be provided")
+    }
+    if (attrs.functionArn && attrs.functionName) {
+      throw new Error("Provide either functionArn or functionName, not both")
+    }
+
+    // Import the existing Lambda function
+    this.handler = attrs.functionArn
+      ? Function.fromFunctionArn(this, "Handler", attrs.functionArn)
+      : Function.fromFunctionName(this, "Handler", attrs.functionName!)
+
+    // Derive serviceToken by wrapping in custom resource provider
+    const provider = new customResources.Provider(this, "Provider", {
+      onEventHandler: this.handler,
+    })
+    this.serviceToken = provider.serviceToken
+
+    this.engine = attrs.engine
+    this.secret = undefined // Imported providers get secret from environment
+    this.cluster = attrs.cluster // Optional cluster for role creation
   }
 }
 

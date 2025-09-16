@@ -8,6 +8,7 @@ CONVENTIONS.md
 src/handler/handler.js
 lambda/handler.js
 *~
+.claude/hooks/.edited
 /.projen/
 /test-reports/
 junit.xml

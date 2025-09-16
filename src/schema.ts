@@ -2,14 +2,14 @@ import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
+import { IProvider } from "./provider"
 import { Role } from "./role"
 
 export interface SchemaProps {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: IProvider
 
   /**
    * Optional database.

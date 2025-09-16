@@ -1,14 +1,13 @@
 import { CustomResource } from "aws-cdk-lib"
-import * as dsql from "aws-cdk-lib/aws-dsql"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
+import { IProvider, DatabaseEngine } from "./provider"
 
 export interface IamGrantProps {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: IProvider
 
   /**
    * Database role name to grant IAM access to.
@@ -21,17 +20,10 @@ export interface IamGrantProps {
   readonly resourceArn: string
 }
 
-/**
- * Helper function to determine if a cluster is a DSQL cluster
- */
-function isDsqlCluster(cluster: any): cluster is dsql.CfnCluster {
-  return cluster instanceof dsql.CfnCluster
-}
-
 export class IamGrant extends CustomResource {
   constructor(scope: Construct, id: string, props: IamGrantProps) {
     // IAM grants are only supported on DSQL
-    if (!isDsqlCluster(props.provider.cluster)) {
+    if (props.provider.engine !== DatabaseEngine.DSQL) {
       throw new Error(
         "IAM grants are only supported with DSQL clusters. Use regular database authentication for RDS/Aurora clusters."
       )

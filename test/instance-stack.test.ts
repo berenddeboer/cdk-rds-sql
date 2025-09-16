@@ -26,6 +26,7 @@ test("serverless instance v1", () => {
       SecretStringTemplate: {
         "Fn::Join": [
           "", // First element is an empty string (the separator)
+          // eslint-disable-next-line quotes
           Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"postgres"')]), // Second element is the array of strings to join
         ],
       },
@@ -244,6 +245,7 @@ test("mysql database instance engine is set in secret", () => {
       SecretStringTemplate: {
         "Fn::Join": [
           "", // First element is an empty string (the separator)
+          // eslint-disable-next-line quotes
           Match.arrayWith([Match.stringLikeRegexp('"engine":\\s*"mysql"')]), // Second element is the array of strings to join
         ],
       },

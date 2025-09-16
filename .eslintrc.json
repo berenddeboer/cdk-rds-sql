@@ -124,18 +124,6 @@
   "overrides": [
     {
       "files": [
-        "test/cluster-stack.test.ts",
-        "test/instance-stack.test.ts"
-      ],
-      "rules": {
-        "quotes": [
-          "warn",
-          "double"
-        ]
-      }
-    },
-    {
-      "files": [
         "lambda/*.ts"
       ],
       "rules": {

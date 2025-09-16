@@ -11,6 +11,7 @@ const tmpDirectories = [
   "src/handler/handler.js",
   "lambda/handler.js",
   "*~",
+  ".claude/hooks/.edited",
 ]
 
 const project = new awscdk.AwsCdkConstructLibrary({
@@ -90,14 +91,6 @@ if (project.eslint) {
   project.eslint.addRules({
     semi: ["off"],
     quotes: ["error", "double"],
-  })
-
-  // Add an override for the test directory
-  project.eslint.addOverride({
-    files: ["test/cluster-stack.test.ts", "test/instance-stack.test.ts"],
-    rules: {
-      quotes: ["warn", "double"],
-    },
   })
 
   // Add an override for lambda directory to disable import/no-extraneous-dependencies

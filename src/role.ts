@@ -7,14 +7,14 @@ import * as ssm from "aws-cdk-lib/aws-ssm"
 import { Construct } from "constructs"
 import { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { Provider } from "./provider"
+import { IProvider, DatabaseEngine } from "./provider"
 import { Role as CustomResourceRole } from "./role.custom-resource"
 
 export interface RoleProps {
   /**
    * Provider.
    */
-  readonly provider: Provider
+  readonly provider: IProvider
 
   /**
    * SQL.
@@ -93,7 +93,7 @@ class Parameters extends Construct {
     scope: Construct,
     id: string,
     props: {
-      provider: Provider
+      provider: IProvider
       secretArn: string
       parameterPrefix: string
       passwordArn: string
@@ -154,7 +154,7 @@ export class Role extends Construct {
   public readonly secret?: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
-    if (props.provider.engine !== "dsql") {
+    if (props.provider.engine !== DatabaseEngine.DSQL) {
       if (props.database && props.databaseName) {
         throw "Specify either database or databaseName"
       }
@@ -168,7 +168,16 @@ export class Role extends Construct {
     super(scope, id)
 
     // DSQL doesn't use secrets - it always uses IAM authentication
-    if (props.provider.engine !== "dsql") {
+    if (props.provider.engine !== DatabaseEngine.DSQL) {
+      // For imported providers without cluster details, provide helpful error message
+      if (!props.provider.cluster) {
+        throw new Error(
+          "Role creation requires cluster information. When importing a provider with " +
+            "Provider.fromProviderAttributes(), include the 'cluster' property if you plan " +
+            "to create new roles. Alternatively, use existing roles created with the original provider."
+        )
+      }
+
       // For RDS/Aurora clusters and instances, get endpoint details
       const host = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
         ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.hostname
@@ -238,12 +247,12 @@ export class Role extends Construct {
       provider: props.provider,
       roleName: props.roleName,
       passwordArn:
-        props.enableIamAuth || props.provider.engine === "dsql"
+        props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
           ? ""
           : this.secret!.secretArn,
       database: props.database,
       databaseName: props.databaseName,
-      enableIamAuth: props.enableIamAuth || props.provider.engine === "dsql",
+      enableIamAuth: props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL,
     })
 
     if (this.secret) {

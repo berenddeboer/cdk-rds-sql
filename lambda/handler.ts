@@ -113,15 +113,17 @@ export const handler = async (
     }
   } else {
     // Traditional RDS configuration - use secrets
-    if (!event.ResourceProperties.SecretArn) {
-      throw "SecretArn is a required property"
+    // Use SecretArn from event properties, fallback to environment variable
+    const secretArn = event.ResourceProperties.SecretArn || process.env.SECRET_ARN
+    if (!secretArn) {
+      throw "SecretArn is required (not in event properties or environment)"
     }
 
     const command = new GetSecretValueCommand({
-      SecretId: event.ResourceProperties.SecretArn,
+      SecretId: secretArn,
     })
 
-    log(`Fetching secret ${event.ResourceProperties.SecretArn}`)
+    log(`Fetching secret ${secretArn}`)
     const secret: GetSecretValueCommandOutput = await backOff(
       async () => {
         try {
@@ -138,7 +140,7 @@ export const handler = async (
       }
     )
     if (!secret.SecretString) {
-      throw `No secret string in ${event.ResourceProperties.SecretArn}`
+      throw `No secret string in ${secretArn}`
     }
     secretValues = JSON.parse(secret.SecretString)
 

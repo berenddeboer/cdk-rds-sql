@@ -39,6 +39,7 @@ CONVENTIONS.md
 src/handler/handler.js
 lambda/handler.js
 *~
+.claude/hooks/.edited
 /test-reports/
 junit.xml
 /coverage/
