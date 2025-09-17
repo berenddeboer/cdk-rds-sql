@@ -37,19 +37,7 @@ export class DsqlEngine extends AbstractEngine {
   }
 
   async createRole(resourceId: string, props: EngineRoleProperties): Promise<string[]> {
-    const sql = ["BEGIN"]
-
-    // DSQL always uses IAM authentication, no passwords
-    sql.push(pgFormat("CREATE ROLE %I WITH LOGIN", resourceId))
-
-    if (props?.DatabaseName) {
-      sql.push(
-        pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-      )
-    }
-
-    sql.push("COMMIT")
-    return sql
+    return this.generateCreateRoleSql(resourceId, props?.DatabaseName)
   }
 
   async updateRole(
@@ -61,31 +49,23 @@ export class DsqlEngine extends AbstractEngine {
     const sql: string[] = []
 
     if (oldResourceId !== resourceId) {
-      // DSQL doesn't support RENAME, so we need to create new role and drop old one
-      // Use separate transactions for each DDL operation
+      // DSQL doesn't support RENAME, so we create new role and drop old one
+      // Create new role with old database permissions first
+      sql.push(...this.generateCreateRoleSql(resourceId, oldProps?.DatabaseName))
 
-      // First transaction: Create the new role with permissions
-      sql.push("BEGIN")
-      sql.push(pgFormat("CREATE ROLE %I WITH LOGIN", resourceId))
+      // Drop old role
+      sql.push(...this.generateDropRoleSql(oldResourceId))
 
-      // Transfer database permissions to new role
-      if (oldProps?.DatabaseName) {
+      // If database changed as well, grant new database permissions
+      if (props?.DatabaseName && props.DatabaseName !== oldProps?.DatabaseName) {
+        sql.push("BEGIN")
         sql.push(
-          pgFormat(
-            "GRANT CONNECT ON DATABASE %I TO %I",
-            oldProps.DatabaseName,
-            resourceId
-          )
+          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
         )
+        sql.push("COMMIT")
       }
-      sql.push("COMMIT")
-
-      // Second transaction: Drop the old role
-      sql.push("BEGIN")
-      sql.push(pgFormat("DROP ROLE IF EXISTS %I", oldResourceId))
-      sql.push("COMMIT")
     } else {
-      // If only permissions are changing (no rename), single transaction is fine
+      // Only permissions are changing (no rename)
       sql.push("BEGIN")
 
       // Handle database permission changes
@@ -124,38 +104,11 @@ export class DsqlEngine extends AbstractEngine {
       sql.push("COMMIT")
     }
 
-    // Handle case where role was renamed AND database changed to a different one
-    if (
-      oldResourceId !== resourceId &&
-      props?.DatabaseName &&
-      props.DatabaseName !== oldProps?.DatabaseName
-    ) {
-      sql.push("BEGIN")
-      sql.push(
-        pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-      )
-      sql.push("COMMIT")
-    }
-
     return sql
   }
 
   deleteRole(resourceId: string, props: EngineRoleProperties): string | string[] {
-    const sql = ["BEGIN"]
-
-    if (props?.DatabaseName) {
-      sql.push(
-        pgFormat(
-          "REVOKE ALL PRIVILEGES ON DATABASE %I FROM %I",
-          props.DatabaseName,
-          resourceId
-        )
-      )
-    }
-
-    sql.push(pgFormat("DROP ROLE IF EXISTS %I", resourceId))
-    sql.push("COMMIT")
-    return sql
+    return this.generateDropRoleSql(resourceId, props?.DatabaseName)
   }
 
   createSchema(resourceId: string, props: EngineSchemaProperties): string | string[] {
@@ -337,5 +290,31 @@ export class DsqlEngine extends AbstractEngine {
       pgFormat("REVOKE CREATE ON SCHEMA %I FROM %I", schema, roleName),
       pgFormat("REVOKE ALL ON SCHEMA %I FROM %I", schema, roleName),
     ]
+  }
+
+  private generateCreateRoleSql(roleName: string, databaseName?: string): string[] {
+    const sql = ["BEGIN"]
+    sql.push(pgFormat("CREATE ROLE %I WITH LOGIN", roleName))
+
+    if (databaseName) {
+      sql.push(pgFormat("GRANT CONNECT ON DATABASE %I TO %I", databaseName, roleName))
+    }
+
+    sql.push("COMMIT")
+    return sql
+  }
+
+  private generateDropRoleSql(roleName: string, databaseName?: string): string[] {
+    const sql = ["BEGIN"]
+
+    if (databaseName) {
+      sql.push(
+        pgFormat("REVOKE ALL PRIVILEGES ON DATABASE %I FROM %I", databaseName, roleName)
+      )
+    }
+
+    sql.push(pgFormat("DROP ROLE IF EXISTS %I", roleName))
+    sql.push("COMMIT")
+    return sql
   }
 }

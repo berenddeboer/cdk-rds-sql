@@ -42,6 +42,9 @@ npx projen test
 # Run tests in watch mode
 npx projen test:watch
 
+# Run typecheck (instead of npx tsc --noEmit)
+npx projen typecheck
+
 # Run linting
 npx projen eslint
 
