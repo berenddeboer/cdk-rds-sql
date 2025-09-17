@@ -31,6 +31,7 @@ export class IamGrant extends CustomResource {
 
     super(scope, id, {
       serviceToken: props.provider.serviceToken,
+      resourceType: "Custom::DsqlIamGrant",
       properties: {
         Resource: RdsSqlResource.IAM_GRANT,
         ResourceId: props.roleName,
