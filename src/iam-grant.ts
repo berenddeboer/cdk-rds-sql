@@ -2,6 +2,7 @@ import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
 import { IProvider, DatabaseEngine } from "./provider"
+import * as crypto from "crypto"
 
 export interface IamGrantProps {
   /**
@@ -21,6 +22,15 @@ export interface IamGrantProps {
 }
 
 export class IamGrant extends CustomResource {
+  private static createUniqueResourceId(roleName: string, resourceArn: string): string {
+    const hash = crypto
+      .createHash("sha256")
+      .update(resourceArn)
+      .digest("hex")
+      .substring(0, 8)
+    return `${roleName}:${hash}`
+  }
+
   constructor(scope: Construct, id: string, props: IamGrantProps) {
     // IAM grants are only supported on DSQL
     if (props.provider.engine !== DatabaseEngine.DSQL) {
@@ -34,7 +44,8 @@ export class IamGrant extends CustomResource {
       resourceType: "Custom::DsqlIamGrant",
       properties: {
         Resource: RdsSqlResource.IAM_GRANT,
-        ResourceId: props.roleName,
+        ResourceId: IamGrant.createUniqueResourceId(props.roleName, props.resourceArn),
+        RoleName: props.roleName,
         ResourceArn: props.resourceArn,
       },
     })

@@ -177,7 +177,7 @@ export const handler = async (
           break
         case RdsSqlResource.IAM_GRANT:
           sql = dbEngine.createIamGrant(
-            resourceId,
+            event.ResourceProperties.RoleName,
             toIamGrantEngineProps(event.ResourceProperties)
           )
           break
@@ -226,8 +226,8 @@ export const handler = async (
           const iamUpdateEvent =
             event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
           sql = dbEngine.updateIamGrant(
-            resourceId,
-            oldResourceId,
+            event.ResourceProperties.RoleName,
+            iamUpdateEvent.OldResourceProperties.RoleName,
             toIamGrantEngineProps(event.ResourceProperties),
             toIamGrantEngineProps(iamUpdateEvent.OldResourceProperties)
           )
@@ -261,7 +261,7 @@ export const handler = async (
           break
         case RdsSqlResource.IAM_GRANT:
           sql = dbEngine.deleteIamGrant(
-            resourceId,
+            event.ResourceProperties.RoleName,
             toIamGrantEngineProps(event.ResourceProperties)
           )
           break
