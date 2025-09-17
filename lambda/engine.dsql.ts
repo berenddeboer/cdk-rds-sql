@@ -277,6 +277,20 @@ export class DsqlEngine extends AbstractEngine {
               .replace("-- REVOKE_IAM_GRANTS_FOR_ROLE:", "")
               .trim()
             await this.revokeIamGrantsForRole(client, roleName)
+          } else if (statement.includes("AWS IAM REVOKE")) {
+            this.log(`Executing SQL: ${statement}`)
+            try {
+              const result = await client.query(statement)
+              results.push(result)
+            } catch (error: any) {
+              if (error.message && error.message.includes("does not exist")) {
+                this.log(
+                  `Ignoring error for IAM REVOKE (role doesn't exist): ${error.message}`
+                )
+              } else {
+                throw error
+              }
+            }
           } else {
             this.log(`Executing SQL: ${statement}`)
             const result = await client.query(statement)
