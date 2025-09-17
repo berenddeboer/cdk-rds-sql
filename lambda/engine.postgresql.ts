@@ -177,7 +177,7 @@ END$$;`,
     return sql
   }
 
-  deleteRole(resourceId: string, props: EngineRoleProperties): string[] {
+  async deleteRole(resourceId: string, props: EngineRoleProperties): Promise<string[]> {
     return [
       "start transaction",
       pgFormat(

@@ -245,7 +245,7 @@ export const handler = async (
           sql = dbEngine.deleteDatabase(resourceId, secretValues.username)
           break
         case RdsSqlResource.ROLE:
-          sql = dbEngine.deleteRole(
+          sql = await dbEngine.deleteRole(
             resourceId,
             toRoleEngineProps(event.ResourceProperties)
           )

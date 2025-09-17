@@ -54,8 +54,8 @@ describe("MySQL Engine", () => {
       expect(sql[2]).toContain("FLUSH PRIVILEGES")
     })
 
-    it("should generate correct SQL for deleting a role", () => {
-      const sql = engine.deleteRole("testrole", { DatabaseName: "testdb" })
+    it("should generate correct SQL for deleting a role", async () => {
+      const sql = await engine.deleteRole("testrole", { DatabaseName: "testdb" })
       expect(Array.isArray(sql)).toBe(true)
       expect(sql[0]).toContain("REVOKE ALL PRIVILEGES")
       expect(sql[1]).toContain("DROP USER IF EXISTS")

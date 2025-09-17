@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -o errexit -o pipefail -o nounset
+
+# Script claude should use for linting.
+
+# Make sure we're in the root
+if [ ! -z "${CLAUDE_PROJECT_DIR:-}" ]
+then
+   cd $CLAUDE_PROJECT_DIR
+fi
+
+# No file edited, leave
+if [ ! -e ".claude/hooks/.edited" ]
+then
+  exit 0
+fi
+
+# Read hook input from stdin and check for stop_hook_active flag
+if command -v jq >/dev/null 2>&1; then
+  input=$(cat)
+  stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false')
+  if [ "$stop_hook_active" = "true" ]; then
+    exit 0
+  fi
+fi
+
+format=$(npx projen eslint)
+
+# Capture stdout and check exit code for the main linting command
+if ! output=$(npx projen typecheck 2>&1); then
+  echo "$output" >&2
+  exit 2
+fi
+
+# We're done, remove .edited
+rm .claude/hooks/.edited

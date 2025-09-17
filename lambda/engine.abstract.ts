@@ -51,7 +51,10 @@ export abstract class AbstractEngine {
     props: EngineRoleProperties,
     oldProps: EngineRoleProperties
   ): Promise<string | string[]>
-  abstract deleteRole(resourceId: string, props: EngineRoleProperties): string | string[]
+  abstract deleteRole(
+    resourceId: string,
+    props: EngineRoleProperties
+  ): Promise<string | string[]>
 
   abstract createSchema(
     resourceId: string,

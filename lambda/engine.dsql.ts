@@ -53,6 +53,9 @@ export class DsqlEngine extends AbstractEngine {
       // Create new role with old database permissions first
       sql.push(...this.generateCreateRoleSql(resourceId, oldProps?.DatabaseName))
 
+      // Add special marker for IAM grant revocation
+      sql.push(`-- REVOKE_IAM_GRANTS_FOR_ROLE: ${oldResourceId}`)
+
       // Drop old role
       sql.push(...this.generateDropRoleSql(oldResourceId))
 
@@ -107,8 +110,19 @@ export class DsqlEngine extends AbstractEngine {
     return sql
   }
 
-  deleteRole(resourceId: string, props: EngineRoleProperties): string | string[] {
-    return this.generateDropRoleSql(resourceId, props?.DatabaseName)
+  async deleteRole(
+    resourceId: string,
+    props: EngineRoleProperties
+  ): Promise<string | string[]> {
+    const sql: string[] = []
+
+    // Add special marker for IAM grant revocation
+    sql.push(`-- REVOKE_IAM_GRANTS_FOR_ROLE: ${resourceId}`)
+
+    // Add the regular drop role SQL
+    sql.push(...this.generateDropRoleSql(resourceId, props?.DatabaseName))
+
+    return sql
   }
 
   createSchema(resourceId: string, props: EngineSchemaProperties): string | string[] {
@@ -257,9 +271,17 @@ export class DsqlEngine extends AbstractEngine {
 
       for (const statement of statements) {
         if (statement.trim()) {
-          this.log(`Executing SQL: ${statement}`)
-          const result = await client.query(statement)
-          results.push(result)
+          // Handle special IAM grant revocation marker
+          if (statement.startsWith("-- REVOKE_IAM_GRANTS_FOR_ROLE:")) {
+            const roleName = statement
+              .replace("-- REVOKE_IAM_GRANTS_FOR_ROLE:", "")
+              .trim()
+            await this.revokeIamGrantsForRole(client, roleName)
+          } else {
+            this.log(`Executing SQL: ${statement}`)
+            const result = await client.query(statement)
+            results.push(result)
+          }
         }
       }
 
@@ -316,5 +338,35 @@ export class DsqlEngine extends AbstractEngine {
     sql.push(pgFormat("DROP ROLE IF EXISTS %I", roleName))
     sql.push("COMMIT")
     return sql
+  }
+
+  private async revokeIamGrantsForRole(client: any, roleName: string): Promise<void> {
+    try {
+      this.log(`Querying IAM grants for role: ${roleName}`)
+
+      // Query the IAM role mappings for this role
+      const result = await client.query(
+        pgFormat(
+          "SELECT arn FROM sys.iam_pg_role_mappings WHERE pg_role_name = %L",
+          roleName
+        )
+      )
+
+      if (result.rows && result.rows.length > 0) {
+        this.log(`Found ${result.rows.length} IAM grants to revoke for role: ${roleName}`)
+
+        // Revoke each IAM grant
+        for (const row of result.rows) {
+          const revokeStatement = pgFormat("AWS IAM REVOKE %I FROM %L", roleName, row.arn)
+          this.log(`Executing IAM revoke: ${revokeStatement}`)
+          await client.query(revokeStatement)
+        }
+      } else {
+        this.log(`No IAM grants found for role: ${roleName}`)
+      }
+    } catch (error) {
+      this.log(`Error revoking IAM grants for role ${roleName}: ${error}`)
+      // Don't throw here - the role might not have any IAM grants, which is fine
+    }
   }
 }
