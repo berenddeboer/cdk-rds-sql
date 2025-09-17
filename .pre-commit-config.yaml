@@ -29,6 +29,14 @@ repos:
           - pre-commit
   - repo: local
     hooks:
+      - id: projen
+        name: run-projen
+        language: system
+        entry: sh -c 'npx projen'
+        files: \.ts$
+        pass_filenames: false
+  - repo: local
+    hooks:
       - id: build-typescript
         exclude: .projenrc.ts
         name: build-typescript

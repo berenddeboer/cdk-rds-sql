@@ -1,8 +1,8 @@
+import * as crypto from "crypto"
 import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
 import { IProvider, DatabaseEngine } from "./provider"
-import * as crypto from "crypto"
 
 export interface IamGrantProps {
   /**
