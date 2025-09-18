@@ -5,7 +5,6 @@ import {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
-  EngineIamGrantProperties,
 } from "./types"
 
 export class MysqlEngine extends AbstractEngine {
@@ -184,26 +183,20 @@ export class MysqlEngine extends AbstractEngine {
     return props?.Rollback || ""
   }
 
-  createIamGrant(
-    _resourceId: string,
-    _props: EngineIamGrantProperties
-  ): string | string[] {
+  createIamGrant(_roleName: string, _iamArn: string): string | string[] {
     throw new Error("IAM grants are only supported with DSQL clusters")
   }
 
   updateIamGrant(
-    _resourceId: string,
-    _oldResourceId: string,
-    _props: EngineIamGrantProperties,
-    _oldProps: EngineIamGrantProperties
+    _roleName: string,
+    _oldRoleName: string,
+    _iamArn: string,
+    _oldIamArn: string
   ): string | string[] {
     throw new Error("IAM grants are only supported with DSQL clusters")
   }
 
-  deleteIamGrant(
-    _resourceId: string,
-    _props: EngineIamGrantProperties
-  ): string | string[] {
+  deleteIamGrant(_roleName: string, _iamArn: string): string | string[] {
     throw new Error("IAM grants are only supported with DSQL clusters")
   }
 

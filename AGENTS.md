@@ -42,6 +42,9 @@ npx projen test
 # Run tests in watch mode
 npx projen test:watch
 
+# Run typecheck (instead of npx tsc --noEmit)
+npx projen typecheck
+
 # Run linting
 npx projen eslint
 
@@ -108,10 +111,6 @@ Projen tasks:
 - Global RDS certificate bundle is automatically downloaded during build
 - Can be disabled via `ssl: false` in Provider props
 
-## Key Dependencies
+## Code style
 
-- **AWS CDK**: v2.171.1
-- **Node.js**: >= 22.14
-- **TypeScript**: ~5.8
-- **Database Drivers**: pg (PostgreSQL), mysql2 (MySQL)
-- **AWS SDKs**: secrets-manager, ssm clients
+- Avoid any.

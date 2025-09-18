@@ -7,7 +7,6 @@ import {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
-  EngineIamGrantProperties,
 } from "./types"
 
 export class DsqlEngine extends AbstractEngine {
@@ -193,41 +192,47 @@ export class DsqlEngine extends AbstractEngine {
     return []
   }
 
-  createIamGrant(resourceId: string, props: EngineIamGrantProperties): string | string[] {
-    if (!props.ResourceArn) {
+  createIamGrant(roleName: string, iamArn: string): string | string[] {
+    if (!iamArn) {
       throw new Error("ResourceArn is required for IAM grant")
     }
-    return pgFormat("AWS IAM GRANT %I TO %L", resourceId, props.ResourceArn)
+    return pgFormat("AWS IAM GRANT %I TO %L", roleName, iamArn)
   }
 
   updateIamGrant(
-    resourceId: string,
-    oldResourceId: string,
-    props: EngineIamGrantProperties,
-    oldProps: EngineIamGrantProperties
+    roleName: string,
+    oldRoleName: string,
+    iamArn: string,
+    oldIamArn: string
   ): string | string[] {
     const statements: string[] = []
 
+    // Only update if role name or IAM role ARN changed
+    const roleNameChanged = oldRoleName !== roleName
+    const arnChanged = oldIamArn !== iamArn
+
+    if (!roleNameChanged && !arnChanged) {
+      return statements // No changes needed
+    }
+
     // Revoke old grant if resource ARN or role name changed
-    if (oldProps.ResourceArn) {
-      statements.push(
-        pgFormat("AWS IAM REVOKE %I FROM %L", oldResourceId, oldProps.ResourceArn)
-      )
+    if (oldIamArn) {
+      statements.push(pgFormat("AWS IAM REVOKE %I FROM %L", oldRoleName, oldIamArn))
     }
 
     // Grant new permissions
-    if (props.ResourceArn) {
-      statements.push(pgFormat("AWS IAM GRANT %I TO %L", resourceId, props.ResourceArn))
+    if (iamArn) {
+      statements.push(pgFormat("AWS IAM GRANT %I TO %L", roleName, iamArn))
     }
 
     return statements
   }
 
-  deleteIamGrant(resourceId: string, props: EngineIamGrantProperties): string | string[] {
-    if (!props.ResourceArn) {
+  deleteIamGrant(roleName: string, iamArn: string): string | string[] {
+    if (!iamArn) {
       throw new Error("ResourceArn is required for IAM grant deletion")
     }
-    return pgFormat("AWS IAM REVOKE %I FROM %L", resourceId, props.ResourceArn)
+    return pgFormat("AWS IAM REVOKE %I FROM %L", roleName, iamArn)
   }
 
   async executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any> {
@@ -354,7 +359,7 @@ export class DsqlEngine extends AbstractEngine {
     return sql
   }
 
-  private async revokeIamGrantsForRole(client: any, roleName: string): Promise<void> {
+  private async revokeIamGrantsForRole(client: Client, roleName: string): Promise<void> {
     try {
       this.log(`Querying IAM grants for role: ${roleName}`)
 

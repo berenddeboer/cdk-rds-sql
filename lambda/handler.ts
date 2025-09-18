@@ -176,10 +176,8 @@ export const handler = async (
           sql = dbEngine.createSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.IAM_GRANT:
-          sql = dbEngine.createIamGrant(
-            event.ResourceProperties.RoleName,
-            toIamGrantEngineProps(event.ResourceProperties)
-          )
+          const createIam = toIamGrantEngineProps(event.ResourceProperties)
+          sql = dbEngine.createIamGrant(createIam.RoleName, createIam.ResourceArn)
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
@@ -225,11 +223,13 @@ export const handler = async (
         case RdsSqlResource.IAM_GRANT:
           const iamUpdateEvent =
             event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
+          const newIam = toIamGrantEngineProps(event.ResourceProperties)
+          const oldIam = toIamGrantEngineProps(iamUpdateEvent.OldResourceProperties)
           sql = dbEngine.updateIamGrant(
-            event.ResourceProperties.RoleName,
-            iamUpdateEvent.OldResourceProperties.RoleName,
-            toIamGrantEngineProps(event.ResourceProperties),
-            toIamGrantEngineProps(iamUpdateEvent.OldResourceProperties)
+            newIam.RoleName,
+            oldIam.RoleName,
+            newIam.ResourceArn,
+            oldIam.ResourceArn
           )
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
@@ -260,10 +260,8 @@ export const handler = async (
           sql = dbEngine.deleteSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.IAM_GRANT:
-          sql = dbEngine.deleteIamGrant(
-            event.ResourceProperties.RoleName,
-            toIamGrantEngineProps(event.ResourceProperties)
-          )
+          const delIam = toIamGrantEngineProps(event.ResourceProperties)
+          sql = dbEngine.deleteIamGrant(delIam.RoleName, delIam.ResourceArn)
           break
         case RdsSqlResource.PARAMETER_PASSWORD:
           await deleteParameterPassword(event.ResourceProperties)

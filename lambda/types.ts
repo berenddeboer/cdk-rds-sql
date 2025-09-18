@@ -25,7 +25,8 @@ export interface EngineSqlProperties {
 }
 
 export interface EngineIamGrantProperties {
-  readonly ResourceArn?: string
+  readonly RoleName: string
+  readonly ResourceArn: string
 }
 
 // Common CloudFormation properties shared by all resources
@@ -33,7 +34,7 @@ export interface CommonProperties
   extends CloudFormationCustomResourceResourcePropertiesCommon {
   readonly Resource: RdsSqlResource
   readonly ResourceId: string
-  readonly SecretArn: string
+  readonly SecretArn?: string // SecretArn is not set for DSQL
 }
 
 // CloudFormation-specific properties (engine properties + CloudFormation metadata)
