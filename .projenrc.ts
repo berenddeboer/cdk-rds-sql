@@ -9,7 +9,6 @@ const tmpDirectories = [
   ".env",
   "CONVENTIONS.md",
   "src/handler/handler.js",
-  "lambda/handler.js",
   "*~",
   ".claude/hooks/.edited",
 ]
@@ -66,7 +65,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     prettier: true,
   },
   gitignore: tmpDirectories,
-  npmignore: tmpDirectories,
+  npmignore: [...tmpDirectories, "/lambda/"],
   docgen: false,
   workflowNodeVersion: "24.x",
   deps: ["@types/aws-lambda"],

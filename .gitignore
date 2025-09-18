@@ -37,7 +37,6 @@ cdk.out/
 .env
 CONVENTIONS.md
 src/handler/handler.js
-lambda/handler.js
 *~
 .claude/hooks/.edited
 /test-reports/

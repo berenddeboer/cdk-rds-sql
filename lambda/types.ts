@@ -33,7 +33,7 @@ export interface EngineIamGrantProperties {
 export interface CommonProperties
   extends CloudFormationCustomResourceResourcePropertiesCommon {
   readonly Resource: RdsSqlResource
-  readonly ResourceId: string
+  readonly ResourceId?: string // set if we know the exact physical resource id to return; not passed by sql or iam grant
   readonly SecretArn?: string // SecretArn is not set for DSQL
 }
 

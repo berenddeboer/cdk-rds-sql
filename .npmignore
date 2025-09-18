@@ -6,9 +6,9 @@ cdk.out/
 .env
 CONVENTIONS.md
 src/handler/handler.js
-lambda/handler.js
 *~
 .claude/hooks/.edited
+/lambda/
 /.projen/
 /test-reports/
 junit.xml

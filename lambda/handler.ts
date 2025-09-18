@@ -1,3 +1,4 @@
+import * as crypto from "crypto"
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -88,7 +89,7 @@ export const handler = async (
 
   const requestType = event.RequestType
   const resource: RdsSqlResource = event.ResourceProperties.Resource
-  const resourceId = event.ResourceProperties.ResourceId
+  const resourceId = event.ResourceProperties.ResourceId ?? ""
   const databaseName = event.ResourceProperties.DatabaseName
 
   if (!Object.values(RdsSqlResource).includes(resource)) {
@@ -309,8 +310,20 @@ export const handler = async (
   let response: CustomResourceResponse = {}
   // Except for the SQL resource, return the new resource id. This
   // will cause a delete to be sent for the old resource.
-  if (resource !== RdsSqlResource.SQL) {
+  if (resourceId) {
+    // Return given resourceId
     response.PhysicalResourceId = resourceId
+  } else {
+    // For IAM grants, create a physical resource ID from role and hash of IAM arn
+    if (resource === RdsSqlResource.IAM_GRANT) {
+      const iamProps = toIamGrantEngineProps(event.ResourceProperties)
+      const hash = crypto
+        .createHash("sha256")
+        .update(iamProps.ResourceArn)
+        .digest("hex")
+        .substring(0, 8)
+      response.PhysicalResourceId = `${iamProps.RoleName}:${hash}`
+    }
   }
 
   return response
