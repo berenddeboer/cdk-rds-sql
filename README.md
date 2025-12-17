@@ -161,18 +161,13 @@ const iamRole = new Role(this, "IamRole", {
 })
 ```
 
-For IAM-authenticated roles, the secret will not contain a password field:
+When `enableIamAuth` is set to `true`:
 
-```json
-{
-  "dbClusterIdentifier": "teststack-clustereb1186t9-sh4wpqfdyfvu",
-  "dbname": "mydb",
-  "engine": "postgres",
-  "port": 5432,
-  "host": "teststack-clustereb1186t9-sh4wpqfdyfvu.cluster-cgudolabssna.us-east-1.rds.amazonaws.com",
-  "username": "myiamrole"
-}
-```
+- **No secret is created** - the `role.secret` property will be `undefined`
+- The database role is created without a password
+- Your application must generate an IAM authentication token at runtime
+
+This is the same behavior as DSQL clusters, which always use IAM authentication.
 
 **Requirements for IAM Authentication:**
 
@@ -197,6 +192,36 @@ Your application will need an IAM policy like this to connect:
     }
   ]
 }
+```
+
+**Generating an IAM Authentication Token:**
+
+At runtime, your application needs to generate an authentication token
+using the AWS SDK. Here's an example using the AWS SDK for JavaScript:
+
+```ts
+import { Signer } from "@aws-sdk/rds-signer"
+import { Client } from "pg"
+
+const signer = new Signer({
+  hostname: "your-cluster.cluster-xxxxx.us-east-1.rds.amazonaws.com",
+  port: 5432,
+  username: "myiamrole",
+  region: "us-east-1",
+})
+
+const token = await signer.getAuthToken()
+
+const client = new Client({
+  host: "your-cluster.cluster-xxxxx.us-east-1.rds.amazonaws.com",
+  port: 5432,
+  user: "myiamrole",
+  database: "mydb",
+  password: token,
+  ssl: { rejectUnauthorized: true },
+})
+
+await client.connect()
 ```
 
 Both PostgreSQL and MySQL databases support IAM authentication. For more details, see the [AWS RDS IAM Database Authentication documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html).

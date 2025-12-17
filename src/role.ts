@@ -76,8 +76,8 @@ export interface RoleProps {
    * Enable IAM authentication for this role.
    *
    * When enabled, the role will be created without a password and
-   * configured for AWS IAM database authentication. The secret
-   * will not contain a password field.
+   * configured for AWS IAM database authentication. No secret will
+   * be created for this role.
    *
    * Note: For DSQL clusters, this property is ignored as DSQL always
    * uses IAM authentication.
@@ -96,9 +96,9 @@ class Parameters extends Construct {
       provider: IProvider
       secretArn: string
       parameterPrefix: string
-      passwordArn: string
+      passwordArn?: string
       providerServiceToken: string
-      paramData: Record<string, any>
+      paramData: Record<string, string | number>
     }
   ) {
     super(scope, id)
@@ -114,30 +114,33 @@ class Parameters extends Construct {
     })
 
     // For password, use the existing provider to store it in SSM
-    const passwordParameterName = `${props.parameterPrefix}password`
-    const password_parameter = new CustomResource(this, "PasswordParameter", {
-      serviceToken: props.providerServiceToken,
-      properties: {
-        SecretArn: props.secretArn,
-        Resource: RdsSqlResource.PARAMETER_PASSWORD,
-        PasswordArn: props.passwordArn,
-        ParameterName: passwordParameterName,
-      },
-    })
-    password_parameter.node.addDependency(props.provider)
-
-    const paramArn = `arn:aws:ssm:${Stack.of(this).region}:${
-      Stack.of(this).account
-    }:parameter${
-      passwordParameterName.startsWith("/") ? "" : "/"
-    }${passwordParameterName}`
-
-    props.provider.handler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["ssm:PutParameter", "ssm:AddTagsToResource", "ssm:GetParameters"],
-        resources: [paramArn],
+    // Skip password parameter for IAM auth roles (no passwordArn)
+    if (props.passwordArn) {
+      const passwordParameterName = `${props.parameterPrefix}password`
+      const password_parameter = new CustomResource(this, "PasswordParameter", {
+        serviceToken: props.providerServiceToken,
+        properties: {
+          SecretArn: props.secretArn,
+          Resource: RdsSqlResource.PARAMETER_PASSWORD,
+          PasswordArn: props.passwordArn,
+          ParameterName: passwordParameterName,
+        },
       })
-    )
+      password_parameter.node.addDependency(props.provider)
+
+      const paramArn = `arn:aws:ssm:${Stack.of(this).region}:${
+        Stack.of(this).account
+      }:parameter${
+        passwordParameterName.startsWith("/") ? "" : "/"
+      }${passwordParameterName}`
+
+      props.provider.handler.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["ssm:PutParameter", "ssm:AddTagsToResource", "ssm:GetParameters"],
+          resources: [paramArn],
+        })
+      )
+    }
   }
 }
 
@@ -148,8 +151,14 @@ export class Role extends Construct {
   public readonly roleName: string
 
   /**
-   * The generated secret.
-   * Only available for non-DSQL clusters as DSQL uses IAM authentication.
+   * The generated secret containing connection information and password.
+   *
+   * This is only available when:
+   * - The provider is not a DSQL cluster (DSQL uses IAM authentication)
+   * - `enableIamAuth` is not set to `true`
+   *
+   * When using IAM authentication, no secret is created as the password
+   * is generated dynamically using IAM credentials.
    */
   public readonly secret?: ISecret
 
@@ -167,7 +176,11 @@ export class Role extends Construct {
     }
     super(scope, id)
 
-    // DSQL doesn't use secrets - it always uses IAM authentication
+    // Skip secret creation for DSQL (always uses IAM auth) or when enableIamAuth is true
+    const useIamAuth =
+      props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
+
+    // For non-DSQL providers, we need cluster info for secrets and/or parameters
     if (props.provider.engine !== DatabaseEngine.DSQL) {
       // For imported providers without cluster details, provide helpful error message
       if (!props.provider.cluster) {
@@ -191,51 +204,52 @@ export class Role extends Construct {
         ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
         : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
 
-      const secretTemplate = {
-        dbClusterIdentifier: identifier,
-        engine: props.provider.engine,
-        host: host,
-        port: port,
-        username: props.roleName,
-        dbname: props.database ? props.database.databaseName : props.databaseName,
-      }
+      const databaseName = props.database
+        ? props.database.databaseName
+        : props.databaseName
 
-      this.secret = new Secret(this, "Secret", {
-        secretName: props.secretName,
-        encryptionKey: props.encryptionKey,
-        description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
-        ...(props.enableIamAuth
-          ? {
-              // For IAM auth, create secret without password generation
-              secretStringTemplate: JSON.stringify(secretTemplate),
-            }
-          : {
-              // For password auth, generate password
-              generateSecretString: {
-                passwordLength: 30, // Oracle password cannot have more than 30 characters
-                secretStringTemplate: JSON.stringify(secretTemplate),
-                generateStringKey: "password",
-                excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
-              },
-            }),
-        removalPolicy: RemovalPolicy.DESTROY,
-      })
-
-      // Create Parameters if parameterPrefix is provided
-      if (props.parameterPrefix) {
-        const paramData = {
+      // Create secret only for password auth (not IAM auth)
+      if (!useIamAuth) {
+        const secretTemplate = {
           dbClusterIdentifier: identifier,
           engine: props.provider.engine,
           host: host,
           port: port,
           username: props.roleName,
-          dbname: props.database ? props.database.databaseName : props.databaseName,
+          dbname: databaseName,
+        }
+
+        this.secret = new Secret(this, "Secret", {
+          secretName: props.secretName,
+          encryptionKey: props.encryptionKey,
+          description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
+          generateSecretString: {
+            passwordLength: 30, // Oracle password cannot have more than 30 characters
+            secretStringTemplate: JSON.stringify(secretTemplate),
+            generateStringKey: "password",
+            excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+          },
+          removalPolicy: RemovalPolicy.DESTROY,
+        })
+      }
+
+      // Create Parameters if parameterPrefix is provided (for both password and IAM auth)
+      if (props.parameterPrefix) {
+        const paramData: Record<string, string | number> = {
+          dbClusterIdentifier: identifier,
+          engine: props.provider.engine,
+          host: host,
+          port: port,
+          username: props.roleName,
+        }
+        if (databaseName) {
+          paramData.dbname = databaseName
         }
 
         new Parameters(this, "Parameters", {
           secretArn: props.provider.secret?.secretArn || "",
           parameterPrefix: props.parameterPrefix,
-          passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
+          passwordArn: this.secret?.secretArn, // undefined for IAM auth - skips password param
           providerServiceToken: props.provider.serviceToken,
           provider: props.provider,
           paramData,
@@ -246,13 +260,10 @@ export class Role extends Construct {
     const role = new CustomResourceRole(this, "PostgresRole", {
       provider: props.provider,
       roleName: props.roleName,
-      passwordArn:
-        props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
-          ? ""
-          : this.secret!.secretArn,
+      passwordArn: useIamAuth ? "" : this.secret!.secretArn,
       database: props.database,
       databaseName: props.databaseName,
-      enableIamAuth: props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL,
+      enableIamAuth: useIamAuth,
     })
 
     if (this.secret) {
