@@ -168,6 +168,48 @@ describe("Custom Resource Properties", () => {
       expect(Object.keys(secrets)).toHaveLength(0)
     })
 
+    test("role with IAM auth and parameterPrefix creates parameters without password", () => {
+      const iamRole = new Role(stack, "TestRole", {
+        provider: provider,
+        roleName: "test_role",
+        databaseName: "test_db",
+        enableIamAuth: true,
+        parameterPrefix: "/my/params/",
+      })
+
+      const template = Template.fromStack(stack)
+
+      // Verify no secret is created
+      expect(iamRole.secret).toBeUndefined()
+
+      // Verify SSM parameters are created for connection info (but not password)
+      template.hasResourceProperties("AWS::SSM::Parameter", {
+        Name: "/my/params/username",
+        Value: "test_role",
+      })
+
+      template.hasResourceProperties("AWS::SSM::Parameter", {
+        Name: "/my/params/dbname",
+        Value: "test_db",
+      })
+
+      template.hasResourceProperties("AWS::SSM::Parameter", {
+        Name: "/my/params/engine",
+        Value: "postgres",
+      })
+
+      // Verify no password parameter custom resource is created
+      const passwordParams = template.findResources(
+        "AWS::CloudFormation::CustomResource",
+        {
+          Properties: {
+            Resource: "parameter_password",
+          },
+        }
+      )
+      expect(Object.keys(passwordParams)).toHaveLength(0)
+    })
+
     test("role without database name", () => {
       const database = new Database(stack, "TestDatabase", {
         provider: provider,
