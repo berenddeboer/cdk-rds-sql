@@ -138,7 +138,8 @@
       "name": "eslint",
       "description": "Runs eslint against the codebase",
       "env": {
-        "ESLINT_USE_FLAT_CONFIG": "false"
+        "ESLINT_USE_FLAT_CONFIG": "false",
+        "NODE_NO_WARNINGS": "1"
       },
       "steps": [
         {
@@ -340,7 +341,7 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@aws-sdk/client-secrets-manager,@aws-sdk/client-ssm,@aws-sdk/dsql-signer,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,exponential-backoff,jsii-diff,jsii-pacmak,mysql2,node-pg-format,prettier,projen,source-map-support,ts-node,@types/aws-lambda"
+          "exec": "npx npm-check-updates@18 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@aws-sdk/client-secrets-manager,@aws-sdk/client-ssm,@aws-sdk/dsql-signer,esbuild,eslint-config-prettier,eslint-import-resolver-typescript,eslint-plugin-import,eslint-plugin-prettier,exponential-backoff,jsii-diff,jsii-pacmak,mysql2,node-pg-format,prettier,projen,source-map-support,ts-node,@types/aws-lambda"
         },
         {
           "exec": "npm install"
