@@ -136,8 +136,8 @@ describe("Custom Resource Properties", () => {
       })
     })
 
-    test("role with IAM auth enabled", () => {
-      new Role(stack, "TestRole", {
+    test("role with IAM auth enabled does not create a secret", () => {
+      const iamRole = new Role(stack, "TestRole", {
         provider: provider,
         roleName: "test_role",
         databaseName: "test_db",
@@ -146,14 +146,26 @@ describe("Custom Resource Properties", () => {
 
       const template = Template.fromStack(stack)
 
+      // Verify the custom resource is created with IAM auth enabled
       validateCustomResourceProperties(template, "role", {
         Resource: "role",
         ResourceId: "test_role",
         SecretArn: Match.anyValue(),
-        PasswordArn: Match.anyValue(),
+        PasswordArn: "", // Empty for IAM auth
         DatabaseName: "test_db",
         EnableIamAuth: true,
       })
+
+      // Verify no secret is created for this role
+      expect(iamRole.secret).toBeUndefined()
+
+      // Verify no secret with this role's description exists
+      const secrets = template.findResources("AWS::SecretsManager::Secret", {
+        Properties: {
+          Description: "Generated secret for postgres role test_role",
+        },
+      })
+      expect(Object.keys(secrets)).toHaveLength(0)
     })
 
     test("role without database name", () => {

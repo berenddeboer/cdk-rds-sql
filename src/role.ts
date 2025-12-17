@@ -76,8 +76,8 @@ export interface RoleProps {
    * Enable IAM authentication for this role.
    *
    * When enabled, the role will be created without a password and
-   * configured for AWS IAM database authentication. The secret
-   * will not contain a password field.
+   * configured for AWS IAM database authentication. No secret will
+   * be created for this role.
    *
    * Note: For DSQL clusters, this property is ignored as DSQL always
    * uses IAM authentication.
@@ -148,8 +148,14 @@ export class Role extends Construct {
   public readonly roleName: string
 
   /**
-   * The generated secret.
-   * Only available for non-DSQL clusters as DSQL uses IAM authentication.
+   * The generated secret containing connection information and password.
+   *
+   * This is only available when:
+   * - The provider is not a DSQL cluster (DSQL uses IAM authentication)
+   * - `enableIamAuth` is not set to `true`
+   *
+   * When using IAM authentication, no secret is created as the password
+   * is generated dynamically using IAM credentials.
    */
   public readonly secret?: ISecret
 
@@ -167,8 +173,10 @@ export class Role extends Construct {
     }
     super(scope, id)
 
-    // DSQL doesn't use secrets - it always uses IAM authentication
-    if (props.provider.engine !== DatabaseEngine.DSQL) {
+    // Skip secret creation for DSQL (always uses IAM auth) or when enableIamAuth is true
+    const useIamAuth =
+      props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
+    if (!useIamAuth) {
       // For imported providers without cluster details, provide helpful error message
       if (!props.provider.cluster) {
         throw new Error(
@@ -204,20 +212,12 @@ export class Role extends Construct {
         secretName: props.secretName,
         encryptionKey: props.encryptionKey,
         description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
-        ...(props.enableIamAuth
-          ? {
-              // For IAM auth, create secret without password generation
-              secretStringTemplate: JSON.stringify(secretTemplate),
-            }
-          : {
-              // For password auth, generate password
-              generateSecretString: {
-                passwordLength: 30, // Oracle password cannot have more than 30 characters
-                secretStringTemplate: JSON.stringify(secretTemplate),
-                generateStringKey: "password",
-                excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
-              },
-            }),
+        generateSecretString: {
+          passwordLength: 30, // Oracle password cannot have more than 30 characters
+          secretStringTemplate: JSON.stringify(secretTemplate),
+          generateStringKey: "password",
+          excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+        },
         removalPolicy: RemovalPolicy.DESTROY,
       })
 
@@ -235,7 +235,7 @@ export class Role extends Construct {
         new Parameters(this, "Parameters", {
           secretArn: props.provider.secret?.secretArn || "",
           parameterPrefix: props.parameterPrefix,
-          passwordArn: props.enableIamAuth ? "" : this.secret.secretArn,
+          passwordArn: this.secret.secretArn,
           providerServiceToken: props.provider.serviceToken,
           provider: props.provider,
           paramData,
@@ -246,13 +246,10 @@ export class Role extends Construct {
     const role = new CustomResourceRole(this, "PostgresRole", {
       provider: props.provider,
       roleName: props.roleName,
-      passwordArn:
-        props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
-          ? ""
-          : this.secret!.secretArn,
+      passwordArn: useIamAuth ? "" : this.secret!.secretArn,
       database: props.database,
       databaseName: props.databaseName,
-      enableIamAuth: props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL,
+      enableIamAuth: useIamAuth,
     })
 
     if (this.secret) {
