@@ -1,4 +1,4 @@
-import { awscdk } from "projen"
+import { awscdk, github } from "projen"
 import { NodePackageManager } from "projen/lib/javascript"
 
 const tmpDirectories = [
@@ -26,7 +26,16 @@ const project = new awscdk.AwsCdkConstructLibrary({
   packageManager: NodePackageManager.NPM,
   depsUpgrade: true,
   depsUpgradeOptions: {
-    workflow: false,
+    workflow: true,
+    workflowOptions: {
+      projenCredentials: github.GithubCredentials.fromPersonalAccessToken({
+        secret: "GITHUB_TOKEN",
+      }),
+      permissions: {
+        contents: github.workflows.JobPermission.WRITE,
+        pullRequests: github.workflows.JobPermission.WRITE,
+      },
+    },
   },
   minNodeVersion: "22.14",
   githubOptions: {
