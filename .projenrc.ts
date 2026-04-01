@@ -1,4 +1,4 @@
-import { awscdk, github } from "projen"
+import { YamlFile, awscdk, github } from "projen"
 import { NodePackageManager } from "projen/lib/javascript"
 
 const tmpDirectories = [
@@ -167,5 +167,11 @@ if (releaseWorkflow?.file) {
 }
 
 project.npmrc.addConfig("minimum-release-age", "4320")
+
+new YamlFile(project, "pnpm-workspace.yaml", {
+  obj: {
+    nodeLinker: "hoisted",
+  },
+})
 
 project.synth()
