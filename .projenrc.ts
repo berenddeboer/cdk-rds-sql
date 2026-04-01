@@ -24,6 +24,11 @@ const project = new awscdk.AwsCdkConstructLibrary({
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
   packageManager: NodePackageManager.PNPM,
+  pnpmVersion: "10.32.1",
+  buildWorkflowOptions: {
+    // Keep the PR build mutable so projen self-mutation can surface generated-file drift.
+    mutableBuild: true,
+  },
   depsUpgrade: true,
   depsUpgradeOptions: {
     cooldown: 3,
@@ -157,13 +162,18 @@ project.tasks.tryFind("pre-compile")?.spawn(project.tasks.tryFind("build:handler
 project.tasks.tryFind("compile")?.spawn(project.tasks.tryFind("copy:handler")!)
 
 // Override release workflow to remove NPM_TOKEN and add NPM_TRUSTED_PUBLISHER
+const releaseNpmPublishStepIndex = 10
 const releaseWorkflow = project.github?.tryFindWorkflow("release")
 if (releaseWorkflow?.file) {
-  // Target the Release step's environment variables specifically
-  releaseWorkflow.file.addOverride("jobs.release_npm.steps.10.env", {
-    NPM_TRUSTED_PUBLISHER: "true",
-    NPM_TOKEN: undefined,
-  })
+  // The generated pnpm setup step shifts the npm publish step to index 10.
+  // If projen changes the step order, this override path needs updating.
+  releaseWorkflow.file.addOverride(
+    `jobs.release_npm.steps.${releaseNpmPublishStepIndex}.env`,
+    {
+      NPM_TRUSTED_PUBLISHER: "true",
+      NPM_TOKEN: undefined,
+    }
+  )
 }
 
 project.npmrc.addConfig("minimum-release-age", "4320")
