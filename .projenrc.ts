@@ -23,9 +23,10 @@ const project = new awscdk.AwsCdkConstructLibrary({
   defaultReleaseBranch: "main",
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
-  packageManager: NodePackageManager.NPM,
+  packageManager: NodePackageManager.PNPM,
   depsUpgrade: true,
   depsUpgradeOptions: {
+    cooldown: 3,
     workflow: true,
     workflowOptions: {
       projenCredentials: github.GithubCredentials.fromPersonalAccessToken({
@@ -112,27 +113,27 @@ if (project.eslint) {
 
 project.addTask("integ:deploy:postgresql:serverless", {
   description: "Deploy the Aurora Serverless V2 integration test stack",
-  exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --require-approval never",
+  exec: "pnpm exec cdk deploy TestRdsSqlServerlessV2Stack --require-approval never",
 })
 
 project.addTask("integ:deploy:mysql:serverless", {
   description: "Deploy the Aurora Serverless V2 integration test stack",
-  exec: "npx cdk deploy TestRdsSqlServerlessV2Stack --context engine=mysql --require-approval never",
+  exec: "pnpm exec cdk deploy TestRdsSqlServerlessV2Stack --context engine=mysql --require-approval never",
 })
 
 project.addTask("integ:destroy:serverless", {
   description: "Destroy the Aurora Serverless V2 integration test stack",
-  exec: "npx cdk destroy TestRdsSqlServerlessV2Stack --force",
+  exec: "pnpm exec cdk destroy TestRdsSqlServerlessV2Stack --force",
 })
 
 project.addTask("integ:deploy:dsql", {
   description: "Deploy the DSQL integration test stack",
-  exec: "npx cdk deploy TestRdsSqlDsqlStack --require-approval never",
+  exec: "pnpm exec cdk deploy TestRdsSqlDsqlStack --require-approval never",
 })
 
 project.addTask("integ:destroy:dsql", {
   description: "Destroy the DSQL integration test stack",
-  exec: "npx cdk destroy TestRdsSqlDsqlStack --force",
+  exec: "pnpm exec cdk destroy TestRdsSqlDsqlStack --force",
 })
 
 // Add build tasks for transpiling the Lambda handler
@@ -148,7 +149,7 @@ project.addTask("copy:handler", {
 
 project.addTask("typecheck", {
   description: "Typecheck typescript",
-  exec: "npx tsc --project tsconfig.dev.json --noEmit",
+  exec: "pnpm exec tsc --project tsconfig.dev.json --noEmit",
 })
 
 // Hook these tasks into the build process
@@ -159,10 +160,12 @@ project.tasks.tryFind("compile")?.spawn(project.tasks.tryFind("copy:handler")!)
 const releaseWorkflow = project.github?.tryFindWorkflow("release")
 if (releaseWorkflow?.file) {
   // Target the Release step's environment variables specifically
-  releaseWorkflow.file.addOverride("jobs.release_npm.steps.9.env", {
+  releaseWorkflow.file.addOverride("jobs.release_npm.steps.10.env", {
     NPM_TRUSTED_PUBLISHER: "true",
     NPM_TOKEN: undefined,
   })
 }
+
+project.npmrc.addConfig("minimum-release-age", "4320")
 
 project.synth()
