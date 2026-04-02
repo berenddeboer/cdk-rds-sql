@@ -192,15 +192,17 @@ export class Role extends Construct {
       }
 
       // For RDS/Aurora clusters and instances, get endpoint details
-      const host = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+      const isCluster = !!(props.provider.cluster as IDatabaseCluster).clusterEndpoint
+
+      const host = isCluster
         ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.hostname
         : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.hostname
 
-      const port = (props.provider.cluster as IDatabaseCluster).clusterEndpoint
+      const port = isCluster
         ? (props.provider.cluster as IDatabaseCluster).clusterEndpoint.port
         : (props.provider.cluster as IDatabaseInstance).instanceEndpoint.port
 
-      const identifier = (props.provider.cluster as IDatabaseCluster).clusterIdentifier
+      const identifier = isCluster
         ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
         : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
 
@@ -210,8 +212,9 @@ export class Role extends Construct {
 
       // Create secret only for password auth (not IAM auth)
       if (!useIamAuth) {
+        const identifierKey = isCluster ? "dbClusterIdentifier" : "dbInstanceIdentifier"
         const secretTemplate = {
-          dbClusterIdentifier: identifier,
+          [identifierKey]: identifier,
           engine: props.provider.engine,
           host: host,
           port: port,
@@ -235,8 +238,9 @@ export class Role extends Construct {
 
       // Create Parameters if parameterPrefix is provided (for both password and IAM auth)
       if (props.parameterPrefix) {
+        const identifierKey = isCluster ? "dbClusterIdentifier" : "dbInstanceIdentifier"
         const paramData: Record<string, string | number> = {
-          dbClusterIdentifier: identifier,
+          [identifierKey]: identifier,
           engine: props.provider.engine,
           host: host,
           port: port,

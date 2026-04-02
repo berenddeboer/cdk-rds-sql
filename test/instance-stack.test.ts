@@ -183,6 +183,70 @@ test("vpcSubnet selection can be specified", () => {
   }).toThrow()
 })
 
+test("instance role secret uses dbInstanceIdentifier not dbClusterIdentifier", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const instance = new rds.DatabaseInstance(stack, "Instance", {
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+    engine: rds.DatabaseInstanceEngine.postgres({
+      version: rds.PostgresEngineVersion.VER_15,
+    }),
+    databaseName: "example",
+    credentials: rds.Credentials.fromGeneratedSecret("admin"),
+    instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+  })
+
+  const provider = new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: instance,
+    secret: instance.secret!,
+  })
+
+  new Role(stack, "Role", {
+    provider: provider,
+    roleName: "myrole",
+    databaseName: "mydb",
+  })
+
+  const template = Template.fromStack(stack)
+
+  // Should use dbInstanceIdentifier (not dbClusterIdentifier) for instances
+  template.hasResourceProperties("AWS::SecretsManager::Secret", {
+    GenerateSecretString: {
+      SecretStringTemplate: {
+        "Fn::Join": [
+          "",
+          // eslint-disable-next-line quotes
+          Match.arrayWith([Match.stringLikeRegexp('"dbInstanceIdentifier"')]),
+        ],
+      },
+    },
+  })
+
+  // Should NOT have dbClusterIdentifier for instances
+  const resources = template.findResources("AWS::SecretsManager::Secret")
+  const secretValues = JSON.stringify(resources)
+  expect(secretValues).not.toContain("dbClusterIdentifier")
+})
+
 test("mysql database instance engine is set in secret", () => {
   const app = new cdk.App()
   const stack = new cdk.Stack(app, "TestStack", {
