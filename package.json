@@ -87,6 +87,7 @@
   "bundledDependencies": [
     "@types/aws-lambda"
   ],
+  "pnpm": {},
   "keywords": [
     "aurora",
     "aws",

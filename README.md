@@ -522,7 +522,7 @@ This code is managed by
 [projen](https://github.com/projen/projen/blob/main/README.md). In
 addition [pre-commit](https://pre-commit.com/) is used.
 
-So after git clone and `npm ci` you would do:
+So after git clone and `pnpm install` you would do:
 
 ```
 pre-commit install --install-hooks --hook-type commit-msg --hook-type pre-commit
@@ -534,19 +534,19 @@ to install the pre-commit hooks.
 
 Test code via projen with:
 
-    npx projen test
+    pnpm exec projen test
 
-You can run the sample stack with:
+You can run the PostgreSQL sample stack with:
 
-    npx projen integ:deploy:serverless
+    pnpm exec projen integ:deploy:postgresql:serverless
 
 If you want to use an existing vpc:
 
-    npx cdk deploy --context vpc-id=vpc-0123456789 TestServerlessV2Stack
+    pnpm exec cdk deploy --context vpc-id=vpc-0123456789 TestRdsSqlServerlessV2Stack
 
 You can also test DSQL support with:
 
-    npx projen integ:deploy:dsql
+    pnpm exec projen integ:deploy:dsql
 
 # To do
 

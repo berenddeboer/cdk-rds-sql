@@ -31,38 +31,38 @@ The Lambda handler supports both PostgreSQL and MySQL databases, auto-detecting 
 
 ```bash
 # After changing .projenrc.ts
-npx projen
+pnpm exec projen
 
 # Build the project
-npx projen build
+pnpm exec projen build
 
 # Run all tests
-npx projen test
+pnpm exec projen test
 
 # Run tests in watch mode
-npx projen test:watch
+pnpm exec projen test:watch
 
-# Run typecheck (instead of npx tsc --noEmit)
-npx projen typecheck
+# Run typecheck (instead of pnpm exec tsc --noEmit)
+pnpm exec projen typecheck
 
 # Run linting
-npx projen eslint
+pnpm exec projen eslint
 
 # Build only the Lambda handler
-npx projen build:handler
+pnpm exec projen build:handler
 ```
 
 ### Integration Testing
 
 ```bash
 # Deploy PostgreSQL serverless test stack
-npx projen integ:deploy:postgresql:serverless
+pnpm exec projen integ:deploy:postgresql:serverless
 
 # Deploy MySQL serverless test stack
-npx projen integ:deploy:mysql:serverless
+pnpm exec projen integ:deploy:mysql:serverless
 
 # Destroy test stack
-npx projen integ:destroy:serverless
+pnpm exec projen integ:destroy:serverless
 ```
 
 ## Testing Setup
@@ -90,7 +90,7 @@ npx projen integ:destroy:serverless
 
 The project uses projen for build management. Do not change files
 managed by projen, but instead change `.projenrc.ts`. After changing
-`.projenrc.ts` run `npx projen`.
+`.projenrc.ts` run `pnpm exec projen`.
 
 In particular:
 
