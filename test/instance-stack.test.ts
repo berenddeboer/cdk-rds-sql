@@ -211,7 +211,10 @@ test("instance role secret uses dbInstanceIdentifier not dbClusterIdentifier", (
     }),
     databaseName: "example",
     credentials: rds.Credentials.fromGeneratedSecret("admin"),
-    instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+    instanceType: ec2.InstanceType.of(
+      ec2.InstanceClass.BURSTABLE3,
+      ec2.InstanceSize.MICRO
+    ),
   })
 
   const provider = new Provider(stack, "Provider", {
