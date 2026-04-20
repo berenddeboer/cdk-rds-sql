@@ -53,7 +53,7 @@ export class PostgresqlEngine extends AbstractEngine {
         resourceId
       ),
       pgFormat(
-        "DO $$BEGIN\nIF EXISTS (select from pg_database WHERE datname = '%s') THEN alter database %I owner to %I; END IF;\nEND$$;",
+        "DO $$BEGIN\nIF EXISTS (select from pg_database WHERE datname = %L) THEN alter database %I owner to %I; END IF;\nEND$$;",
         resourceId,
         resourceId,
         masterUser
