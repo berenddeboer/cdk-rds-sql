@@ -176,7 +176,19 @@ if (releaseWorkflow?.file) {
   )
 }
 
-project.npmrc.addConfig("minimum-release-age", "4320")
+const dependabot = project.github?.addDependabot()
+if (dependabot) {
+  dependabot.config.updates = [
+    {
+      "package-ecosystem": "github-actions",
+      directory: "/",
+      schedule: {
+        interval: github.DependabotScheduleInterval.WEEKLY,
+      },
+      allow: [{ "dependency-name": "anthropics/claude-code-action" }],
+    },
+  ]
+}
 
 new YamlFile(project, "pnpm-workspace.yaml", {
   obj: {
