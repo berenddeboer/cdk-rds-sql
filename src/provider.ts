@@ -289,7 +289,7 @@ export class Provider extends Construct implements IProvider {
     const deleteParameterPolicy = new iam.PolicyStatement({
       actions: ["ssm:DeleteParameter"],
       resources: [
-        `arn:aws:ssm:${Stack.of(scope).region}:${Stack.of(scope).account}:parameter/*`,
+        `arn:${Stack.of(scope).partition}:ssm:${Stack.of(scope).region}:${Stack.of(scope).account}:parameter/*`,
       ],
       conditions: {
         StringEquals: {

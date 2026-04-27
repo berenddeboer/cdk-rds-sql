@@ -463,3 +463,105 @@ test("mysql cluster engine is set in secret", () => {
     },
   })
 })
+
+test("ssm DeleteParameter policy uses partition from stack (aws-cn)", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "cn-north-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "Cluster", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_15_10,
+    }),
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    defaultDatabaseName: "example",
+    writer: rds.ClusterInstance.serverlessV2("writer"),
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+  })
+
+  new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: cluster,
+    secret: cluster.secret!,
+  })
+
+  const template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::IAM::Policy", {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Action: "ssm:DeleteParameter",
+          Effect: "Allow",
+          Resource: "arn:aws-cn:ssm:cn-north-1:123456789:parameter/*",
+        }),
+      ]),
+    },
+  })
+})
+
+test("ssm DeleteParameter policy uses partition from stack (aws)", () => {
+  const app = new cdk.App()
+  const stack = new cdk.Stack(app, "TestStack", {
+    env: {
+      account: "123456789",
+      region: "us-east-1",
+    },
+  })
+  const vpc = new ec2.Vpc(stack, "Vpc", {
+    subnetConfiguration: [
+      {
+        cidrMask: 28,
+        name: "rds",
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+    ],
+  })
+
+  const cluster = new rds.DatabaseCluster(stack, "Cluster", {
+    engine: rds.DatabaseClusterEngine.auroraPostgres({
+      version: rds.AuroraPostgresEngineVersion.VER_15_10,
+    }),
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    defaultDatabaseName: "example",
+    writer: rds.ClusterInstance.serverlessV2("writer"),
+    vpc,
+    vpcSubnets: {
+      subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+    },
+  })
+
+  new Provider(stack, "Provider", {
+    vpc: vpc,
+    cluster: cluster,
+    secret: cluster.secret!,
+  })
+
+  const template = Template.fromStack(stack)
+  template.hasResourceProperties("AWS::IAM::Policy", {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Action: "ssm:DeleteParameter",
+          Effect: "Allow",
+          Resource: "arn:aws:ssm:us-east-1:123456789:parameter/*",
+        }),
+      ]),
+    },
+  })
+})
