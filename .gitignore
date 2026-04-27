@@ -57,6 +57,6 @@ junit.xml
 !/.eslintrc.json
 .jsii
 tsconfig.json
-!/.npmrc
+!/.github/dependabot.yml
 !/pnpm-workspace.yaml
 !/.projenrc.ts
