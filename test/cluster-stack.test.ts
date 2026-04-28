@@ -215,7 +215,16 @@ test("credentials stored in parameters", () => {
         Match.objectLike({
           Action: ["ssm:PutParameter", "ssm:AddTagsToResource", "ssm:GetParameters"],
           Effect: "Allow",
-          Resource: "arn:aws:ssm:us-east-1:123456789:parameter/my/params/path/password",
+          Resource: {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                { Ref: "AWS::Partition" },
+                ":ssm:us-east-1:123456789:parameter/my/params/path/password",
+              ],
+            ],
+          },
         }),
       ]),
     },
