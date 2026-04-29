@@ -286,11 +286,10 @@ export class Provider extends Construct implements IProvider {
       environment.SECRET_ARN = props.secret.secretArn
     }
 
+    const { partition, region: stackRegion, account } = Stack.of(scope)
     const deleteParameterPolicy = new iam.PolicyStatement({
       actions: ["ssm:DeleteParameter"],
-      resources: [
-        `arn:aws:ssm:${Stack.of(scope).region}:${Stack.of(scope).account}:parameter/*`,
-      ],
+      resources: [`arn:${partition}:ssm:${stackRegion}:${account}:parameter/*`],
       conditions: {
         StringEquals: {
           "ssm:ResourceTag/created-by": "cdk-rds-sql",

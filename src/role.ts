@@ -128,7 +128,7 @@ class Parameters extends Construct {
       })
       password_parameter.node.addDependency(props.provider)
 
-      const paramArn = `arn:aws:ssm:${Stack.of(this).region}:${
+      const paramArn = `arn:${Stack.of(this).partition}:ssm:${Stack.of(this).region}:${
         Stack.of(this).account
       }:parameter${
         passwordParameterName.startsWith("/") ? "" : "/"
