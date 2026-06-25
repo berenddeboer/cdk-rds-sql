@@ -9,6 +9,7 @@ src/handler/handler.js
 *~
 .claude/hooks/.edited
 /lambda/
+!pnpm-lock.yaml
 /.projen/
 /test-reports/
 junit.xml

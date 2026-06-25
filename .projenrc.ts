@@ -80,7 +80,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     prettier: true,
   },
   gitignore: tmpDirectories,
-  npmignore: [...tmpDirectories, "/lambda/"],
+  npmignore: [...tmpDirectories, "/lambda/", "!pnpm-lock.yaml"],
   docgen: false,
   workflowNodeVersion: "24.x",
   deps: ["@types/aws-lambda"],
@@ -100,6 +100,10 @@ const project = new awscdk.AwsCdkConstructLibrary({
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql", "dsql"],
   minMajorVersion: 1,
+  publishToPypi: {
+    distName: "cdk-rds-sql",
+    module: "cdk_rds_sql",
+  },
 })
 if (project.eslint) {
   project.eslint.addRules({

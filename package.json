@@ -24,6 +24,7 @@
     "package": "projen package",
     "package-all": "projen package-all",
     "package:js": "projen package:js",
+    "package:python": "projen package:python",
     "post-compile": "projen post-compile",
     "post-upgrade": "projen post-upgrade",
     "pre-compile": "projen pre-compile",
@@ -173,7 +174,12 @@
   "stability": "stable",
   "jsii": {
     "outdir": "dist",
-    "targets": {},
+    "targets": {
+      "python": {
+        "distName": "cdk-rds-sql",
+        "module": "cdk_rds_sql"
+      }
+    },
     "tsc": {
       "outDir": "lib",
       "rootDir": "src"
