@@ -32,16 +32,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   depsUpgrade: true,
   depsUpgradeOptions: {
     cooldown: 3,
-    workflow: true,
-    workflowOptions: {
-      projenCredentials: github.GithubCredentials.fromPersonalAccessToken({
-        secret: "GITHUB_TOKEN",
-      }),
-      permissions: {
-        contents: github.workflows.JobPermission.WRITE,
-        pullRequests: github.workflows.JobPermission.WRITE,
-      },
-    },
+    workflow: false,
   },
   minNodeVersion: "22.14",
   githubOptions: {
