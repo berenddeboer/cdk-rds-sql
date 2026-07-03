@@ -65,8 +65,8 @@ export interface RoleProps {
    * `parameterPrefix`, so make sure the prefix ends with a slash if
    *  you have your parameter names slash separated.
    *
-   * Note that the password from the secret is copied just once, they
-   * are not kept in sync.
+   * The password parameter is refreshed when CloudFormation updates the
+   * generated secret resource.
    *
    * @default - credentials are only stored in Secrets Manager
    */
@@ -97,6 +97,8 @@ class Parameters extends Construct {
       secretArn: string
       parameterPrefix: string
       passwordArn?: string
+      passwordSecret?: Secret
+      passwordSyncTrigger?: Record<string, unknown>
       providerServiceToken: string
       paramData: Record<string, string | number>
     }
@@ -124,9 +126,13 @@ class Parameters extends Construct {
           Resource: RdsSqlResource.PARAMETER_PASSWORD,
           PasswordArn: props.passwordArn,
           ParameterName: passwordParameterName,
+          SyncTrigger: props.passwordSyncTrigger,
         },
       })
       password_parameter.node.addDependency(props.provider)
+      if (props.passwordSecret) {
+        password_parameter.node.addDependency(props.passwordSecret)
+      }
 
       const paramArn = `arn:${Stack.of(this).partition}:ssm:${Stack.of(this).region}:${
         Stack.of(this).account
@@ -179,6 +185,8 @@ export class Role extends Construct {
     // Skip secret creation for DSQL (always uses IAM auth) or when enableIamAuth is true
     const useIamAuth =
       props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
+    let passwordSyncTrigger: Record<string, unknown> | undefined
+    let passwordSecret: Secret | undefined
 
     // For non-DSQL providers, we need cluster info for secrets and/or parameters
     if (props.provider.engine !== DatabaseEngine.DSQL) {
@@ -209,7 +217,6 @@ export class Role extends Construct {
       const databaseName = props.database
         ? props.database.databaseName
         : props.databaseName
-
       // Create secret only for password auth (not IAM auth)
       if (!useIamAuth) {
         const identifierKey = isCluster ? "dbClusterIdentifier" : "dbInstanceIdentifier"
@@ -221,19 +228,22 @@ export class Role extends Construct {
           username: props.roleName,
           dbname: databaseName,
         }
+        const generateSecretString = {
+          passwordLength: 30, // Oracle password cannot have more than 30 characters
+          secretStringTemplate: JSON.stringify(secretTemplate),
+          generateStringKey: "password",
+          excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+        }
+        passwordSyncTrigger = generateSecretString
 
-        this.secret = new Secret(this, "Secret", {
+        passwordSecret = new Secret(this, "Secret", {
           secretName: props.secretName,
           encryptionKey: props.encryptionKey,
           description: `Generated secret for ${props.provider.engine} role ${props.roleName}`,
-          generateSecretString: {
-            passwordLength: 30, // Oracle password cannot have more than 30 characters
-            secretStringTemplate: JSON.stringify(secretTemplate),
-            generateStringKey: "password",
-            excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
-          },
+          generateSecretString,
           removalPolicy: RemovalPolicy.DESTROY,
         })
+        this.secret = passwordSecret
       }
 
       // Create Parameters if parameterPrefix is provided (for both password and IAM auth)
@@ -254,6 +264,8 @@ export class Role extends Construct {
           secretArn: props.provider.secret?.secretArn || "",
           parameterPrefix: props.parameterPrefix,
           passwordArn: this.secret?.secretArn, // undefined for IAM auth - skips password param
+          passwordSecret,
+          passwordSyncTrigger,
           providerServiceToken: props.provider.serviceToken,
           provider: props.provider,
           paramData,

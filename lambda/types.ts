@@ -67,6 +67,8 @@ export interface ParameterPasswordProperties extends CommonProperties {
   readonly Resource: RdsSqlResource.PARAMETER_PASSWORD
   readonly PasswordArn: string
   readonly ParameterName: string
+  /** Ignored by the handler; forces CloudFormation updates when secret config changes. */
+  readonly SyncTrigger?: Record<string, unknown>
 }
 
 // Union type of all resource properties
