@@ -233,6 +233,11 @@ test("credentials stored in parameters", () => {
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "parameter_password",
     ParameterName: "/my/params/path/password",
+    SyncTrigger: Match.objectLike({
+      generateStringKey: "password",
+      passwordLength: 30,
+      secretStringTemplate: Match.anyValue(),
+    }),
   })
 })
 
