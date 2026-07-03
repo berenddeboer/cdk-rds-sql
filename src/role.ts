@@ -97,7 +97,7 @@ class Parameters extends Construct {
       secretArn: string
       parameterPrefix: string
       passwordArn?: string
-      passwordSecret?: Construct
+      passwordSecret?: Secret
       passwordSyncTrigger?: Record<string, unknown>
       providerServiceToken: string
       paramData: Record<string, string | number>
