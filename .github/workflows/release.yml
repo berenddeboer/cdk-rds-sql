@@ -69,6 +69,7 @@ jobs:
     needs:
       - release
       - release_npm
+      - release_pypi
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -136,3 +137,49 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
           NPM_TRUSTED_PUBLISHER: "true"
         run: npx -p publib@latest publib-npm
+  release_pypi:
+    name: Publish to PyPI
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    if: needs.release.outputs.tag_exists != 'true' && needs.release.outputs.latest_commit == github.sha
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          package-manager-cache: "false"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: build-artifact
+          path: dist
+      - name: Restore build artifact permissions
+        run: cd dist && setfacl --restore=permissions-backup.acl
+        continue-on-error: true
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10.32.1
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          path: .repo
+      - name: Install Dependencies
+        run: cd .repo && pnpm i --frozen-lockfile
+      - name: Extract build artifact
+        run: tar --strip-components=1 -xzvf dist/js/*.tgz -C .repo
+      - name: Move build artifact out of the way
+        run: mv dist dist.old
+      - name: Create python artifact
+        run: cd .repo && pnpm exec projen package:python
+      - name: Collect python artifact
+        run: mv .repo/dist dist
+      - name: Release
+        env:
+          PYPI_TRUSTED_PUBLISHER: "true"
+        run: npx -p publib@latest publib-pypi

@@ -299,6 +299,7 @@ export class Provider extends Construct implements IProvider {
 
     const fn = new lambda.NodejsFunction(scope, id, {
       ...props.functionProps,
+      depsLockFilePath: path.join(__dirname, "..", "pnpm-lock.yaml"),
       // Only configure VPC for traditional RDS
       ...(isDsql
         ? {}
