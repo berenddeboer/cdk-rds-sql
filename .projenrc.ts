@@ -103,6 +103,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   publishToPypi: {
     distName: "cdk-rds-sql",
     module: "cdk_rds_sql",
+    trustedPublishing: true,
   },
 })
 if (project.eslint) {
