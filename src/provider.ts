@@ -4,9 +4,13 @@ import { Duration, Stack } from "aws-cdk-lib"
 import * as dsql from "aws-cdk-lib/aws-dsql"
 import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
 import * as iam from "aws-cdk-lib/aws-iam"
-import { Function, IFunction, Runtime } from "aws-cdk-lib/aws-lambda"
-import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
-import { NodejsFunctionProps } from "aws-cdk-lib/aws-lambda-nodejs"
+import {
+  Code,
+  Function,
+  FunctionOptions,
+  IFunction,
+  Runtime,
+} from "aws-cdk-lib/aws-lambda"
 import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
@@ -77,11 +81,12 @@ export interface RdsSqlProps {
    *
    * This enables additional function customization such as the log group. However,
    * lambda function properties controlled by other {RdsSqlProps} parameters will trump
-   * opions set via this parameter.
+   * options set via this parameter. The handler is shipped as a prebuilt asset; bundling
+   * options from NodejsFunction are not supported.
    *
    * @default - empty
    */
-  readonly functionProps?: NodejsFunctionProps
+  readonly functionProps?: FunctionOptions
 
   /**
    * Use SSL?
@@ -242,24 +247,10 @@ export class Provider extends Construct implements IProvider {
     scope: Construct,
     id: string,
     props: RdsSqlProps
-  ): lambda.NodejsFunction {
+  ): Function {
     const isDsql = isDsqlCluster(props.cluster)
-    const handlerDir = path.join(__dirname, "handler")
-    const index_ts = path.join(handlerDir, "index.ts")
-    const index_js = path.join(handlerDir, "index.js")
-    let entry: string
+    const handlerDir = resolveHandlerAssetDir()
 
-    if (existsSync(index_ts)) {
-      entry = index_ts
-    } else if (existsSync(index_js)) {
-      entry = index_js
-    } else {
-      // Ugly hack to support SST (possibly caused by my hack to make SST work with CommonJS libraries)
-      entry = path.join(
-        path.dirname(process.env.npm_package_json || process.cwd()),
-        "node_modules/cdk-rds-sql/lib/handler/index.js"
-      )
-    }
     let ssl_options: Record<string, string> | undefined
     if (props.ssl !== undefined && !props.ssl) {
       ssl_options = {
@@ -297,9 +288,8 @@ export class Provider extends Construct implements IProvider {
       },
     })
 
-    const fn = new lambda.NodejsFunction(scope, id, {
+    const fn = new Function(scope, id, {
       ...props.functionProps,
-      depsLockFilePath: path.join(__dirname, "..", "pnpm-lock.yaml"),
       // Only configure VPC for traditional RDS
       ...(isDsql
         ? {}
@@ -309,29 +299,17 @@ export class Provider extends Construct implements IProvider {
               subnetType: SubnetType.PRIVATE_ISOLATED,
             },
           }),
-      entry: entry,
+      // Prebuilt at package build time — no consumer-side esbuild/pnpm.
+      code: Code.fromAsset(handlerDir, {
+        exclude: ["*.ts", "*.d.ts", "*.map", ".gitkeep"],
+      }),
+      handler: "index.handler",
       runtime: Runtime.NODEJS_22_X,
       timeout: props.timeout ?? props.functionProps?.timeout ?? Duration.seconds(300),
-      bundling: {
-        // Include the migrations directory in the bundle
-        commandHooks: {
-          beforeBundling(_: string, outputDir: string): string[] {
-            return [
-              `curl --silent -fL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o ${path.join(
-                outputDir,
-                "global-bundle.pem"
-              )}`,
-            ]
-          },
-          afterBundling(): string[] {
-            return []
-          },
-          beforeInstall(): string[] {
-            return []
-          },
-        },
+      environment: {
+        ...props.functionProps?.environment,
+        ...environment,
       },
-      environment,
       initialPolicy: [
         deleteParameterPolicy,
         ...(props.functionProps?.initialPolicy ?? []),
@@ -392,4 +370,39 @@ class ImportedProvider extends Construct implements IProvider {
 
 function slugify(x: string): string {
   return x.replace(/[^a-zA-Z0-9]/g, "")
+}
+
+/**
+ * Locate the prebuilt handler asset directory (index.js + global-bundle.pem).
+ *
+ * Prefer the package-relative path next to this module. Fall back to the
+ * installed package under node_modules for layouts (e.g. some SST setups)
+ * where __dirname does not sit beside the published handler assets.
+ */
+function resolveHandlerAssetDir(): string {
+  // Prefer package.json location when set; otherwise the process cwd (app root).
+  // Do not use path.dirname(cwd) — that incorrectly walks up one directory.
+  const packageRoot = process.env.npm_package_json
+    ? path.dirname(process.env.npm_package_json)
+    : process.cwd()
+
+  const candidates = [
+    path.join(__dirname, "handler"),
+    path.join(packageRoot, "node_modules/cdk-rds-sql/lib/handler"),
+  ]
+
+  for (const dir of candidates) {
+    if (
+      existsSync(path.join(dir, "index.js")) &&
+      existsSync(path.join(dir, "global-bundle.pem"))
+    ) {
+      return dir
+    }
+  }
+
+  throw new Error(
+    `Prebuilt handler asset not found (looked in: ${candidates.join(", ")}). ` +
+      "Run `pnpm exec projen build:handler` (or a full build) before synthesizing, " +
+      "or reinstall cdk-rds-sql so lib/handler is present."
+  )
 }

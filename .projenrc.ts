@@ -8,7 +8,9 @@ const tmpDirectories = [
   ".envrc",
   ".env",
   "CONVENTIONS.md",
-  "src/handler/handler.js",
+  // Prebuilt Lambda handler assets (produced by build:handler)
+  "src/handler/index.js",
+  "src/handler/global-bundle.pem",
   "*~",
   ".claude/hooks/.edited",
 ]
@@ -71,7 +73,15 @@ const project = new awscdk.AwsCdkConstructLibrary({
     prettier: true,
   },
   gitignore: tmpDirectories,
-  npmignore: [...tmpDirectories, "/lambda/", "!pnpm-lock.yaml"],
+  // Do not ship lock/workspace files (they forced consumers onto pnpm during synth).
+  // Include the RDS CA bundle from the prebuilt handler asset directory.
+  npmignore: [
+    ...tmpDirectories,
+    "/lambda/",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "!/lib/**/*.pem",
+  ],
   docgen: false,
   workflowNodeVersion: "24.x",
   deps: ["@types/aws-lambda"],
@@ -137,16 +147,24 @@ project.addTask("integ:destroy:dsql", {
   exec: "pnpm exec cdk destroy TestRdsSqlDsqlStack --force",
 })
 
-// Add build tasks for transpiling the Lambda handler
-project.addTask("build:handler", {
-  description: "Transpile the Lambda handler to JavaScript",
-  exec: "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/handler.js",
+// Build a self-contained Lambda asset (bundle + RDS CA) so consumers never run
+// NodejsFunction/esbuild against this package's lockfile at synth time.
+const buildHandler = project.addTask("build:handler", {
+  description: "Bundle the Lambda handler and download the RDS CA certificate",
 })
+buildHandler.exec("mkdir -p src/handler")
+buildHandler.exec(
+  "esbuild lambda/handler.ts --bundle --platform=node --target=node22 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/index.js"
+)
+buildHandler.exec(
+  "curl --silent -fL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o src/handler/global-bundle.pem"
+)
 
-project.addTask("copy:handler", {
-  description: "Copy transpiled handler into lib",
-  exec: "cp src/handler/handler.js lib/handler/handler.js",
+const copyHandler = project.addTask("copy:handler", {
+  description: "Copy prebuilt handler asset into lib for packaging",
 })
+copyHandler.exec("mkdir -p lib/handler")
+copyHandler.exec("cp src/handler/index.js src/handler/global-bundle.pem lib/handler/")
 
 project.addTask("typecheck", {
   description: "Typecheck typescript",
@@ -154,8 +172,10 @@ project.addTask("typecheck", {
 })
 
 // Hook these tasks into the build process
-project.tasks.tryFind("pre-compile")?.spawn(project.tasks.tryFind("build:handler")!)
-project.tasks.tryFind("compile")?.spawn(project.tasks.tryFind("copy:handler")!)
+project.tasks.tryFind("pre-compile")?.spawn(buildHandler)
+project.tasks.tryFind("compile")?.spawn(copyHandler)
+// Unit tests synthesize stacks that load the prebuilt handler asset.
+project.tasks.tryFind("test")?.prependSpawn(buildHandler)
 
 // Override release workflow to remove NPM_TOKEN and add NPM_TRUSTED_PUBLISHER
 const releaseNpmPublishStepIndex = 10
@@ -186,9 +206,19 @@ if (dependabot) {
   ]
 }
 
+// pnpm 10.15+ / 11 require explicit approval for dependency build scripts.
+// Without this, `pnpm exec` (used by CDK NodejsFunction local bundling in tests)
+// fails with ERR_PNPM_IGNORED_BUILDS.
 new YamlFile(project, "pnpm-workspace.yaml", {
   obj: {
     nodeLinker: "hoisted",
+    allowBuilds: {
+      "cpu-features": true,
+      esbuild: true,
+      protobufjs: true,
+      ssh2: true,
+      "unrs-resolver": true,
+    },
   },
 })
 

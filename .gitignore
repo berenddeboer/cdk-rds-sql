@@ -36,7 +36,8 @@ cdk.out/
 .envrc
 .env
 CONVENTIONS.md
-src/handler/handler.js
+src/handler/index.js
+src/handler/global-bundle.pem
 *~
 .claude/hooks/.edited
 /test-reports/

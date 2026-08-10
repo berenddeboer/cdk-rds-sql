@@ -26,10 +26,16 @@
     },
     "build:handler": {
       "name": "build:handler",
-      "description": "Transpile the Lambda handler to JavaScript",
+      "description": "Bundle the Lambda handler and download the RDS CA certificate",
       "steps": [
         {
-          "exec": "esbuild lambda/handler.ts --bundle --platform=node --target=node20 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/handler.js"
+          "exec": "mkdir -p src/handler"
+        },
+        {
+          "exec": "esbuild lambda/handler.ts --bundle --platform=node --target=node22 --external:aws-sdk --external:@aws-sdk/* --outfile=src/handler/index.js"
+        },
+        {
+          "exec": "curl --silent -fL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o src/handler/global-bundle.pem"
         }
       ]
     },
@@ -106,10 +112,13 @@
     },
     "copy:handler": {
       "name": "copy:handler",
-      "description": "Copy transpiled handler into lib",
+      "description": "Copy prebuilt handler asset into lib for packaging",
       "steps": [
         {
-          "exec": "cp src/handler/handler.js lib/handler/handler.js"
+          "exec": "mkdir -p lib/handler"
+        },
+        {
+          "exec": "cp src/handler/index.js src/handler/global-bundle.pem lib/handler/"
         }
       ]
     },
@@ -301,6 +310,9 @@
       "name": "test",
       "description": "Run tests",
       "steps": [
+        {
+          "spawn": "build:handler"
+        },
         {
           "exec": "jest --passWithNoTests --updateSnapshot",
           "receiveArgs": true

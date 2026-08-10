@@ -1,6 +1,6 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { Client, ClientConfig } from "pg"
-import { GenericContainer, StartedTestContainer } from "testcontainers"
+import { GenericContainer, StartedTestContainer, Wait } from "testcontainers"
 import { handler } from "./handler"
 import {
   createRequest,
@@ -52,9 +52,22 @@ beforeAll(async () => {
       POSTGRES_PASSWORD: DB_MASTER_PASSWORD,
       POSTGRES_DB: DB_DEFAULT_DB,
     })
+    // Port open is not enough — Postgres can still reject with "starting up".
+    .withWaitStrategy(
+      Wait.forLogMessage("database system is ready to accept connections", 2)
+    )
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
+
+  // Extra readiness probe so beforeEach cleanup does not race container startup.
+  await waitForPostgres({
+    host: pgHost,
+    port: pgPort,
+    database: DB_DEFAULT_DB,
+    user: DB_MASTER_USERNAME,
+    password: DB_MASTER_PASSWORD,
+  })
 }, 60000)
 
 afterAll(async () => {
@@ -335,4 +348,35 @@ const newClient = async (config?: ClientConfig): Promise<Client> => {
   })
   await client.connect()
   return client
+}
+
+async function waitForPostgres(config: {
+  host: string
+  port: number
+  database: string
+  user: string
+  password: string
+}): Promise<void> {
+  const deadline = Date.now() + 30_000
+  let lastError: unknown
+  while (Date.now() < deadline) {
+    const client = new Client(config)
+    try {
+      await client.connect()
+      await client.query("SELECT 1")
+      await client.end()
+      return
+    } catch (error) {
+      lastError = error
+      try {
+        await client.end()
+      } catch {
+        // ignore close errors while the server is still starting
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250))
+    }
+  }
+  throw new Error(
+    `PostgreSQL container did not become ready in time: ${String(lastError)}`
+  )
 }

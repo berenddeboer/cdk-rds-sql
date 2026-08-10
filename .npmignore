@@ -5,11 +5,14 @@ cdk.out/
 .envrc
 .env
 CONVENTIONS.md
-src/handler/handler.js
+src/handler/index.js
+src/handler/global-bundle.pem
 *~
 .claude/hooks/.edited
 /lambda/
-!pnpm-lock.yaml
+pnpm-lock.yaml
+pnpm-workspace.yaml
+!/lib/**/*.pem
 /.projen/
 /test-reports/
 junit.xml
