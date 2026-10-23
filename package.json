@@ -24,6 +24,7 @@
     "integ:destroy:serverless": "projen integ:destroy:serverless",
     "package": "projen package",
     "package-all": "projen package-all",
+    "package:dotnet": "projen package:dotnet",
     "package:js": "projen package:js",
     "package:python": "projen package:python",
     "post-compile": "projen post-compile",
@@ -173,6 +174,10 @@
       "python": {
         "distName": "cdk-rds-sql",
         "module": "cdk_rds_sql"
+      },
+      "dotnet": {
+        "namespace": "BerenddeBoer.CdkRdsSql",
+        "packageId": "BerenddeBoer.CdkRdsSql"
       }
     },
     "tsconfig": "tsconfig.json",
