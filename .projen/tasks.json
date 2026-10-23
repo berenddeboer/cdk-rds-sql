@@ -315,7 +315,7 @@
           ]
         }
       ],
-      "condition": "dotnet --list-sdks 2>/dev/null | grep -q ."
+      "condition": "sh -c 'if [ -n \"$CI\" ]; then exit 0; fi; dotnet --list-sdks 2>/dev/null | grep -q .'"
     },
     "package:js": {
       "name": "package:js",

@@ -215,13 +215,16 @@ project.tasks.tryFind("pre-compile")?.spawn(buildHandler)
 project.tasks.tryFind("compile")?.spawn(copyHandler)
 
 // Local `projen build` packages every language. Pre-commit runs that build, and
-// most machines have no .NET SDK. Skip the NuGet pack unless `dotnet --list-sdks`
-// prints a version. CI still invokes `package:dotnet` after setup-dotnet.
+// most machines have no .NET SDK. Skip the NuGet pack locally unless
+// `dotnet --list-sdks` prints a version. In CI always run it, so a missing SDK
+// fails the pack instead of publishing nothing.
 const packageDotnet = project.tasks.tryFind("package:dotnet")
 if (!packageDotnet) {
   throw new Error("Expected package:dotnet task")
 }
-packageDotnet.addCondition("dotnet --list-sdks 2>/dev/null | grep -q .")
+packageDotnet.addCondition(
+  "sh -c 'if [ -n \"$CI\" ]; then exit 0; fi; dotnet --list-sdks 2>/dev/null | grep -q .'"
+)
 // Node16 preserves dynamic import(), which needs VM module support inside Jest.
 for (const task of ["test", "test:watch", "test:update"]) {
   // Unit tests synthesize stacks that load the prebuilt handler asset.
