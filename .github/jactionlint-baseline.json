@@ -146,6 +146,46 @@
       "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
     },
     {
+      "file": ".github/workflows/build.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "749b6e3f3c675583",
+      "context": "50877a9fa3486f37",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "e05ecbae8ac23bdd",
+      "context": "41bf8436d4e51f4a",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "923e6786d5876970",
+      "context": "30d2a5395797f06a",
+      "occurrence": 0,
+      "message": "action \"actions/setup-dotnet@v6.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "4699ae4f752cb39d",
+      "context": "d2619c4ddfee927d",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "artipacked",
+      "fingerprint": "c6a862eb035f71dd",
+      "context": "486c7dad1d084b62",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
       "file": ".github/workflows/claude-code-review.yml",
       "rule": "concurrency-limits",
       "fingerprint": "c41f0955d93b4ce5",
@@ -390,6 +430,46 @@
       "rule": "artipacked",
       "fingerprint": "4717e3062e655cf5",
       "context": "1e7c3db0c1c85106",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "53c68c84903b53bc",
+      "context": "c0a29851c2ad3f04",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "21fc58859fe7d615",
+      "context": "e46fcc62fb40f6e9",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "f3d28da778c69ed1",
+      "context": "79b6e9cabbf23668",
+      "occurrence": 0,
+      "message": "action \"actions/setup-dotnet@v6.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "d24dc9c3f31bec1e",
+      "context": "7b78449a86d2dfa7",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "artipacked",
+      "fingerprint": "72ffc9cd7e481915",
+      "context": "4573578f9b3533ba",
       "occurrence": 0,
       "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
     }
