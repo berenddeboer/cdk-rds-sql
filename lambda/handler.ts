@@ -164,6 +164,36 @@ export const handler = async (
 
   const dbEngine = EngineFactory.createEngine(engine)
 
+  let database: string
+  if (engine === "dsql") {
+    // DSQL always uses 'postgres' database
+    database = "postgres"
+  } else if (resource === RdsSqlResource.ROLE) {
+    database = secretValues.dbname
+  } else {
+    database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
+  }
+  const config: EngineConnectionConfig = {
+    host: secretValues.host,
+    port: secretValues.port,
+    user: secretValues.username,
+    password: secretValues.password || "", // DSQL will generate token in engine
+    database: database,
+  }
+  // Load session state before SQL is rendered. MySQL literal escaping depends on sql_mode.
+  // prepare() and executeSQL() each open a new session as the same master user, so
+  // both see the same global and user sql_mode. A session-only change between them
+  // is not re-read.
+  // Parameter password copies a secret to SSM and never opens a database connection.
+  if (resource !== RdsSqlResource.PARAMETER_PASSWORD) {
+    try {
+      await dbEngine.prepare(config)
+    } catch (error) {
+      log("Error preparing database connection: %o", error)
+      throw error
+    }
+  }
+
   let sql: string | string[] | undefined
   switch (requestType) {
     case "Create": {
@@ -274,24 +304,6 @@ export const handler = async (
   }
 
   if (sql) {
-    let database: string
-    if (engine === "dsql") {
-      // DSQL always uses 'postgres' database
-      database = "postgres"
-    } else if (resource === RdsSqlResource.ROLE) {
-      database = secretValues.dbname
-    } else {
-      database = databaseName ?? secretValues.dbname // connect to given database if possible, else to database mentioned in secret
-    }
-
-    const config: EngineConnectionConfig = {
-      host: secretValues.host,
-      port: secretValues.port,
-      user: secretValues.username,
-      password: secretValues.password || "", // DSQL will generate token in engine
-      database: database,
-    }
-
     try {
       await backOff(
         async () => {

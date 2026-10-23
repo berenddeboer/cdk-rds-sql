@@ -1,18 +1,27 @@
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
+import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { createConnection } from "mysql2/promise"
 import { GenericContainer, type StartedTestContainer } from "testcontainers"
 import { handler } from "./handler"
+import { quoteMysqlIdentifier } from "./mysql-quote"
 import { createRequest, deleteRequest, updateRequest } from "./util"
 
 jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
   typeof SecretsManagerClient
 >
+// The automocked command does not keep constructor input, which the password
+// dispatch below needs in order to tell a role secret from the cluster secret.
+const GetSecretValueCommandMock = GetSecretValueCommand as unknown as jest.Mock
 
 const DB_PORT = 3306
 const DB_MASTER_USERNAME = "root"
 const DB_MASTER_PASSWORD = "masterpwd"
 const DB_DEFAULT_DB = "dummy"
+const QUOTED_PASSWORD_ARN = "arn:aws:secretsmanager:us-east-1:123456789:secret:quoted-password"
+const QUOTED_PASSWORD = "it's-a\\password"
+const BACKSLASH_PASSWORD_ARN =
+  "arn:aws:secretsmanager:us-east-1:123456789:secret:backslash-password"
+const BACKSLASH_PASSWORD = "back\\slash'quote"
 
 let mysqlContainer: StartedTestContainer
 let mysqlHost: string
@@ -34,7 +43,15 @@ beforeAll(async () => {
   mysqlPort = mysqlContainer.getMappedPort(DB_PORT)
 
   // Set up the mock after we have the host and port values
-  SecretsManagerClientMock.prototype.send.mockImplementation(() => {
+  GetSecretValueCommandMock.mockImplementation((input: unknown) => ({ input }))
+  SecretsManagerClientMock.prototype.send.mockImplementation((command: unknown) => {
+    const secretId = secretIdOf(command)
+    const password = secretId ? rolePasswords[secretId] : undefined
+    if (password) {
+      return {
+        SecretString: JSON.stringify({ password }),
+      }
+    }
     return {
       SecretString: JSON.stringify({
         host: mysqlHost,
@@ -69,7 +86,9 @@ beforeEach(async () => {
     )
 
     for (const db of databases) {
-      await connection.query(`DROP DATABASE IF EXISTS \`${db.SCHEMA_NAME}\``)
+      await connection.query(
+        `DROP DATABASE IF EXISTS ${quoteMysqlIdentifier(String(db.SCHEMA_NAME))}`
+      )
     }
 
     // Drop all users except system ones
@@ -78,7 +97,9 @@ beforeEach(async () => {
     )
 
     for (const user of users) {
-      await connection.query(`DROP USER IF EXISTS '${user.User}'@'%'`)
+      // Identifier quoting is valid for account names and does not depend on SQL mode.
+      const account = `${quoteMysqlIdentifier(String(user.User))}@${quoteMysqlIdentifier("%")}`
+      await connection.query(`DROP USER IF EXISTS ${account}`)
     }
   } finally {
     await connection.end()
@@ -110,6 +131,42 @@ async function tableExists(connection: any, dbName: string, tableName: string): 
 async function rowCount(connection: any, tableName: string): Promise<number> {
   const [rows] = await connection.query(`SELECT COUNT(*) as count FROM ${tableName}`)
   return rows[0].count
+}
+
+const rolePasswords: Record<string, string> = {
+  [QUOTED_PASSWORD_ARN]: QUOTED_PASSWORD,
+  [BACKSLASH_PASSWORD_ARN]: BACKSLASH_PASSWORD,
+}
+
+function secretIdOf(command: unknown): string | undefined {
+  if (typeof command !== "object" || command === null || !("input" in command)) {
+    return undefined
+  }
+  const input = command.input
+  if (typeof input !== "object" || input === null || !("SecretId" in input)) {
+    return undefined
+  }
+  const secretId = input.SecretId
+  return typeof secretId === "string" ? secretId : undefined
+}
+
+async function globalSqlMode(
+  connection: Awaited<ReturnType<typeof createConnection>>
+): Promise<string> {
+  const [rows] = await connection.query("SELECT @@GLOBAL.sql_mode AS sqlMode")
+  if (!Array.isArray(rows) || rows.length !== 1) {
+    throw new Error("MySQL did not return a global sql_mode")
+  }
+  const row: unknown = rows[0]
+  if (
+    typeof row !== "object" ||
+    row === null ||
+    !("sqlMode" in row) ||
+    typeof row.sqlMode !== "string"
+  ) {
+    throw new Error("MySQL did not return a global sql_mode")
+  }
+  return row.sqlMode
 }
 
 async function newConnection(config?: any): Promise<any> {
@@ -272,6 +329,123 @@ describe("User creation", () => {
       })
       await userConn2.end()
     } finally {
+      await connection.end()
+    }
+  })
+})
+
+describe("escaped passwords and delimited names", () => {
+  const userName = "o'brien"
+  const databaseName = "db`tick"
+
+  it("creates a delimited user and database and accepts the raw password", async () => {
+    await handler(
+      createRequest("role", userName, {
+        PasswordArn: QUOTED_PASSWORD_ARN,
+      })
+    )
+    await handler(
+      createRequest("database", databaseName, {
+        Owner: userName,
+      })
+    )
+
+    const connection = await newConnection()
+    try {
+      expect(await userExists(connection, userName)).toEqual(true)
+      expect(await databaseExists(connection, databaseName)).toEqual(true)
+
+      const userConn = await newConnection({
+        user: userName,
+        password: QUOTED_PASSWORD,
+        database: databaseName,
+      })
+      try {
+        await userConn.query("CREATE TABLE t(i INT)")
+        await userConn.query("INSERT INTO t VALUES (1)")
+        expect(await rowCount(userConn, "t")).toEqual(1)
+      } finally {
+        await userConn.end()
+      }
+
+      await handler(
+        updateRequest("role", userName, userName, {
+          PasswordArn: BACKSLASH_PASSWORD_ARN,
+          DatabaseName: databaseName,
+        })
+      )
+      const updatedConn = await newConnection({
+        user: userName,
+        password: BACKSLASH_PASSWORD,
+        database: databaseName,
+      })
+      await updatedConn.end()
+
+      await handler(
+        deleteRequest("role", userName, {
+          DatabaseName: databaseName,
+        })
+      )
+      expect(await userExists(connection, userName)).toEqual(false)
+    } finally {
+      await connection.end()
+    }
+  })
+
+  it("honors NO_BACKSLASH_ESCAPES for backslashes in passwords and names", async () => {
+    const backslashUser = "a\\b"
+    const connection = await newConnection()
+    const originalMode = await globalSqlMode(connection)
+    try {
+      await connection.query("SET GLOBAL sql_mode = ?", [`${originalMode},NO_BACKSLASH_ESCAPES`])
+
+      await handler(
+        createRequest("role", backslashUser, {
+          PasswordArn: QUOTED_PASSWORD_ARN,
+          DatabaseName: DB_DEFAULT_DB,
+        })
+      )
+
+      expect(await userExists(connection, backslashUser)).toEqual(true)
+      const userConn = await newConnection({
+        user: backslashUser,
+        password: QUOTED_PASSWORD,
+      })
+      await userConn.end()
+    } finally {
+      await connection.query("SET GLOBAL sql_mode = ?", [originalMode])
+      await connection.end()
+    }
+  })
+
+  it("still quotes backticks and apostrophes when ANSI_QUOTES is enabled", async () => {
+    const connection = await newConnection()
+    const originalMode = await globalSqlMode(connection)
+    try {
+      await connection.query("SET GLOBAL sql_mode = ?", [`${originalMode},ANSI_QUOTES`])
+
+      await handler(
+        createRequest("role", userName, {
+          PasswordArn: QUOTED_PASSWORD_ARN,
+        })
+      )
+      await handler(
+        createRequest("database", databaseName, {
+          Owner: userName,
+        })
+      )
+
+      expect(await userExists(connection, userName)).toEqual(true)
+      expect(await databaseExists(connection, databaseName)).toEqual(true)
+      const userConn = await newConnection({
+        user: userName,
+        password: QUOTED_PASSWORD,
+        database: databaseName,
+      })
+      await userConn.query("SELECT 1")
+      await userConn.end()
+    } finally {
+      await connection.query("SET GLOBAL sql_mode = ?", [originalMode])
       await connection.end()
     }
   })
