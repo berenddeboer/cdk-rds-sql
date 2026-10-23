@@ -68,6 +68,13 @@ export abstract class AbstractEngine {
   ): string | string[]
   abstract deleteIamGrant(roleName: string, iamArn: string): string | string[]
 
+  /**
+   * Load connection state required before SQL is rendered.
+   * MySQL literal escaping depends on the session SQL mode, so the handler
+   * calls this before create/update/delete SQL is built.
+   */
+  async prepare(_config: EngineConnectionConfig): Promise<void> {}
+
   abstract executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any>
 
   /**

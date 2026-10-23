@@ -1,4 +1,5 @@
 import { MysqlEngine } from "./engine.mysql"
+import { quoteMysqlIdentifier, quoteMysqlString } from "./mysql-quote"
 
 describe("MySQL Engine", () => {
   let engine: MysqlEngine
@@ -281,6 +282,145 @@ describe("MySQL Engine", () => {
         expect(sql[2]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'switchuser'@'%'")
         expect(sql[3]).toBe("FLUSH PRIVILEGES")
       })
+    })
+  })
+
+  describe("escaping", () => {
+    const passwordArn = "arn:aws:secretsmanager:region:account:secret:name"
+    const password = "it's-a\\password"
+    const user = "o'brien"
+    const database = "db`tick"
+
+    beforeEach(() => {
+      jest.spyOn(engine as any, "getPassword").mockResolvedValue(password)
+    })
+
+    it("quotes identifiers by doubling backticks and does not depend on SQL mode", () => {
+      expect(quoteMysqlIdentifier(database)).toBe("`db``tick`")
+      expect(quoteMysqlIdentifier("o'brien")).toBe("`o'brien`")
+      expect(quoteMysqlIdentifier("a\\b")).toBe("`a\\b`")
+    })
+
+    it("doubles apostrophes and escapes backslashes in the default SQL mode", () => {
+      expect(quoteMysqlString(password, "")).toBe("'it''s-a\\\\password'")
+      expect(quoteMysqlString(password, "ANSI_QUOTES")).toBe("'it''s-a\\\\password'")
+      expect(quoteMysqlString("line\n\t\0", "")).toBe("'line\\n\\t\\0'")
+    })
+
+    it("does not escape backslashes when NO_BACKSLASH_ESCAPES is set", () => {
+      const mode = "ONLY_FULL_GROUP_BY, NO_BACKSLASH_ESCAPES,ANSI_QUOTES"
+      expect(quoteMysqlString(password, mode)).toBe("'it''s-a\\password'")
+      expect(quoteMysqlString("line\n", mode)).toBe("'line\n'")
+    })
+
+    it("escapes database names and owners", () => {
+      expect(engine.createDatabase(database, { Owner: user })).toEqual([
+        "CREATE DATABASE IF NOT EXISTS `db``tick`",
+        "GRANT ALL PRIVILEGES ON `db``tick`.* TO 'o''brien'@'%'",
+        "FLUSH PRIVILEGES",
+      ])
+      expect(engine.deleteDatabase(database, "master")).toEqual([
+        "DROP DATABASE IF EXISTS `db``tick`",
+      ])
+    })
+
+    it("escapes a password and delimited names when creating a role", async () => {
+      const sql = await engine.createRole(user, {
+        PasswordArn: passwordArn,
+        DatabaseName: database,
+        MaxUserConnections: 5,
+      })
+
+      expect(sql).toEqual([
+        "CREATE USER IF NOT EXISTS 'o''brien'@'%' IDENTIFIED BY 'it''s-a\\\\password'",
+        "GRANT ALL PRIVILEGES ON `db``tick`.* TO 'o''brien'@'%'",
+        "ALTER USER 'o''brien'@'%' WITH MAX_USER_CONNECTIONS 5",
+        "FLUSH PRIVILEGES",
+      ])
+    })
+
+    it("quotes a backslash password for NO_BACKSLASH_ESCAPES", async () => {
+      engine.setSqlMode("STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES")
+
+      const sql = await engine.createRole("a\\b", {
+        PasswordArn: passwordArn,
+      })
+
+      expect(sql[0]).toBe("CREATE USER IF NOT EXISTS 'a\\b'@'%' IDENTIFIED BY 'it''s-a\\password'")
+    })
+
+    it("escapes the user name of an IAM role", async () => {
+      const sql = await engine.createRole(user, { EnableIamAuth: true })
+
+      expect(sql[0]).toBe(
+        "CREATE USER IF NOT EXISTS 'o''brien'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+      )
+    })
+
+    it("escapes a password change", async () => {
+      const sql = await engine.updateRole(
+        user,
+        user,
+        { PasswordArn: passwordArn, DatabaseName: database },
+        { PasswordArn: passwordArn, DatabaseName: "old`db" }
+      )
+
+      expect(sql).toContain("ALTER USER 'o''brien'@'%' IDENTIFIED BY 'it''s-a\\\\password'")
+      expect(sql).toContain("REVOKE ALL PRIVILEGES ON `old``db`.* FROM 'o''brien'@'%'")
+      expect(sql).toContain("GRANT ALL PRIVILEGES ON `db``tick`.* TO 'o''brien'@'%'")
+    })
+
+    it("escapes both names when renaming a password user", async () => {
+      const sql = await engine.updateRole(user, "old'user", { PasswordArn: passwordArn }, {})
+
+      expect(sql[0]).toBe(
+        "CREATE USER IF NOT EXISTS 'o''brien'@'%' IDENTIFIED BY 'it''s-a\\\\password'"
+      )
+      expect(sql[1]).toBe("DROP USER IF EXISTS 'old''user'@'%'")
+    })
+
+    it("escapes a rename that expires a generated password", async () => {
+      const sql = await engine.updateRole(user, "old'user", {}, {})
+
+      expect(sql[0]).toBe("CREATE USER IF NOT EXISTS 'o''brien'@'%' IDENTIFIED BY UUID()")
+      expect(sql[1]).toBe("ALTER USER 'o''brien'@'%' PASSWORD EXPIRE")
+      expect(sql[2]).toBe("DROP USER IF EXISTS 'old''user'@'%'")
+    })
+
+    it("escapes a switch from IAM to password authentication", async () => {
+      const sql = await engine.updateRole(
+        user,
+        user,
+        { EnableIamAuth: false, PasswordArn: passwordArn },
+        { EnableIamAuth: true }
+      )
+
+      expect(sql[0]).toBe("DROP USER IF EXISTS 'o''brien'@'%'")
+      expect(sql[1]).toBe("CREATE USER 'o''brien'@'%' IDENTIFIED BY 'it''s-a\\\\password'")
+    })
+
+    it("escapes a switch from password to IAM authentication", async () => {
+      const sql = await engine.updateRole(
+        user,
+        user,
+        { EnableIamAuth: true },
+        { EnableIamAuth: false }
+      )
+
+      expect(sql[0]).toBe("DROP USER IF EXISTS 'o''brien'@'%'")
+      expect(sql[1]).toBe(
+        "CREATE USER 'o''brien'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+      )
+    })
+
+    it("escapes a role delete", async () => {
+      const sql = await engine.deleteRole(user, { DatabaseName: database })
+
+      expect(sql).toEqual([
+        "REVOKE ALL PRIVILEGES ON `db``tick`.* FROM 'o''brien'@'%'",
+        "DROP USER IF EXISTS 'o''brien'@'%'",
+        "FLUSH PRIVILEGES",
+      ])
     })
   })
 

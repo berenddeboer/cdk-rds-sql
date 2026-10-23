@@ -26,12 +26,14 @@ describe("Handler CloudFormation Property Conversion", () => {
 
     // Mock the engine instances
     mockMysqlEngine = {
+      prepare: jest.fn(),
       createRole: jest.fn(),
       updateRole: jest.fn(),
       executeSQL: jest.fn(),
     } as any
 
     mockPostgresqlEngine = {
+      prepare: jest.fn(),
       createRole: jest.fn(),
       executeSQL: jest.fn(),
     } as any
@@ -66,6 +68,22 @@ describe("Handler CloudFormation Property Conversion", () => {
       })
 
       await handler(request)
+
+      expect(mockMysqlEngine.prepare).toHaveBeenCalledWith(
+        expect.objectContaining({
+          host: "localhost",
+          port: 3306,
+          user: "root",
+          password: "password",
+          database: "test",
+        })
+      )
+      const prepareOrder = mockMysqlEngine.prepare.mock.invocationCallOrder[0]
+      const createOrder = mockMysqlEngine.createRole.mock.invocationCallOrder[0]
+      if (prepareOrder === undefined || createOrder === undefined) {
+        throw new Error("expected prepare and createRole to be called")
+      }
+      expect(prepareOrder).toBeLessThan(createOrder)
 
       // Verify that createRole was called with boolean false, not string 'false'
       expect(mockMysqlEngine.createRole).toHaveBeenCalledWith(
