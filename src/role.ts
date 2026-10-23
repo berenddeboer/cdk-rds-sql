@@ -85,6 +85,24 @@ export interface RoleProps {
    * @default false - use password authentication
    */
   readonly enableIamAuth?: boolean
+
+  /**
+   * Maximum simultaneous connections for this MySQL/MariaDB user.
+   *
+   * When set, create and update run
+   * `ALTER USER '<roleName>'@'%' WITH MAX_USER_CONNECTIONS <n>`.
+   * A later change, including a smaller number, is applied on update.
+   * `0` restores the server default (unlimited unless the global
+   * `max_user_connections` is set).
+   *
+   * Omit the property to leave the user unlimited. Omitting it does not
+   * clear a limit that was already applied; set `0` to do that.
+   *
+   * PostgreSQL and DSQL do not support this property and throw if it is set.
+   *
+   * @default undefined - no connection limit is applied
+   */
+  readonly maxUserConnections?: number
 }
 
 // Private Parameters construct (not exported)
@@ -169,6 +187,14 @@ export class Role extends Construct {
   public readonly secret?: ISecret
 
   constructor(scope: Construct, id: string, props: RoleProps) {
+    if (props.maxUserConnections !== undefined) {
+      if (props.provider.engine !== DatabaseEngine.MYSQL) {
+        throw new Error("maxUserConnections is only supported for MySQL/MariaDB roles")
+      }
+      if (!Number.isInteger(props.maxUserConnections) || props.maxUserConnections < 0) {
+        throw new Error("maxUserConnections must be a non-negative integer")
+      }
+    }
     if (props.provider.engine !== DatabaseEngine.DSQL) {
       if (props.database && props.databaseName) {
         throw "Specify either database or databaseName"
@@ -280,6 +306,7 @@ export class Role extends Construct {
       database: props.database,
       databaseName: props.databaseName,
       enableIamAuth: useIamAuth,
+      maxUserConnections: props.maxUserConnections,
     })
 
     if (this.secret) {

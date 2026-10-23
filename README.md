@@ -143,6 +143,31 @@ has been created.
 If you want to make the role the owner of a new database, just specify
 the `databaseName` here, and create the database later.
 
+### Connection limit (MySQL/MariaDB)
+
+Cap how many connections a MySQL or MariaDB user may open:
+
+```ts
+const role = new Role(this, "Role", {
+  provider: provider,
+  roleName: "myrole",
+  databaseName: "mydb",
+  maxUserConnections: 5,
+})
+```
+
+Create and update then run:
+
+```sql
+ALTER USER 'myrole'@'%' WITH MAX_USER_CONNECTIONS 5
+```
+
+Omit `maxUserConnections` to leave the user unlimited, which is the
+existing behaviour. Omitting it does not clear a limit that was already
+applied; set `0` to restore the server default (unlimited unless the
+global `max_user_connections` is set). PostgreSQL and DSQL throw if
+this property is set.
+
 ### IAM Authentication
 
 Instead of password-based authentication, you can create roles that

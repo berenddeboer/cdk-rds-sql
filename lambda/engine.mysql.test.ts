@@ -94,6 +94,128 @@ describe("MySQL Engine", () => {
       expect(grantStatement).toBeDefined()
     })
 
+    describe("max user connections", () => {
+      it("should apply the connection limit when creating a password user", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        const sql = await engine.createRole("siteuser", {
+          PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+          MaxUserConnections: 5,
+        })
+
+        expect(sql).toContain(
+          "CREATE USER IF NOT EXISTS 'siteuser'@'%' IDENTIFIED BY 'test-password'"
+        )
+        expect(sql).toContain("ALTER USER 'siteuser'@'%' WITH MAX_USER_CONNECTIONS 5")
+        expect(
+          sql.findIndex((statement) => statement.includes("CREATE USER"))
+        ).toBeLessThan(
+          sql.findIndex((statement) => statement.includes("MAX_USER_CONNECTIONS"))
+        )
+        expect(sql[sql.length - 1]).toBe("FLUSH PRIVILEGES")
+      })
+
+      it("should apply the connection limit when creating an IAM user", async () => {
+        const sql = await engine.createRole("iamuser", {
+          EnableIamAuth: true,
+          MaxUserConnections: 5,
+        })
+
+        expect(sql).toContain(
+          "CREATE USER IF NOT EXISTS 'iamuser'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+        )
+        expect(sql).toContain("ALTER USER 'iamuser'@'%' WITH MAX_USER_CONNECTIONS 5")
+      })
+
+      it("should not add a connection limit when the prop is unset", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        const sql = await engine.createRole("siteuser", {
+          PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+        })
+
+        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(
+          false
+        )
+      })
+
+      it("should apply a reduced connection limit on update", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        const sql = await engine.updateRole(
+          "siteuser",
+          "siteuser",
+          {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+            MaxUserConnections: 3,
+          },
+          {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+            MaxUserConnections: 10,
+          }
+        )
+
+        expect(sql).toContain("ALTER USER 'siteuser'@'%' WITH MAX_USER_CONNECTIONS 3")
+        expect(
+          sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS 10"))
+        ).toBe(false)
+      })
+
+      it("should reapply the connection limit after a rename recreates the user", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        const sql = await engine.updateRole(
+          "newuser",
+          "olduser",
+          {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+            MaxUserConnections: 5,
+          },
+          {
+            MaxUserConnections: 5,
+          }
+        )
+
+        const createAt = sql.findIndex((statement) => statement.includes("CREATE USER"))
+        const alterAt = sql.findIndex((statement) =>
+          statement.includes("MAX_USER_CONNECTIONS")
+        )
+        expect(alterAt).toBeGreaterThan(createAt)
+        expect(sql[alterAt]).toBe("ALTER USER 'newuser'@'%' WITH MAX_USER_CONNECTIONS 5")
+      })
+
+      it("should not add a connection limit when updating a role without the prop", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        const sql = await engine.updateRole(
+          "siteuser",
+          "siteuser",
+          {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+          },
+          {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+            MaxUserConnections: 5,
+          }
+        )
+
+        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(
+          false
+        )
+      })
+
+      it("should reject a negative connection limit", async () => {
+        jest.spyOn(engine as any, "getPassword").mockResolvedValue("test-password")
+
+        await expect(
+          engine.createRole("siteuser", {
+            PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
+            MaxUserConnections: -1,
+          })
+        ).rejects.toThrow("non-negative integer")
+      })
+    })
+
     describe("IAM Authentication", () => {
       it("should create user with IAM authentication", async () => {
         const props = {
