@@ -105,6 +105,72 @@ Projen tasks:
 4. `biome`: Runs formatting and linting
 5. `typecheck`: Runs typecheck
 
+## GitHub Actions checks
+
+`hk.pkl` lints workflows, Dependabot config, and composite actions with
+jactionlint. `mise.toml` pins `jactionlint` 2.3.0 and the `shellcheck` 0.11.0
+that jactionlint shells out to. Run that pin through mise. A `jactionlint`
+already on `PATH` can be another version.
+
+The hk step is `jactionlint --baseline --sarif-hide-baselined --format sarif`.
+`.github/jactionlint.yaml` sets `baseline: auto`, so findings recorded in
+`.github/jactionlint-baseline.json` are accepted and any other finding fails.
+`mise run check` includes the step. To run only it:
+
+```bash
+mise exec -- hk check --all --step jactionlint
+```
+
+### Refreshing the jactionlint baseline
+
+The baseline matches by fingerprint and context hash, which include the finding
+text. After a projen upgrade, a Dependabot action bump, or another
+generated-workflow change, an already accepted finding can fail again because
+the old entry still names the previous text. The old entry then matches
+nothing. Changing `actions/setup-node@v7.0.0` to `v7.0.1` in
+`.github/workflows/build.yml` does this for the three baselined `unpinned-uses`
+findings in that file.
+
+Re-baseline only for that drift, and only after confirming each new finding is
+that stale-baseline effect and not a real regression. Commit the refreshed
+`.github/jactionlint-baseline.json` in the same commit or pull request as the
+workflow change. Do not refresh the baseline to hide a finding you introduced,
+and do not edit the JSON by hand.
+
+1. List findings the baseline does not hide, and compare them with the workflow
+   diff. Expected drift is the same rule on the same step, with the message now
+   naming the new generated text:
+
+   ```bash
+   mise exec -- jactionlint --baseline
+   ```
+
+2. List entries that no longer match anything. They are reported as
+   `unused-baseline-entry`:
+
+   ```bash
+   mise exec -- jactionlint --baseline-check
+   ```
+
+3. Rewrite the baseline. Do not pass workflow paths, and do not combine this
+   with `--baseline`. File arguments keep every other file's entries.
+   `--baseline-write` records every current finding and exits 0 even when new
+   findings exist, so review the baseline diff before committing:
+
+   ```bash
+   mise exec -- jactionlint --baseline-write
+   ```
+
+4. Confirm the hk step is clean:
+
+   ```bash
+   mise exec -- hk check --all --step jactionlint
+   ```
+
+`.github/jactionlint.yaml` mentions the same `--baseline-write` flag. Use the
+mise form so the `mise.toml` pin is the binary that runs. Install tools with
+`mise install` if `mise exec` cannot find `jactionlint`.
+
 ## SSL/TLS Configuration
 
 - SSL is enabled by default
