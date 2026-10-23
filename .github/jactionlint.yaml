@@ -1,0 +1,3 @@
+# Accept findings recorded in jactionlint-baseline.json.
+# New findings still fail. Refresh with: jactionlint --baseline-write
+baseline: auto
