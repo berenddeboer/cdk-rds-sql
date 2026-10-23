@@ -46,7 +46,7 @@ pnpm exec projen test:watch
 pnpm exec projen typecheck
 
 # Run linting
-pnpm exec projen eslint
+pnpm exec projen biome
 
 # Build only the Lambda handler
 pnpm exec projen build:handler
@@ -102,7 +102,7 @@ Projen tasks:
 1. `pre-compile`: Transpiles Lambda handler using esbuild
 2. `compile`: TypeScript compilation
 3. `post-compile`: Copies handler to lib directory
-4. `eslint`: Runs linter
+4. `biome`: Runs formatting and linting
 5. `typecheck`: Runs typecheck
 
 ## SSL/TLS Configuration

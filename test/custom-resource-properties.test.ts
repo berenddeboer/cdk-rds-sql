@@ -3,7 +3,7 @@ import { Match, Template } from "aws-cdk-lib/assertions"
 import * as dsql from "aws-cdk-lib/aws-dsql"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import { Provider, DatabaseEngine, Role, Database, Schema, Sql } from "../src"
+import { Database, DatabaseEngine, Provider, Role, Schema, Sql } from "../src"
 
 describe("Custom Resource Properties", () => {
   let app: cdk.App
@@ -199,14 +199,11 @@ describe("Custom Resource Properties", () => {
       })
 
       // Verify no password parameter custom resource is created
-      const passwordParams = template.findResources(
-        "AWS::CloudFormation::CustomResource",
-        {
-          Properties: {
-            Resource: "parameter_password",
-          },
-        }
-      )
+      const passwordParams = template.findResources("AWS::CloudFormation::CustomResource", {
+        Properties: {
+          Resource: "parameter_password",
+        },
+      })
       expect(Object.keys(passwordParams)).toHaveLength(0)
     })
 
@@ -259,10 +256,7 @@ describe("Custom Resource Properties", () => {
           version: rds.MariaDbEngineVersion.VER_11_4_3,
         }),
         credentials: rds.Credentials.fromGeneratedSecret("admin"),
-        instanceType: ec2.InstanceType.of(
-          ec2.InstanceClass.BURSTABLE3,
-          ec2.InstanceSize.MICRO
-        ),
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
       })
       const mysqlProvider = new Provider(mysqlStack, "Provider", {
         vpc: mysqlVpc,
@@ -328,15 +322,11 @@ describe("Custom Resource Properties", () => {
     })
 
     test("mysql role rejects a non-integer maxUserConnections", () => {
-      const mysqlProvider = Provider.fromProviderAttributes(
-        stack,
-        "MysqlProviderInvalid",
-        {
-          functionName: "mysql-provider-invalid",
-          engine: DatabaseEngine.MYSQL,
-          cluster,
-        }
-      )
+      const mysqlProvider = Provider.fromProviderAttributes(stack, "MysqlProviderInvalid", {
+        functionName: "mysql-provider-invalid",
+        engine: DatabaseEngine.MYSQL,
+        cluster,
+      })
 
       expect(() => {
         new Role(stack, "InvalidRole", {
@@ -553,14 +543,10 @@ describe("Custom Resource Properties", () => {
       })
 
       // This should not throw an error
-      const importedProvider = Provider.fromProviderAttributes(
-        importedStack,
-        "ImportedProvider",
-        {
-          functionArn: "arn:aws:lambda:us-east-1:123456789012:function:test-provider",
-          engine: DatabaseEngine.POSTGRES,
-        }
-      )
+      const importedProvider = Provider.fromProviderAttributes(importedStack, "ImportedProvider", {
+        functionArn: "arn:aws:lambda:us-east-1:123456789012:function:test-provider",
+        engine: DatabaseEngine.POSTGRES,
+      })
 
       // Verify the provider has the correct properties
       expect(importedProvider.engine).toBe(DatabaseEngine.POSTGRES)
@@ -576,14 +562,10 @@ describe("Custom Resource Properties", () => {
       })
 
       // This should not throw an error
-      const namedProvider = Provider.fromProviderAttributes(
-        importedStack,
-        "NamedProvider",
-        {
-          functionName: "test-provider",
-          engine: DatabaseEngine.MYSQL,
-        }
-      )
+      const namedProvider = Provider.fromProviderAttributes(importedStack, "NamedProvider", {
+        functionName: "test-provider",
+        engine: DatabaseEngine.MYSQL,
+      })
 
       // Verify the provider has the correct properties
       expect(namedProvider.engine).toBe(DatabaseEngine.MYSQL)

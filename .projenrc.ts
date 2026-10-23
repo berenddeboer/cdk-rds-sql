@@ -1,5 +1,11 @@
-import { YamlFile, awscdk, github } from "projen"
-import { NodePackageManager } from "projen/lib/javascript"
+import { awscdk, Component, github } from "projen"
+import {
+  Biome,
+  NodePackageManager,
+  PnpmWorkspaceYamlSchemaNodeLinker,
+  TypeScriptModuleResolution,
+  UpdateSnapshot,
+} from "projen/lib/javascript"
 
 const tmpDirectories = [
   "cdk.context.json",
@@ -8,6 +14,7 @@ const tmpDirectories = [
   ".envrc",
   ".env",
   "CONVENTIONS.md",
+  "hk.local.pkl",
   // Prebuilt Lambda handler assets (produced by build:handler)
   "src/handler/index.js",
   "src/handler/global-bundle.pem",
@@ -26,7 +33,20 @@ const project = new awscdk.AwsCdkConstructLibrary({
   repositoryUrl: "https://github.com/berenddeboer/cdk-rds-sql.git",
   projenrcTs: true,
   packageManager: NodePackageManager.PNPM,
-  pnpmVersion: "10.32.1",
+  pnpmVersion: "12.14.0",
+  pnpmOptions: {
+    workspaceYamlOptions: {
+      nodeLinker: PnpmWorkspaceYamlSchemaNodeLinker.HOISTED,
+      allowBuilds: {
+        "@parcel/watcher": true,
+        "cpu-features": true,
+        esbuild: true,
+        protobufjs: true,
+        ssh2: true,
+        "unrs-resolver": true,
+      },
+    },
+  },
   buildWorkflowOptions: {
     // Keep the PR build mutable so projen self-mutation can surface generated-file drift.
     mutableBuild: true,
@@ -46,6 +66,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   },
   jestOptions: {
     jestVersion: "~30",
+    updateSnapshot: UpdateSnapshot.NEVER,
     jestConfig: {
       testMatch: ["<rootDir>/@(src|test|lambda)/**/*(*.)@(spec|test).ts"],
       testPathIgnorePatterns: ["/node_modules/", "/cdk.out/", "/.github/", "/dist/"],
@@ -53,40 +74,49 @@ const project = new awscdk.AwsCdkConstructLibrary({
       maxWorkers: "75%",
     },
   },
-  typescriptVersion: "~5.9",
-  constructsVersion: "10.4.2",
-  cdkVersion: "2.214.0",
-  jsiiVersion: "~5.9.0",
+  typescriptVersion: "~6.0",
+  constructsVersion: "10.5.0",
+  cdkVersion: "2.273.0",
+  jsiiVersion: "~6.0.0",
+  tsconfigDevFile: "tsconfig.dev.json",
   tsconfigDev: {
     compilerOptions: {
       esModuleInterop: true,
       noUnusedLocals: true,
       target: "es2022",
+      module: "node16",
+      moduleResolution: TypeScriptModuleResolution.NODE16,
       noImplicitOverride: true,
       noUncheckedIndexedAccess: true,
     },
     include: ["lambda/**/*.ts"],
   },
-  eslint: true,
-  eslintOptions: {
-    dirs: ["src", "lambda"],
-    prettier: true,
+  eslint: false,
+  prettier: false,
+  biome: true,
+  biomeOptions: {
+    version: "^2.5",
   },
   gitignore: tmpDirectories,
   // Do not ship lock/workspace files (they forced consumers onto pnpm during synth).
   // Include the RDS CA bundle from the prebuilt handler asset directory.
-  npmignore: [
-    ...tmpDirectories,
-    "/lambda/",
-    "pnpm-lock.yaml",
-    "pnpm-workspace.yaml",
-    "!/lib/**/*.pem",
-  ],
+  npmIgnoreOptions: {
+    ignorePatterns: [
+      ...tmpDirectories,
+      "/lambda/",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "hk.pkl",
+      "mise.toml",
+      "!/lib/**/*.pem",
+    ],
+  },
   docgen: false,
   workflowNodeVersion: "24.x",
   deps: ["@types/aws-lambda"],
   bundledDeps: ["@types/aws-lambda"],
   devDeps: [
+    "@types/node@^24",
     "@aws-sdk/client-secrets-manager",
     "@aws-sdk/client-ssm",
     "@aws-sdk/dsql-signer",
@@ -97,7 +127,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     "node-pg-format",
     "pg@^8.13.3",
     "source-map-support",
-    "testcontainers@11",
+    "testcontainers@^12.2.1",
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql", "dsql"],
   minMajorVersion: 1,
@@ -107,20 +137,24 @@ const project = new awscdk.AwsCdkConstructLibrary({
     trustedPublishing: true,
   },
 })
-if (project.eslint) {
-  project.eslint.addRules({
-    semi: ["off"],
-    quotes: ["error", "double"],
-  })
-
-  // Add an override for lambda directory to disable import/no-extraneous-dependencies
-  project.eslint.addOverride({
-    files: ["lambda/*.ts"],
-    rules: {
-      "import/no-extraneous-dependencies": "off",
-    },
-  })
+const biome = Biome.of(project)
+if (!biome) {
+  throw new Error("Expected Biome to be enabled for this project")
 }
+biome.addFilePattern("lambda/**")
+biome.file.addOverride("formatter", {
+  enabled: true,
+  indentStyle: "space",
+  indentWidth: 2,
+  lineWidth: 100,
+})
+biome.file.addOverride("javascript.formatter", {
+  semicolons: "asNeeded",
+  trailingCommas: "es5",
+})
+biome.file.addOverride("linter.rules.nursery.noFloatingPromises", "error")
+biome.file.addOverride("linter.rules.suspicious.noShadow", "error")
+biome.file.addOverride("linter.rules.correctness.noUndeclaredDependencies", "error")
 
 project.addTask("integ:deploy:postgresql:serverless", {
   description: "Deploy the Aurora Serverless V2 integration test stack",
@@ -174,23 +208,34 @@ project.addTask("typecheck", {
 // Hook these tasks into the build process
 project.tasks.tryFind("pre-compile")?.spawn(buildHandler)
 project.tasks.tryFind("compile")?.spawn(copyHandler)
-// Unit tests synthesize stacks that load the prebuilt handler asset.
-project.tasks.tryFind("test")?.prependSpawn(buildHandler)
-
-// Override release workflow to remove NPM_TOKEN and add NPM_TRUSTED_PUBLISHER
-const releaseNpmPublishStepIndex = 10
-const releaseWorkflow = project.github?.tryFindWorkflow("release")
-if (releaseWorkflow?.file) {
-  // The generated pnpm setup step shifts the npm publish step to index 10.
-  // If projen changes the step order, this override path needs updating.
-  releaseWorkflow.file.addOverride(
-    `jobs.release_npm.steps.${releaseNpmPublishStepIndex}.env`,
-    {
-      NPM_TRUSTED_PUBLISHER: "true",
-      NPM_TOKEN: undefined,
-    }
-  )
+// Node16 preserves dynamic import(), which needs VM module support inside Jest.
+for (const task of ["test", "test:watch", "test:update"]) {
+  // Unit tests synthesize stacks that load the prebuilt handler asset.
+  project.tasks.tryFind(task)?.prependSpawn(buildHandler)
+  project.tasks.tryFind(task)?.env("NODE_OPTIONS", "--experimental-vm-modules")
 }
+
+// Release jobs are populated during preSynthesize; apply overrides after that.
+class NpmTrustedPublishing extends Component {
+  override preSynthesize() {
+    const releaseWorkflow = project.github?.tryFindWorkflow("release")
+    const npmJob = releaseWorkflow?.getJob("release_npm")
+    if (!releaseWorkflow?.file || !npmJob || !("steps" in npmJob)) {
+      throw new Error("Expected release_npm to contain npm publishing steps")
+    }
+    const publishSteps = npmJob.steps.filter((step) => step.run?.includes("publib-npm"))
+    if (publishSteps.length !== 1 || publishSteps[0]?.id !== "release") {
+      throw new Error("Expected exactly one publib-npm step with id 'release' in release_npm")
+    }
+    const env: Record<string, string> = {
+      ...publishSteps[0].env,
+      NPM_TRUSTED_PUBLISHER: "true",
+    }
+    delete env.NPM_TOKEN
+    releaseWorkflow.patchStep("release_npm", "release", { env })
+  }
+}
+new NpmTrustedPublishing(project)
 
 const dependabot = project.github?.addDependabot()
 if (dependabot) {
@@ -201,25 +246,10 @@ if (dependabot) {
       schedule: {
         interval: github.DependabotScheduleInterval.WEEKLY,
       },
+      // Projen owns the generated workflow action versions; upgrade projen to update them.
       allow: [{ "dependency-name": "anthropics/claude-code-action" }],
     },
   ]
 }
-
-// pnpm 10.15+ / 11 require explicit approval for dependency build scripts.
-// Without this, `pnpm exec` (used by CDK NodejsFunction local bundling in tests)
-// fails with ERR_PNPM_IGNORED_BUILDS.
-new YamlFile(project, "pnpm-workspace.yaml", {
-  obj: {
-    nodeLinker: "hoisted",
-    allowBuilds: {
-      "cpu-features": true,
-      esbuild: true,
-      protobufjs: true,
-      ssh2: true,
-      "unrs-resolver": true,
-    },
-  },
-})
 
 project.synth()

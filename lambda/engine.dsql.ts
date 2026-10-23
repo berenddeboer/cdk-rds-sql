@@ -1,8 +1,8 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer"
 import { format as pgFormat } from "node-pg-format"
-import { Client, ClientConfig } from "pg"
-import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
-import {
+import { Client, type ClientConfig } from "pg"
+import { AbstractEngine, type EngineConnectionConfig } from "./engine.abstract"
+import type {
   EngineDatabaseProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
@@ -10,13 +10,8 @@ import {
 } from "./types"
 
 export class DsqlEngine extends AbstractEngine {
-  createDatabase(
-    _resourceId: string,
-    _props: EngineDatabaseProperties
-  ): string | string[] {
-    throw new Error(
-      "DSQL does not support creating databases. Database is always 'postgres'."
-    )
+  createDatabase(_resourceId: string, _props: EngineDatabaseProperties): string | string[] {
+    throw new Error("DSQL does not support creating databases. Database is always 'postgres'.")
   }
 
   updateDatabase(
@@ -24,15 +19,11 @@ export class DsqlEngine extends AbstractEngine {
     _oldResourceId: string,
     _props: EngineDatabaseProperties
   ): string[] {
-    throw new Error(
-      "DSQL does not support database operations. Database is always 'postgres'."
-    )
+    throw new Error("DSQL does not support database operations. Database is always 'postgres'.")
   }
 
   deleteDatabase(_resourceId: string, _masterUser: string): string | string[] {
-    throw new Error(
-      "DSQL does not support deleting databases. Database is always 'postgres'."
-    )
+    throw new Error("DSQL does not support deleting databases. Database is always 'postgres'.")
   }
 
   async createRole(resourceId: string, props: EngineRoleProperties): Promise<string[]> {
@@ -61,9 +52,7 @@ export class DsqlEngine extends AbstractEngine {
       // If database changed as well, grant new database permissions
       if (props?.DatabaseName && props.DatabaseName !== oldProps?.DatabaseName) {
         sql.push("BEGIN")
-        sql.push(
-          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-        )
+        sql.push(pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId))
         sql.push("COMMIT")
       }
     } else {
@@ -78,28 +67,16 @@ export class DsqlEngine extends AbstractEngine {
       ) {
         // Revoke from old database and grant to new
         sql.push(
-          pgFormat(
-            "REVOKE CONNECT ON DATABASE %I FROM %I",
-            oldProps.DatabaseName,
-            resourceId
-          )
+          pgFormat("REVOKE CONNECT ON DATABASE %I FROM %I", oldProps.DatabaseName, resourceId)
         )
-        sql.push(
-          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-        )
+        sql.push(pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId))
       } else if (props?.DatabaseName && !oldProps?.DatabaseName) {
         // Grant to new database
-        sql.push(
-          pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId)
-        )
+        sql.push(pgFormat("GRANT CONNECT ON DATABASE %I TO %I", props.DatabaseName, resourceId))
       } else if (!props?.DatabaseName && oldProps?.DatabaseName) {
         // Revoke from old database
         sql.push(
-          pgFormat(
-            "REVOKE CONNECT ON DATABASE %I FROM %I",
-            oldProps.DatabaseName,
-            resourceId
-          )
+          pgFormat("REVOKE CONNECT ON DATABASE %I FROM %I", oldProps.DatabaseName, resourceId)
         )
       }
 
@@ -109,10 +86,7 @@ export class DsqlEngine extends AbstractEngine {
     return sql
   }
 
-  async deleteRole(
-    resourceId: string,
-    props: EngineRoleProperties
-  ): Promise<string | string[]> {
+  async deleteRole(resourceId: string, props: EngineRoleProperties): Promise<string | string[]> {
     const sql: string[] = []
 
     // Add special marker for IAM grant revocation
@@ -127,9 +101,7 @@ export class DsqlEngine extends AbstractEngine {
   createSchema(resourceId: string, props: EngineSchemaProperties): string | string[] {
     const sql: string[] = [pgFormat("CREATE SCHEMA IF NOT EXISTS %I", resourceId)]
     if (props?.RoleName) {
-      this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
-        sql.push(stmt)
-      )
+      sql.push(...this.grantRoleForSchema(resourceId, props.RoleName))
     }
     return sql
   }
@@ -141,17 +113,13 @@ export class DsqlEngine extends AbstractEngine {
   ): string | string[] {
     const statements: string[] = []
     if (props?.RoleName) {
-      this.revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
-        statements.push(stmt)
-      )
+      statements.push(...this.revokeRoleFromSchema(oldResourceId, props.RoleName))
     }
     if (resourceId !== oldResourceId) {
       statements.push(pgFormat("ALTER SCHEMA %I RENAME TO %I", oldResourceId, resourceId))
     }
     if (props?.RoleName) {
-      this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
-        statements.push(stmt)
-      )
+      statements.push(...this.grantRoleForSchema(resourceId, props.RoleName))
     }
     return statements
   }
@@ -159,9 +127,7 @@ export class DsqlEngine extends AbstractEngine {
   deleteSchema(resourceId: string, props: EngineSchemaProperties): string | string[] {
     const statements: string[] = []
     if (props?.RoleName) {
-      this.revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) =>
-        statements.push(stmt)
-      )
+      statements.push(...this.revokeRoleFromSchema(resourceId, props.RoleName))
     }
     statements.push(pgFormat("DROP SCHEMA IF EXISTS %I CASCADE", resourceId))
     return statements
@@ -278,9 +244,7 @@ export class DsqlEngine extends AbstractEngine {
         if (statement.trim()) {
           // Handle special IAM grant revocation marker
           if (statement.startsWith("-- REVOKE_IAM_GRANTS_FOR_ROLE:")) {
-            const roleName = statement
-              .replace("-- REVOKE_IAM_GRANTS_FOR_ROLE:", "")
-              .trim()
+            const roleName = statement.replace("-- REVOKE_IAM_GRANTS_FOR_ROLE:", "").trim()
             await this.revokeIamGrantsForRole(client, roleName)
           } else if (statement.includes("AWS IAM REVOKE")) {
             this.log(`Executing SQL: ${statement}`)
@@ -289,9 +253,7 @@ export class DsqlEngine extends AbstractEngine {
               results.push(result)
             } catch (error: any) {
               if (error.message && error.message.includes("does not exist")) {
-                this.log(
-                  `Ignoring error for IAM REVOKE (role doesn't exist): ${error.message}`
-                )
+                this.log(`Ignoring error for IAM REVOKE (role doesn't exist): ${error.message}`)
               } else {
                 throw error
               }
@@ -349,9 +311,7 @@ export class DsqlEngine extends AbstractEngine {
     const sql = ["BEGIN"]
 
     if (databaseName) {
-      sql.push(
-        pgFormat("REVOKE ALL PRIVILEGES ON DATABASE %I FROM %I", databaseName, roleName)
-      )
+      sql.push(pgFormat("REVOKE ALL PRIVILEGES ON DATABASE %I FROM %I", databaseName, roleName))
     }
 
     sql.push(pgFormat("DROP ROLE IF EXISTS %I", roleName))
@@ -365,10 +325,7 @@ export class DsqlEngine extends AbstractEngine {
 
       // Query the IAM role mappings for this role
       const result = await client.query(
-        pgFormat(
-          "SELECT arn FROM sys.iam_pg_role_mappings WHERE pg_role_name = %L",
-          roleName
-        )
+        pgFormat("SELECT arn FROM sys.iam_pg_role_mappings WHERE pg_role_name = %L", roleName)
       )
 
       if (result.rows && result.rows.length > 0) {

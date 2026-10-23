@@ -2,10 +2,10 @@ import * as cdk from "aws-cdk-lib"
 import { Match, Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import * as serverlessInstancev1 from "./instance1-stack"
-import * as serverlessInstancev2 from "./instance2-stack"
 import { Provider } from "../src/provider"
 import { Role } from "../src/role"
+import * as serverlessInstancev1 from "./instance1-stack"
+import * as serverlessInstancev2 from "./instance2-stack"
 
 test("serverless instance v1", () => {
   const app = new cdk.App()
@@ -15,7 +15,7 @@ test("serverless instance v1", () => {
       region: "us-east-1",
     },
   })
-  let template = Template.fromStack(stack)
+  const template = Template.fromStack(stack)
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
@@ -84,7 +84,7 @@ test("serverless instance v2", () => {
       region: "us-east-1",
     },
   })
-  let template = Template.fromStack(stack)
+  const template = Template.fromStack(stack)
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
@@ -101,10 +101,7 @@ test("serverless instance v2", () => {
     },
     IpProtocol: "tcp",
     SourceSecurityGroupId: {
-      "Fn::GetAtt": [
-        "RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508",
-        "GroupId",
-      ],
+      "Fn::GetAtt": ["RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508", "GroupId"],
     },
   })
 })
@@ -117,7 +114,7 @@ test("absence of security group is detected", () => {
       region: "us-east-1",
     },
   })
-  let template = Template.fromStack(stack)
+  const template = Template.fromStack(stack)
   template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
     Resource: "role",
   })
@@ -125,10 +122,7 @@ test("absence of security group is detected", () => {
     FromPort: 5432,
     IpProtocol: "tcp",
     SourceSecurityGroupId: {
-      "Fn::GetAtt": [
-        "RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508",
-        "GroupId",
-      ],
+      "Fn::GetAtt": ["RdsSql28b9e791af604a33bca8ffb6f30ef8c5SecurityGroup60F64508", "GroupId"],
     },
   })
 })
@@ -211,10 +205,7 @@ test("instance role secret uses dbInstanceIdentifier not dbClusterIdentifier", (
     }),
     databaseName: "example",
     credentials: rds.Credentials.fromGeneratedSecret("admin"),
-    instanceType: ec2.InstanceType.of(
-      ec2.InstanceClass.BURSTABLE3,
-      ec2.InstanceSize.MICRO
-    ),
+    instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
   })
 
   const provider = new Provider(stack, "Provider", {
@@ -283,10 +274,7 @@ test("mysql database instance engine is set in secret", () => {
     }),
     databaseName: "example",
     credentials: rds.Credentials.fromGeneratedSecret("admin"),
-    instanceType: ec2.InstanceType.of(
-      ec2.InstanceClass.BURSTABLE3,
-      ec2.InstanceSize.MICRO
-    ),
+    instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
   })
 
   const provider = new Provider(stack, "Provider", {

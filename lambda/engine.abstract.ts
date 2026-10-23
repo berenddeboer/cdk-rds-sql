@@ -1,9 +1,6 @@
-import { ConnectionOptions } from "tls"
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager"
-import {
+import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
+import type { ConnectionOptions } from "tls"
+import type {
   EngineDatabaseProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
@@ -29,10 +26,7 @@ export abstract class AbstractEngine {
         : (_message?: any, ..._optionalParams: any[]) => {}
   }
 
-  abstract createDatabase(
-    resourceId: string,
-    props: EngineDatabaseProperties
-  ): string | string[]
+  abstract createDatabase(resourceId: string, props: EngineDatabaseProperties): string | string[]
   abstract updateDatabase(
     resourceId: string,
     oldResourceId: string,
@@ -40,34 +34,22 @@ export abstract class AbstractEngine {
   ): string | string[]
   abstract deleteDatabase(resourceId: string, masterUser: string): string | string[]
 
-  abstract createRole(
-    resourceId: string,
-    props: EngineRoleProperties
-  ): Promise<string | string[]>
+  abstract createRole(resourceId: string, props: EngineRoleProperties): Promise<string | string[]>
   abstract updateRole(
     resourceId: string,
     oldResourceId: string,
     props: EngineRoleProperties,
     oldProps: EngineRoleProperties
   ): Promise<string | string[]>
-  abstract deleteRole(
-    resourceId: string,
-    props: EngineRoleProperties
-  ): Promise<string | string[]>
+  abstract deleteRole(resourceId: string, props: EngineRoleProperties): Promise<string | string[]>
 
-  abstract createSchema(
-    resourceId: string,
-    props: EngineSchemaProperties
-  ): string | string[]
+  abstract createSchema(resourceId: string, props: EngineSchemaProperties): string | string[]
   abstract updateSchema(
     resourceId: string,
     oldResourceId: string,
     props: EngineSchemaProperties
   ): string | string[]
-  abstract deleteSchema(
-    resourceId: string,
-    props: EngineSchemaProperties
-  ): string | string[]
+  abstract deleteSchema(resourceId: string, props: EngineSchemaProperties): string | string[]
 
   abstract createSql(resourceId: string, props: EngineSqlProperties): string | string[]
   abstract updateSql(
@@ -86,10 +68,7 @@ export abstract class AbstractEngine {
   ): string | string[]
   abstract deleteIamGrant(roleName: string, iamArn: string): string | string[]
 
-  abstract executeSQL(
-    sql: string | string[],
-    config: EngineConnectionConfig
-  ): Promise<any>
+  abstract executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any>
 
   /**
    * Parse password field from secret. Returns void on error or if no password field exists.

@@ -1,10 +1,10 @@
-import {
+import type {
   CloudFormationCustomResourceCreateEvent,
-  CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
+  CloudFormationCustomResourceUpdateEvent,
 } from "aws-lambda"
-import { Client } from "pg"
-import { ResourceProperties } from "./types"
+import type { Client } from "pg"
+import type { ResourceProperties } from "./types"
 
 // Helper interface to simplify test request creation
 export interface ResourcePropertiesInput {
@@ -38,8 +38,7 @@ export const createRequest = (
       ServiceToken: "",
       Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: resourceId,
-      SecretArn:
-        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      SecretArn: props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
     },
     RequestType: "Create",
@@ -63,8 +62,7 @@ export const updateRequest = (
       ServiceToken: "",
       Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: newResourceId,
-      SecretArn:
-        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      SecretArn: props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
     } as unknown as ResourceProperties,
     RequestType: "Update",
@@ -73,8 +71,7 @@ export const updateRequest = (
       ServiceToken: "",
       Resource: resource as any,
       ResourceId: oldResourceId,
-      SecretArn:
-        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      SecretArn: props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
     } as unknown as ResourceProperties,
   }
 }
@@ -95,8 +92,7 @@ export const deleteRequest = (
       ServiceToken: "",
       Resource: resource as any, // Needed for backward compatibility with tests
       ResourceId: resourceId,
-      SecretArn:
-        props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
+      SecretArn: props?.SecretArn || "arn:aws:secretsmanager:us-east-1:123456789:secret:dummy",
       ...props,
     } as unknown as ResourceProperties,
     RequestType: "Delete",
@@ -124,15 +120,11 @@ export const roleGrantedForSchema = async (
                       where array_to_string(nspacl,',') like '%'||r.rolname||'%' and nspowner > 1 \
                       and nspname = '${schema}' and r.rolname = '${role}'`
   const { rows } = await client.query(sql)
-  return (
-    rows.length === 1 && rows[0].create_grant === true && rows[0].usage_grant === true
-  )
+  return rows.length === 1 && rows[0].create_grant === true && rows[0].usage_grant === true
 }
 
 const getSchemas = async (client: Client): Promise<string[]> => {
-  const { rows } = await client.query(
-    "select schema_name from information_schema.schemata"
-  )
+  const { rows } = await client.query("select schema_name from information_schema.schemata")
   return rows.map((r) => r.schema_name)
 }
 
@@ -146,18 +138,13 @@ const getRoles = async (client: Client): Promise<string[]> => {
   return rows.map((r) => r.rolname)
 }
 
-export const databaseExists = async (
-  client: Client,
-  database: string
-): Promise<boolean> => {
+export const databaseExists = async (client: Client, database: string): Promise<boolean> => {
   const databases = await getDatabases(client)
   return databases.find((r) => r === database) !== undefined
 }
 
 const getDatabases = async (client: Client): Promise<string[]> => {
-  const { rows } = await client.query(
-    "select datname from pg_database where datistemplate = false"
-  )
+  const { rows } = await client.query("select datname from pg_database where datistemplate = false")
   return rows.map((r) => r.datname)
 }
 
@@ -170,10 +157,7 @@ export const databaseOwnerIs = async (
   return databases.find((r) => r === database) !== undefined
 }
 
-const getDatabasesWithOwner = async (
-  client: Client,
-  user_name: string
-): Promise<string[]> => {
+const getDatabasesWithOwner = async (client: Client, user_name: string): Promise<string[]> => {
   const { rows } = await client.query(
     `select datname from pg_database where datistemplate = false and pg_catalog.pg_get_userbyid(datdba) = '${user_name}'`
   )

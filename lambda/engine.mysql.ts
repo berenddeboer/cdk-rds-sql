@@ -1,6 +1,6 @@
 import * as fs from "fs"
-import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
-import {
+import { AbstractEngine, type EngineConnectionConfig } from "./engine.abstract"
+import type {
   EngineDatabaseProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
@@ -41,15 +41,11 @@ export class MysqlEngine extends AbstractEngine {
       const password = await this.getPassword(props.PasswordArn)
       if (!password) throw `Cannot parse password from ${props.PasswordArn}`
 
-      sql.push(
-        `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`
-      )
+      sql.push(`CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
     }
 
     if (props.DatabaseName) {
-      sql.push(
-        `GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`
-      )
+      sql.push(`GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`)
     }
 
     appendMaxUserConnections(sql, resourceId, props.MaxUserConnections)
@@ -78,9 +74,7 @@ export class MysqlEngine extends AbstractEngine {
         const password = await this.getPassword(props.PasswordArn)
         if (!password) throw `Cannot parse password from ${props.PasswordArn}`
 
-        sql.push(
-          `CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`
-        )
+        sql.push(`CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY '${password}'`)
       } else {
         // If no password is provided, create user with a random password then expire it
         sql.push(`CREATE USER IF NOT EXISTS '${resourceId}'@'%' IDENTIFIED BY UUID()`)
@@ -94,9 +88,7 @@ export class MysqlEngine extends AbstractEngine {
       if (props?.EnableIamAuth && !oldProps?.EnableIamAuth) {
         // Switching from password to IAM auth - need to recreate user
         sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
-        sql.push(
-          `CREATE USER '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`
-        )
+        sql.push(`CREATE USER '${resourceId}'@'%' IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'`)
       } else if (!props?.EnableIamAuth && oldProps?.EnableIamAuth) {
         // Switching from IAM to password auth - need to recreate user
         sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
@@ -120,15 +112,11 @@ export class MysqlEngine extends AbstractEngine {
       oldProps.DatabaseName !== props.DatabaseName
     ) {
       // Revoke from old database
-      sql.push(
-        `REVOKE ALL PRIVILEGES ON \`${oldProps.DatabaseName}\`.* FROM '${resourceId}'@'%'`
-      )
+      sql.push(`REVOKE ALL PRIVILEGES ON \`${oldProps.DatabaseName}\`.* FROM '${resourceId}'@'%'`)
     }
 
     if (props?.DatabaseName) {
-      sql.push(
-        `GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`
-      )
+      sql.push(`GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`)
     }
 
     appendMaxUserConnections(sql, resourceId, props.MaxUserConnections)
@@ -144,9 +132,7 @@ export class MysqlEngine extends AbstractEngine {
     const sql: string[] = []
 
     if (props?.DatabaseName) {
-      sql.push(
-        `REVOKE ALL PRIVILEGES ON \`${props.DatabaseName}\`.* FROM '${resourceId}'@'%'`
-      )
+      sql.push(`REVOKE ALL PRIVILEGES ON \`${props.DatabaseName}\`.* FROM '${resourceId}'@'%'`)
     }
 
     sql.push(`DROP USER IF EXISTS '${resourceId}'@'%'`)
@@ -175,11 +161,7 @@ export class MysqlEngine extends AbstractEngine {
     return props?.Statement || ""
   }
 
-  updateSql(
-    _resourceId: string,
-    _oldResourceId: string,
-    props: EngineSqlProperties
-  ): string {
+  updateSql(_resourceId: string, _oldResourceId: string, props: EngineSqlProperties): string {
     return props?.Statement || ""
   }
 
@@ -266,11 +248,7 @@ function appendMaxUserConnections(
     return
   }
   if (!Number.isInteger(maxUserConnections) || maxUserConnections < 0) {
-    throw new Error(
-      `MaxUserConnections must be a non-negative integer, got ${maxUserConnections}`
-    )
+    throw new Error(`MaxUserConnections must be a non-negative integer, got ${maxUserConnections}`)
   }
-  sql.push(
-    `ALTER USER '${resourceId}'@'%' WITH MAX_USER_CONNECTIONS ${maxUserConnections}`
-  )
+  sql.push(`ALTER USER '${resourceId}'@'%' WITH MAX_USER_CONNECTIONS ${maxUserConnections}`)
 }

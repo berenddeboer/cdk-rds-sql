@@ -1,10 +1,10 @@
-import { Duration, Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Duration, Fn, RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
-import { Construct } from "constructs"
-import { Provider, Database, Role, Schema, Sql } from "./../src/index"
+import type { Construct } from "constructs"
+import { Database, Provider, Role, Schema, Sql } from "./../src/index"
 import { Vpc } from "./vpc"
 
 export interface TestStackProps extends StackProps {
@@ -157,25 +157,17 @@ export class ImportedClusterStack extends Stack {
       Fn.importValue("secret-arn")
     )
 
-    const cluster = rds.DatabaseCluster.fromDatabaseClusterAttributes(
-      this,
-      "DatabaseCluster",
-      {
-        clusterIdentifier: Fn.importValue("cluster-identifier"),
-        clusterEndpointAddress: Fn.importValue("cluster-endpoint"),
-        engine: rds.DatabaseClusterEngine.auroraPostgres({
-          version: rds.AuroraPostgresEngineVersion.VER_14_6,
-        }),
-        port: 5432, // absence of port in import causes an exception
-        securityGroups: [
-          ec2.SecurityGroup.fromSecurityGroupId(
-            this,
-            "RdsSecurityGroup",
-            "sg-00bbd66b014133c45"
-          ),
-        ],
-      }
-    )
+    const cluster = rds.DatabaseCluster.fromDatabaseClusterAttributes(this, "DatabaseCluster", {
+      clusterIdentifier: Fn.importValue("cluster-identifier"),
+      clusterEndpointAddress: Fn.importValue("cluster-endpoint"),
+      engine: rds.DatabaseClusterEngine.auroraPostgres({
+        version: rds.AuroraPostgresEngineVersion.VER_14_6,
+      }),
+      port: 5432, // absence of port in import causes an exception
+      securityGroups: [
+        ec2.SecurityGroup.fromSecurityGroupId(this, "RdsSecurityGroup", "sg-00bbd66b014133c45"),
+      ],
+    })
 
     const provider = new Provider(this, "Provider", {
       vpc: vpc.vpc,

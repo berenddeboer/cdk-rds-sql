@@ -5,6 +5,7 @@ cdk.out/
 .envrc
 .env
 CONVENTIONS.md
+hk.local.pkl
 src/handler/index.js
 src/handler/global-bundle.pem
 *~
@@ -12,6 +13,8 @@ src/handler/global-bundle.pem
 /lambda/
 pnpm-lock.yaml
 pnpm-workspace.yaml
+hk.pkl
+mise.toml
 !/lib/**/*.pem
 /.projen/
 /test-reports/
@@ -34,7 +37,7 @@ dist
 /.idea/
 /.projenrc.js
 tsconfig.tsbuildinfo
-/.eslintrc.json
+/projenrc/tsconfig.json
 !.jsii
 /.gitattributes
 /.projenrc.ts

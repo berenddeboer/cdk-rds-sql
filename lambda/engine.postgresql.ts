@@ -1,9 +1,9 @@
 import * as fs from "fs"
-import { ConnectionOptions } from "tls"
 import { format as pgFormat } from "node-pg-format"
-import { Client, ClientConfig } from "pg"
-import { AbstractEngine, EngineConnectionConfig } from "./engine.abstract"
-import {
+import { Client, type ClientConfig } from "pg"
+import type { ConnectionOptions } from "tls"
+import { AbstractEngine, type EngineConnectionConfig } from "./engine.abstract"
+import type {
   EngineDatabaseProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
@@ -31,13 +31,9 @@ export class PostgresqlEngine extends AbstractEngine {
     const statements: string[] = []
     if (resourceId !== oldResourceId) {
       if (props?.MasterOwner) {
-        statements.push(
-          pgFormat("alter database %I owner to %I", oldResourceId, props.MasterOwner)
-        )
+        statements.push(pgFormat("alter database %I owner to %I", oldResourceId, props.MasterOwner))
       }
-      statements.push(
-        pgFormat("alter database %I rename to %I", oldResourceId, resourceId)
-      )
+      statements.push(pgFormat("alter database %I rename to %I", oldResourceId, resourceId))
     }
     const owner = props?.Owner
     if (owner) {
@@ -199,29 +195,19 @@ END$$;`,
   createSchema(resourceId: string, props: EngineSchemaProperties): string[] {
     const sql: string[] = [pgFormat("create schema if not exists %I", resourceId)]
     if (props?.RoleName) {
-      this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
-        sql.push(stmt)
-      )
+      sql.push(...this.grantRoleForSchema(resourceId, props.RoleName))
     }
     return sql
   }
 
-  updateSchema(
-    resourceId: string,
-    oldResourceId: string,
-    props: EngineSchemaProperties
-  ): string[] {
+  updateSchema(resourceId: string, oldResourceId: string, props: EngineSchemaProperties): string[] {
     const sql: string[] = []
     if (props?.RoleName) {
-      this.revokeRoleFromSchema(oldResourceId, props.RoleName).forEach((stmt) =>
-        sql.push(stmt)
-      )
+      sql.push(...this.revokeRoleFromSchema(oldResourceId, props.RoleName))
     }
     sql.push(pgFormat("alter schema %I rename to %I", oldResourceId, resourceId))
     if (props?.RoleName) {
-      this.grantRoleForSchema(resourceId, props.RoleName).forEach((stmt) =>
-        sql.push(stmt)
-      )
+      sql.push(...this.grantRoleForSchema(resourceId, props.RoleName))
     }
     return sql
   }
@@ -229,9 +215,7 @@ END$$;`,
   deleteSchema(resourceId: string, props: EngineSchemaProperties): string[] {
     const sql: string[] = []
     if (props?.RoleName) {
-      this.revokeRoleFromSchema(resourceId, props.RoleName).forEach((stmt) =>
-        sql.push(stmt)
-      )
+      sql.push(...this.revokeRoleFromSchema(resourceId, props.RoleName))
     }
     sql.push(pgFormat("drop schema if exists %I cascade", resourceId))
     return sql
@@ -241,11 +225,7 @@ END$$;`,
     return props?.Statement || ""
   }
 
-  updateSql(
-    _resourceId: string,
-    _oldResourceId: string,
-    props: EngineSqlProperties
-  ): string {
+  updateSql(_resourceId: string, _oldResourceId: string, props: EngineSqlProperties): string {
     return props?.Statement || ""
   }
 

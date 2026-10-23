@@ -1,7 +1,7 @@
 import { CustomResource } from "aws-cdk-lib"
-import { Construct } from "constructs"
+import type { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
-import { IProvider, DatabaseEngine } from "./provider"
+import { DatabaseEngine, type IProvider } from "./provider"
 
 export interface IamGrantProps {
   /**

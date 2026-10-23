@@ -1,5 +1,5 @@
-import { CloudFormationCustomResourceResourcePropertiesCommon } from "aws-lambda"
-import { RdsSqlResource } from "../src/enum"
+import type { CloudFormationCustomResourceResourcePropertiesCommon } from "aws-lambda"
+import type { RdsSqlResource } from "../src/enum"
 
 // Engine-specific interfaces (business logic properties only)
 export interface EngineDatabaseProperties {
@@ -31,8 +31,7 @@ export interface EngineIamGrantProperties {
 }
 
 // Common CloudFormation properties shared by all resources
-export interface CommonProperties
-  extends CloudFormationCustomResourceResourcePropertiesCommon {
+export interface CommonProperties extends CloudFormationCustomResourceResourcePropertiesCommon {
   readonly Resource: RdsSqlResource
   readonly ResourceId?: string // set if we know the exact physical resource id to return; not passed by sql or iam grant
   readonly SecretArn?: string // SecretArn is not set for DSQL

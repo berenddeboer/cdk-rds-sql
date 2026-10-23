@@ -1,9 +1,9 @@
 import { CustomResource } from "aws-cdk-lib"
-import { Construct } from "constructs"
-import { IDatabase } from "./database"
+import type { Construct } from "constructs"
+import type { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { IProvider } from "./provider"
-import { Role } from "./role"
+import type { IProvider } from "./provider"
+import type { Role } from "./role"
 
 export interface SchemaProps {
   /**
