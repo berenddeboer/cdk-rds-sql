@@ -181,6 +181,9 @@ export const handler = async (
     database: database,
   }
   // Load session state before SQL is rendered. MySQL literal escaping depends on sql_mode.
+  // prepare() and executeSQL() each open a new session as the same master user, so
+  // both see the same global and user sql_mode. A session-only change between them
+  // is not re-read.
   // Parameter password copies a secret to SSM and never opens a database connection.
   if (resource !== RdsSqlResource.PARAMETER_PASSWORD) {
     try {
