@@ -19,6 +19,13 @@ steps {
     exclude = List("**/tsconfig*.json", "tsconfig*.json")
     check = "for file in {{files}}; do yq eval '.' \"$file\" > /dev/null || exit; done"
   }
+  ["jactionlint"] {
+    glob = List(".github/workflows/*.yaml", ".github/workflows/*.yml", ".github/dependabot.y*ml", "**/action.y*ml")
+    batch = true
+    diagnostic_format = "sarif"
+    check = "jactionlint --baseline --sarif-hide-baselined --format sarif {{files}}"
+    check_diff = "hk util sarif-diff -- jactionlint --baseline --sarif-hide-baselined --format sarif {{files}}"
+  }
   ["typecheck"] {
     glob = "*.ts"
     depends = "biome"

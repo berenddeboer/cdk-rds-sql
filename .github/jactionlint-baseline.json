@@ -1,0 +1,397 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "file": ".github/dependabot.yml",
+      "rule": "dependabot-cooldown",
+      "fingerprint": "b3ef5a552652cbd0",
+      "context": "bc96ebf5ff8c15af",
+      "occurrence": 0,
+      "message": "\"cooldown\" is not set in this update, so Dependabot applies its implicit cooldown of 3 days. set \"cooldown.default-days\" to at least 7 to avoid updating to a version right after its release. set \"default-days\" in the \"dependabot-cooldown\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "concurrency-limits",
+      "fingerprint": "c41f0955d93b4ce5",
+      "context": "081b2e27040f94d3",
+      "occurrence": 0,
+      "message": "workflow has no \"concurrency:\", so every run of it executes at the same time even when a newer run supersedes the older ones. add a top-level \"concurrency:\" with a \"group:\" and \"cancel-in-progress: true\". use a group per pull request such as \"${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\", so that a new push cancels only the older runs of the same pull request and not the runs of the others"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "79654f519f51860e",
+      "context": "c67d416bd2037202",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "artipacked",
+      "fingerprint": "4a6c7a7cb79e68f8",
+      "context": "f0f197e2f6d265a0",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "cfc33aa75471fb5f",
+      "context": "158a2a55d7d173f0",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "6686658ab621f997",
+      "context": "f9eecf747706cb35",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unlocked-install",
+      "fingerprint": "b608351cd6c2a1cf",
+      "context": "9722b8b86e6e179c",
+      "occurrence": 0,
+      "message": "\"pnpm install\" is told not to freeze the lock file, so it may update pnpm-lock.yaml instead of failing when it is out of date. pass --frozen-lockfile"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "shellcheck",
+      "fingerprint": "2cba4f31a200b391",
+      "context": "e685f204a3be2bd7",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:2:93: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "864e6c59d02dc538",
+      "context": "8a40d579184bc524",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "4f8bf86ee0810eaf",
+      "context": "ad881987580dd604",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "f99b06fdaa9fe67c",
+      "context": "f74f7928e1f81dc1",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "8331498229d95578",
+      "context": "c075da3be8a0d9de",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "artipacked",
+      "fingerprint": "e02b09562b1310fd",
+      "context": "b8f2ef939e4c1766",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "5c6e2595f4a39ff7",
+      "context": "eeb6ce181693410c",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "fa96c339ad904600",
+      "context": "1f443fc951fe1ac2",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "476c3a77f8fafe9c",
+      "context": "0d0422cf0ccd6cb5",
+      "occurrence": 0,
+      "message": "action \"actions/setup-python@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "488c8562b8f7ce70",
+      "context": "d0c74120cf4947e7",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/build.yml",
+      "rule": "artipacked",
+      "fingerprint": "b45bb5538c3f0323",
+      "context": "e0c02fa91e493748",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "rule": "concurrency-limits",
+      "fingerprint": "c41f0955d93b4ce5",
+      "context": "081b2e27040f94d3",
+      "occurrence": 0,
+      "message": "workflow has no \"concurrency:\", so every run of it executes at the same time even when a newer run supersedes the older ones. add a top-level \"concurrency:\" with a \"group:\" and \"cancel-in-progress: true\". use a group per pull request such as \"${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\", so that a new push cancels only the older runs of the same pull request and not the runs of the others"
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "c7f0246d1f4f05af",
+      "context": "fd586ed5fa0e8999",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "rule": "artipacked",
+      "fingerprint": "da9fe888d0647706",
+      "context": "b99e0dd1e068827f",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/claude.yml",
+      "rule": "concurrency-limits",
+      "fingerprint": "c41f0955d93b4ce5",
+      "context": "081b2e27040f94d3",
+      "occurrence": 0,
+      "message": "workflow has no \"concurrency:\", so every run of it executes at the same time even when a newer run supersedes the older ones. add a top-level \"concurrency:\" with a \"group:\" and \"cancel-in-progress: true\". use a group per pull request such as \"${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\", so that a new push cancels only the older runs of the same pull request and not the runs of the others"
+    },
+    {
+      "file": ".github/workflows/claude.yml",
+      "rule": "dangerous-triggers",
+      "fingerprint": "a6d4b1126580c6e4",
+      "context": "679173a66b3203d5",
+      "occurrence": 0,
+      "message": "trigger \"issue_comment\" is dangerous: it runs in the context of the default branch with a write token (id-token) and secrets (CLAUDE_CODE_OAUTH_TOKEN), and it can be started by anyone who can comment. check the permission of the commenter and never run code of the pull request"
+    },
+    {
+      "file": ".github/workflows/claude.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "eb6774c349942fc9",
+      "context": "fb609a830f253c16",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/claude.yml",
+      "rule": "artipacked",
+      "fingerprint": "04f0768d8e9d8530",
+      "context": "1b38e965fd6ade12",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/pull-request-lint.yml",
+      "rule": "concurrency-limits",
+      "fingerprint": "c41f0955d93b4ce5",
+      "context": "081b2e27040f94d3",
+      "occurrence": 0,
+      "message": "workflow has no \"concurrency:\", so every run of it executes at the same time even when a newer run supersedes the older ones. add a top-level \"concurrency:\" with a \"group:\" and \"cancel-in-progress: true\". use a group per pull request such as \"${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\", so that a new push cancels only the older runs of the same pull request and not the runs of the others"
+    },
+    {
+      "file": ".github/workflows/pull-request-lint.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "635d49b22d7b8234",
+      "context": "3d6387f45024b7cc",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "71caf4839f9d61fd",
+      "context": "76fd9b3924267e58",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "artipacked",
+      "fingerprint": "72aa4e842715c314",
+      "context": "4059a1c3caeed06c",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "3eeb81aeb09a6751",
+      "context": "7f898bd4be85e9dd",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "086029c8347b48d2",
+      "context": "bc2168f2a9586b33",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "1956f4d9a2e69040",
+      "context": "377ad6ef4792539e",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:2:64: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "3cd36a598a54f670",
+      "context": "377ad6ef4792539e",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:2:95: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "98ef8ba7f8480191",
+      "context": "377ad6ef4792539e",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:2:139: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "0b0d5d443669a188",
+      "context": "334caf6bef32e2ed",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:3:5: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "8572a7ee8ee4ac4f",
+      "context": "ce3b9152f69bc226",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:1:76: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "c9b7b1a899be3f93",
+      "context": "334caf6bef32e2ed",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2086:info:2:5: Double quote to prevent globbing and word splitting"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "71195bb938ef80f1",
+      "context": "f8a86aac6493e4cd",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "d28bb944a3749470",
+      "context": "ff58d70b8e2f9bb7",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "shellcheck",
+      "fingerprint": "5f993a332fc66ca5",
+      "context": "e536d2d6e5f1b7d9",
+      "occurrence": 0,
+      "message": "shellcheck reported issue in this script: SC2015:info:1:32: Note that A && B || C is not if-then-else. C may run when A is true"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "7da24609bfe4bdd8",
+      "context": "bd00069cb81c971e",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "0b4f0cd3d494d1fd",
+      "context": "8a5c3161356c50fd",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "8a5ff838cc354572",
+      "context": "26264b41c0a8adbc",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "artipacked",
+      "fingerprint": "fbb46998bc6cdeef",
+      "context": "164ee1bfd0fbf83a",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "missing-timeout",
+      "fingerprint": "1ea073437ce135db",
+      "context": "903934b7985bff5e",
+      "occurrence": 0,
+      "message": "\"timeout-minutes\" is not set at this job. Set it to avoid wasting runner minutes when the job hangs. Set \"default-minutes\" in the \"missing-timeout\" rule options of the configuration to turn on the --fix fix"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "5f724083babff509",
+      "context": "91060b40974c4b4e",
+      "occurrence": 0,
+      "message": "action \"actions/setup-node@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "8a25231de44f255f",
+      "context": "536a5e9b070a4606",
+      "occurrence": 0,
+      "message": "action \"actions/setup-python@v7.0.0\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "unpinned-uses",
+      "fingerprint": "ef7659b782a39eef",
+      "context": "7b760ae9a9e70d01",
+      "occurrence": 0,
+      "message": "action \"pnpm/action-setup@v6.0.10\" must be pinned to a full-length commit SHA like \"{owner}/{repo}@{sha}\" because the \"unpinned-uses\" rule is enabled"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "rule": "artipacked",
+      "fingerprint": "4717e3062e655cf5",
+      "context": "1e7c3db0c1c85106",
+      "occurrence": 0,
+      "message": "actions/checkout leaves the GITHUB_TOKEN in the git config of the workspace, where a later step such as an artifact upload can publish it. set \"persist-credentials: false\" under \"with:\" unless a later step needs to push"
+    }
+  ]
+}

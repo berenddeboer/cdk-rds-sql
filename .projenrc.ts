@@ -131,6 +131,11 @@ const project = new awscdk.AwsCdkConstructLibrary({
   ],
   keywords: ["aws", "aws-cdk", "rds", "aurora", "postgres", "mysql", "dsql"],
   minMajorVersion: 1,
+  publishToNuget: {
+    dotNetNamespace: "BerenddeBoer.CdkRdsSql",
+    packageId: "BerenddeBoer.CdkRdsSql",
+    trustedPublishing: true,
+  },
   publishToPypi: {
     distName: "cdk-rds-sql",
     module: "cdk_rds_sql",
