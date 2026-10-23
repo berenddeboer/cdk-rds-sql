@@ -1,8 +1,8 @@
 import { CustomResource } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { RdsSqlResource } from "./enum"
-import { IProvider, DatabaseEngine } from "./provider"
-import { Role } from "./role"
+import { DatabaseEngine, type IProvider } from "./provider"
+import type { Role } from "./role"
 
 interface DatabaseAttributes {
   /**

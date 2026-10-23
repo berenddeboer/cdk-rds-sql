@@ -1,4 +1,4 @@
-import { AbstractEngine } from "./engine.abstract"
+import type { AbstractEngine } from "./engine.abstract"
 import { DsqlEngine } from "./engine.dsql"
 import { MysqlEngine } from "./engine.mysql"
 import { PostgresqlEngine } from "./engine.postgresql"

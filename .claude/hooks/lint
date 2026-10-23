@@ -25,10 +25,15 @@ if command -v jq >/dev/null 2>&1; then
   fi
 fi
 
-format=$(npx projen eslint)
+runner=(pnpm exec projen)
+if command -v mise >/dev/null 2>&1; then
+  runner=(mise exec -- "${runner[@]}")
+fi
+
+format=$("${runner[@]}" biome)
 
 # Capture stdout and check exit code for the main linting command
-if ! output=$(npx projen typecheck 2>&1); then
+if ! output=$("${runner[@]}" typecheck 2>&1); then
   echo "$output" >&2
   exit 2
 fi

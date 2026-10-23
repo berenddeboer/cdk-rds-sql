@@ -1,11 +1,11 @@
-import { Fn, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Fn, RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
 import * as rds from "aws-cdk-lib/aws-rds"
 import * as secrets from "aws-cdk-lib/aws-secretsmanager"
-import { Construct } from "constructs"
+import type { Construct } from "constructs"
+import { Database, Provider, Role, Schema, Sql } from "../src/index"
 import { Vpc } from "./vpc"
-import { Provider, Database, Role, Schema, Sql } from "../src/index"
 
 export class TestInstanceStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
@@ -23,10 +23,7 @@ export class TestInstanceStack extends Stack {
       }),
       databaseName: "example",
       credentials: rds.Credentials.fromGeneratedSecret("pgroot"),
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.BURSTABLE3,
-        ec2.InstanceSize.MICRO
-      ),
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
       removalPolicy: RemovalPolicy.DESTROY,
     })
 
@@ -91,25 +88,17 @@ export class ImportedInstanceStack extends Stack {
       Fn.importValue("secret-arn")
     )
 
-    const instance = rds.DatabaseInstance.fromDatabaseInstanceAttributes(
-      this,
-      "DatabaseInstance",
-      {
-        instanceIdentifier: Fn.importValue("instance-identifier"),
-        instanceEndpointAddress: Fn.importValue("instance-endpoint"),
-        engine: rds.DatabaseInstanceEngine.postgres({
-          version: rds.PostgresEngineVersion.VER_13_4,
-        }),
-        port: 5432, // absence of port in import causes an exception
-        securityGroups: [
-          ec2.SecurityGroup.fromSecurityGroupId(
-            this,
-            "RdsSecurityGroup",
-            "sg-00bbd66b014133c45"
-          ),
-        ],
-      }
-    )
+    const instance = rds.DatabaseInstance.fromDatabaseInstanceAttributes(this, "DatabaseInstance", {
+      instanceIdentifier: Fn.importValue("instance-identifier"),
+      instanceEndpointAddress: Fn.importValue("instance-endpoint"),
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_13_4,
+      }),
+      port: 5432, // absence of port in import causes an exception
+      securityGroups: [
+        ec2.SecurityGroup.fromSecurityGroupId(this, "RdsSecurityGroup", "sg-00bbd66b014133c45"),
+      ],
+    })
 
     const provider = new Provider(this, "Provider", {
       vpc: vpc.vpc,

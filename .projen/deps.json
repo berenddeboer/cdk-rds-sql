@@ -13,13 +13,18 @@
       "type": "build"
     },
     {
+      "name": "@biomejs/biome",
+      "version": "^2.5",
+      "type": "build"
+    },
+    {
       "name": "@types/jest",
       "version": "~30",
       "type": "build"
     },
     {
       "name": "@types/node",
-      "version": "^22",
+      "version": "^24",
       "type": "build"
     },
     {
@@ -28,43 +33,12 @@
       "type": "build"
     },
     {
-      "name": "@typescript-eslint/eslint-plugin",
-      "version": "^8",
-      "type": "build"
-    },
-    {
-      "name": "@typescript-eslint/parser",
-      "version": "^8",
-      "type": "build"
-    },
-    {
       "name": "commit-and-tag-version",
-      "version": "^12",
+      "version": "^13",
       "type": "build"
     },
     {
       "name": "esbuild",
-      "type": "build"
-    },
-    {
-      "name": "eslint-config-prettier",
-      "type": "build"
-    },
-    {
-      "name": "eslint-import-resolver-typescript",
-      "type": "build"
-    },
-    {
-      "name": "eslint-plugin-import",
-      "type": "build"
-    },
-    {
-      "name": "eslint-plugin-prettier",
-      "type": "build"
-    },
-    {
-      "name": "eslint",
-      "version": "^9",
       "type": "build"
     },
     {
@@ -73,7 +47,7 @@
     },
     {
       "name": "jest-junit",
-      "version": "^16",
+      "version": "^17",
       "type": "build"
     },
     {
@@ -91,12 +65,12 @@
     },
     {
       "name": "jsii-rosetta",
-      "version": "~5.9.0",
+      "version": "~6.0.0",
       "type": "build"
     },
     {
       "name": "jsii",
-      "version": "~5.9.0",
+      "version": "~6.0.0",
       "type": "build"
     },
     {
@@ -113,10 +87,6 @@
       "type": "build"
     },
     {
-      "name": "prettier",
-      "type": "build"
-    },
-    {
       "name": "projen",
       "type": "build"
     },
@@ -126,7 +96,7 @@
     },
     {
       "name": "testcontainers",
-      "version": "11",
+      "version": "^12.2.1",
       "type": "build"
     },
     {
@@ -140,7 +110,7 @@
     },
     {
       "name": "typescript",
-      "version": "~5.9",
+      "version": "~6.0",
       "type": "build"
     },
     {
@@ -149,12 +119,12 @@
     },
     {
       "name": "aws-cdk-lib",
-      "version": "^2.214.0",
+      "version": "^2.273.0",
       "type": "peer"
     },
     {
       "name": "constructs",
-      "version": "^10.4.2",
+      "version": "^10.5.0",
       "type": "peer"
     },
     {

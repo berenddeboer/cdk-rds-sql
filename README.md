@@ -16,6 +16,8 @@ environments, and works in isolated subnets.
 # Requirements
 
 - CDK v2.
+- Node.js 22.14 or newer for consumers, as declared in `package.json`'s `engines`.
+  This is the library's supported minimum, independent of its development tools.
 
 # Installation
 
@@ -543,23 +545,44 @@ const provider = new Provider(this, "Provider", {
 
 # Working on this code
 
-This code is managed by
-[projen](https://github.com/projen/projen/blob/main/README.md). In
-addition [pre-commit](https://pre-commit.com/) is used.
+This code is managed by [projen](https://github.com/projen/projen).
+[mise](https://mise.jdx.dev/) installs Node 24, pnpm 12, and
+[hk](https://hk.jdx.dev/) for Git hooks. Biome handles formatting and linting.
 
-So after git clone and `pnpm install` you would do:
+Development and CI use Node 24. Testcontainers is a development-only dependency;
+its dependency tree requires newer APIs than the consumer minimum of Node 22.14.
 
+After cloning:
+
+```sh
+mise trust
+mise install
+mise run setup
 ```
-pre-commit install --install-hooks --hook-type commit-msg --hook-type pre-commit
-```
 
-to install the pre-commit hooks.
+When migrating an existing clone, replace the old pre-commit hooks with
+`mise exec -- hk install --mise --force`.
+
+Run all checks with `mise run check`, or format and lint with
+`pnpm exec projen biome`. Tests require Docker. TypeScript stays on the
+6.0 release line supported by jsii 6.0.
+
+The pre-commit hook runs the full build, tests, and packaging, so Docker must
+be running. When `VPC_ID` is set, changes under `src/` also run CDK synthesis
+against that VPC; this requires AWS credentials. Unset `VPC_ID` to skip synthesis.
+
+The development tsconfig uses `node16` module resolution, including package
+exports. Jest tasks enable Node's VM module support for native dynamic imports
+such as the MySQL driver import.
 
 ## Testing
 
 Test code via projen with:
 
     pnpm exec projen test
+
+Tests do not update snapshots automatically. To intentionally refresh them, run
+`pnpm exec projen test:update` and review the snapshot diff.
 
 You can run the PostgreSQL sample stack with:
 

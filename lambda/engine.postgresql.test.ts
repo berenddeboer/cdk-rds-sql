@@ -76,9 +76,7 @@ describe("PostgreSQL Engine", () => {
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
-        expect(sql).toContain(
-          "create role passwordrole with login password 'test-password'"
-        )
+        expect(sql).toContain("create role passwordrole with login password 'test-password'")
         expect(sql[sql.length - 1]).toBe("commit")
       })
 
@@ -92,12 +90,7 @@ describe("PostgreSQL Engine", () => {
           EnableIamAuth: true,
         }
 
-        const sql = await engine.updateRole(
-          "switchrole",
-          "switchrole",
-          newProps,
-          oldProps
-        )
+        const sql = await engine.updateRole("switchrole", "switchrole", newProps, oldProps)
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")
@@ -117,12 +110,7 @@ describe("PostgreSQL Engine", () => {
           PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
         }
 
-        const sql = await engine.updateRole(
-          "switchrole",
-          "switchrole",
-          newProps,
-          oldProps
-        )
+        const sql = await engine.updateRole("switchrole", "switchrole", newProps, oldProps)
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toBe("start transaction")

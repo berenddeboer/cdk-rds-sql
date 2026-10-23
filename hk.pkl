@@ -1,0 +1,50 @@
+amends "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Builtins.pkl"
+
+exclude = List("pnpm-lock.yaml", "node_modules", "lib", "dist", "coverage", "src/handler")
+
+steps {
+  ["biome"] {
+    glob = List("*.ts", "*.js")
+    check = "pnpm exec biome check --no-errors-on-unmatched {{files}}"
+    fix = "pnpm exec biome check --write --no-errors-on-unmatched {{files}}"
+  }
+  ["private-key"] = Builtins.detect_private_key
+  ["secrets"] {
+    glob = "*"
+    check = "for file in {{files}}; do gitleaks stdin --redact --no-banner < \"$file\" || exit; done"
+  }
+  ["yaml-json"] {
+    glob = List("*.yaml", "*.yml", "*.json")
+    exclude = List("**/tsconfig*.json", "tsconfig*.json")
+    check = "for file in {{files}}; do yq eval '.' \"$file\" > /dev/null || exit; done"
+  }
+  ["typecheck"] {
+    glob = "*.ts"
+    depends = "biome"
+    check = "pnpm exec projen typecheck"
+  }
+  ["build"] {
+    glob = List("*.ts", "package.json", "pnpm-workspace.yaml")
+    depends = "typecheck"
+    check = "pnpm exec projen build"
+    exclusive = true
+  }
+  ["synth"] {
+    glob = "src/**/*.ts"
+    required = List("VPC_ID")
+    depends = "build"
+    check = "pnpm exec cdk synth --quiet --context vpc-id=$VPC_ID"
+    exclusive = true
+  }
+}
+
+hooks {
+  ["commit-msg"] {
+    steps {
+      ["conventional-commit"] {
+        check = "hk util check-conventional-commit {{commit_msg_file}}"
+      }
+    }
+  }
+}

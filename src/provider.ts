@@ -1,20 +1,20 @@
-import { existsSync } from "fs"
-import * as path from "path"
 import { Duration, Stack } from "aws-cdk-lib"
 import * as dsql from "aws-cdk-lib/aws-dsql"
-import { IVpc, SubnetType, SubnetSelection } from "aws-cdk-lib/aws-ec2"
+import { type IVpc, type SubnetSelection, SubnetType } from "aws-cdk-lib/aws-ec2"
 import * as iam from "aws-cdk-lib/aws-iam"
 import {
   Code,
-  Function,
-  FunctionOptions,
-  IFunction,
+  type FunctionOptions,
+  type IFunction,
+  Function as LambdaFunction,
   Runtime,
 } from "aws-cdk-lib/aws-lambda"
-import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
-import { ISecret } from "aws-cdk-lib/aws-secretsmanager"
+import type { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
+import type { ISecret } from "aws-cdk-lib/aws-secretsmanager"
 import * as customResources from "aws-cdk-lib/custom-resources"
 import { Construct } from "constructs"
+import { existsSync } from "fs"
+import * as path from "path"
 
 /**
  * Helper function to determine if a cluster is a DSQL cluster
@@ -166,9 +166,7 @@ export class Provider extends Construct implements IProvider {
     // Validate configuration
     const isDsql = isDsqlCluster(props.cluster)
     if (!isDsql && !props.secret) {
-      throw new Error(
-        "Either secret (for traditional RDS) or cluster with DSQL must be provided"
-      )
+      throw new Error("Either secret (for traditional RDS) or cluster with DSQL must be provided")
     }
     if (!isDsql && !props.vpc) {
       throw new Error("VPC is required for traditional RDS databases")
@@ -247,7 +245,7 @@ export class Provider extends Construct implements IProvider {
     scope: Construct,
     id: string,
     props: RdsSqlProps
-  ): Function {
+  ): LambdaFunction {
     const isDsql = isDsqlCluster(props.cluster)
     const handlerDir = resolveHandlerAssetDir()
 
@@ -288,7 +286,7 @@ export class Provider extends Construct implements IProvider {
       },
     })
 
-    const fn = new Function(scope, id, {
+    const fn = new LambdaFunction(scope, id, {
       ...props.functionProps,
       // Only configure VPC for traditional RDS
       ...(isDsql
@@ -310,23 +308,16 @@ export class Provider extends Construct implements IProvider {
         ...props.functionProps?.environment,
         ...environment,
       },
-      initialPolicy: [
-        deleteParameterPolicy,
-        ...(props.functionProps?.initialPolicy ?? []),
-      ],
+      initialPolicy: [deleteParameterPolicy, ...(props.functionProps?.initialPolicy ?? [])],
     })
 
     // Only configure security groups for traditional RDS (not DSQL)
     if (
       !isDsql &&
-      (!props.functionProps?.securityGroups ||
-        props.functionProps?.securityGroups.length === 0)
+      (!props.functionProps?.securityGroups || props.functionProps?.securityGroups.length === 0)
     ) {
       const rdsCluster = props.cluster as IDatabaseCluster | IDatabaseInstance
-      rdsCluster.connections.allowDefaultPortFrom(
-        fn,
-        "Allow the rds sql handler to connect to db"
-      )
+      rdsCluster.connections.allowDefaultPortFrom(fn, "Allow the rds sql handler to connect to db")
     }
 
     return fn
@@ -353,8 +344,8 @@ class ImportedProvider extends Construct implements IProvider {
 
     // Import the existing Lambda function
     this.handler = attrs.functionArn
-      ? Function.fromFunctionArn(this, "Handler", attrs.functionArn)
-      : Function.fromFunctionName(this, "Handler", attrs.functionName!)
+      ? LambdaFunction.fromFunctionArn(this, "Handler", attrs.functionArn)
+      : LambdaFunction.fromFunctionName(this, "Handler", attrs.functionName!)
 
     // Derive serviceToken by wrapping in custom resource provider
     const provider = new customResources.Provider(this, "Provider", {
@@ -392,10 +383,7 @@ function resolveHandlerAssetDir(): string {
   ]
 
   for (const dir of candidates) {
-    if (
-      existsSync(path.join(dir, "index.js")) &&
-      existsSync(path.join(dir, "global-bundle.pem"))
-    ) {
+    if (existsSync(path.join(dir, "index.js")) && existsSync(path.join(dir, "global-bundle.pem"))) {
       return dir
     }
   }

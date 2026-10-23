@@ -1,8 +1,8 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { createConnection } from "mysql2/promise"
-import { GenericContainer, StartedTestContainer } from "testcontainers"
+import { GenericContainer, type StartedTestContainer } from "testcontainers"
 import { handler } from "./handler"
-import { createRequest, updateRequest, deleteRequest } from "./util"
+import { createRequest, deleteRequest, updateRequest } from "./util"
 
 jest.mock("@aws-sdk/client-secrets-manager")
 const SecretsManagerClientMock = SecretsManagerClient as jest.MockedClass<
@@ -95,17 +95,11 @@ async function databaseExists(connection: any, dbName: string): Promise<boolean>
 }
 
 async function userExists(connection: any, username: string): Promise<boolean> {
-  const [rows] = await connection.query("SELECT User FROM mysql.user WHERE User = ?", [
-    username,
-  ])
+  const [rows] = await connection.query("SELECT User FROM mysql.user WHERE User = ?", [username])
   return rows.length > 0
 }
 
-async function tableExists(
-  connection: any,
-  dbName: string,
-  tableName: string
-): Promise<boolean> {
+async function tableExists(connection: any, dbName: string, tableName: string): Promise<boolean> {
   const [rows] = await connection.query(
     "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
     [dbName, tableName]
@@ -140,9 +134,7 @@ test("database", async () => {
     expect(await databaseExists(connection, oldDatabaseName)).toEqual(true)
 
     const update = updateRequest("database", oldDatabaseName, newDatabaseName)
-    await expect(handler(update)).rejects.toThrow(
-      "Renaming database is not supported in MySQL."
-    )
+    await expect(handler(update)).rejects.toThrow("Renaming database is not supported in MySQL.")
 
     const remove = deleteRequest("database", oldDatabaseName)
     await handler(remove)
@@ -199,9 +191,7 @@ test("database with owner", async () => {
     const update = updateRequest("database", oldDatabaseName, newDatabaseName, {
       Owner: userName,
     })
-    await expect(handler(update)).rejects.toThrow(
-      "Renaming database is not supported in MySQL."
-    )
+    await expect(handler(update)).rejects.toThrow("Renaming database is not supported in MySQL.")
   } finally {
     await connection.end()
   }

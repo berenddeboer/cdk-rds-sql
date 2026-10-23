@@ -1,17 +1,17 @@
 import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
-import { Client, ClientConfig } from "pg"
-import { GenericContainer, StartedTestContainer, Wait } from "testcontainers"
+import { Client, type ClientConfig } from "pg"
+import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers"
 import { handler } from "./handler"
 import {
   createRequest,
-  updateRequest,
-  deleteRequest,
-  schemaExists,
-  roleExists,
   databaseExists,
   databaseOwnerIs,
-  rowCount,
+  deleteRequest,
+  roleExists,
   roleGrantedForSchema,
+  rowCount,
+  schemaExists,
+  updateRequest,
 } from "./util"
 
 jest.mock("@aws-sdk/client-secrets-manager")
@@ -53,9 +53,7 @@ beforeAll(async () => {
       POSTGRES_DB: DB_DEFAULT_DB,
     })
     // Port open is not enough — Postgres can still reject with "starting up".
-    .withWaitStrategy(
-      Wait.forLogMessage("database system is ready to accept connections", 2)
-    )
+    .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
     .start()
   pgHost = pgContainer.getHost()
   pgPort = pgContainer.getMappedPort(DB_PORT)
@@ -262,9 +260,7 @@ test("database", async () => {
   const client = await newClient()
   try {
     expect(await databaseExists(client, oldDatabaseName)).toEqual(true)
-    expect(await databaseOwnerIs(client, oldDatabaseName, DB_MASTER_USERNAME)).toEqual(
-      true
-    )
+    expect(await databaseOwnerIs(client, oldDatabaseName, DB_MASTER_USERNAME)).toEqual(true)
     const update = updateRequest("database", oldDatabaseName, newDatabaseName)
     await handler(update)
     expect(await databaseExists(client, oldDatabaseName)).toEqual(false)
@@ -376,7 +372,5 @@ async function waitForPostgres(config: {
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
   }
-  throw new Error(
-    `PostgreSQL container did not become ready in time: ${String(lastError)}`
-  )
+  throw new Error(`PostgreSQL container did not become ready in time: ${String(lastError)}`)
 }

@@ -2,6 +2,7 @@
 
 nodeLinker: hoisted
 allowBuilds:
+  "@parcel/watcher": true
   cpu-features: true
   esbuild: true
   protobufjs: true

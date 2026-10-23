@@ -1,9 +1,9 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"
+import { Duration, RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
-import { Construct } from "constructs"
+import type { Construct } from "constructs"
+import { Database, Provider, Role, Schema, Sql } from "../src/index"
 import { Vpc } from "./vpc"
-import { Provider, Database, Role, Schema, Sql } from "../src/index"
 
 export class TestInstanceStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
@@ -21,10 +21,7 @@ export class TestInstanceStack extends Stack {
       }),
       databaseName: "example",
       credentials: rds.Credentials.fromGeneratedSecret("pgroot"),
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.BURSTABLE3,
-        ec2.InstanceSize.MICRO
-      ),
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
       removalPolicy: RemovalPolicy.DESTROY,
     })
 

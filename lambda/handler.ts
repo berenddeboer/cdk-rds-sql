@@ -1,40 +1,38 @@
-import * as crypto from "crypto"
 import {
-  SecretsManagerClient,
   GetSecretValueCommand,
-  GetSecretValueCommandOutput,
+  type GetSecretValueCommandOutput,
+  SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager"
 import {
-  SSMClient,
-  PutParameterCommand,
-  DeleteParameterCommand,
   AddTagsToResourceCommand,
+  DeleteParameterCommand,
+  PutParameterCommand,
+  SSMClient,
 } from "@aws-sdk/client-ssm"
-import {
+import type {
   CloudFormationCustomResourceCreateEvent,
-  CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
+  CloudFormationCustomResourceUpdateEvent,
 } from "aws-lambda"
+import * as crypto from "crypto"
 import { backOff } from "exponential-backoff"
-import { EngineConnectionConfig } from "./engine.abstract"
+import { RdsSqlResource } from "../src/enum"
+import type { EngineConnectionConfig } from "./engine.abstract"
 import { EngineFactory } from "./engine.factory"
-import {
-  ResourceProperties,
+import type {
   CustomResourceResponse,
   EngineDatabaseProperties,
+  EngineIamGrantProperties,
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
-  EngineIamGrantProperties,
+  ResourceProperties,
 } from "./types"
-import { RdsSqlResource } from "../src/enum"
 
 const maxAttempts = 20
 
 const log =
-  process.env.LOGGER === "true"
-    ? console.debug
-    : (_message?: any, ..._optionalParams: any[]) => {}
+  process.env.LOGGER === "true" ? console.debug : (_message?: any, ..._optionalParams: any[]) => {}
 
 const secrets_client = new SecretsManagerClient({})
 
@@ -57,9 +55,7 @@ function parseMaxUserConnections(value: unknown): number | undefined {
   if (typeof value === "string" && /^(0|[1-9]\d*)$/.test(value)) {
     return Number(value)
   }
-  throw new Error(
-    `MaxUserConnections must be a non-negative integer, got ${String(value)}`
-  )
+  throw new Error(`MaxUserConnections must be a non-negative integer, got ${String(value)}`)
 }
 
 function toRoleEngineProps(props: ResourceProperties): EngineRoleProperties {
@@ -173,30 +169,22 @@ export const handler = async (
     case "Create": {
       switch (resource) {
         case RdsSqlResource.DATABASE:
-          sql = dbEngine.createDatabase(
-            resourceId,
-            toDatabaseEngineProps(event.ResourceProperties)
-          )
+          sql = dbEngine.createDatabase(resourceId, toDatabaseEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.ROLE:
-          sql = await dbEngine.createRole(
-            resourceId,
-            toRoleEngineProps(event.ResourceProperties)
-          )
+          sql = await dbEngine.createRole(resourceId, toRoleEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.SCHEMA:
-          sql = dbEngine.createSchema(
-            resourceId,
-            toSchemaEngineProps(event.ResourceProperties)
-          )
+          sql = dbEngine.createSchema(resourceId, toSchemaEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.SQL:
           sql = dbEngine.createSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
-        case RdsSqlResource.IAM_GRANT:
+        case RdsSqlResource.IAM_GRANT: {
           const createIam = toIamGrantEngineProps(event.ResourceProperties)
           sql = dbEngine.createIamGrant(createIam.RoleName, createIam.ResourceArn)
           break
+        }
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
           break
@@ -204,19 +192,18 @@ export const handler = async (
       break
     }
     case "Update": {
-      const oldResourceId = (event as CloudFormationCustomResourceUpdateEvent)
-        .PhysicalResourceId
+      const oldResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId
       switch (resource) {
-        case RdsSqlResource.DATABASE:
+        case RdsSqlResource.DATABASE: {
           const dbProps = toDatabaseEngineProps(event.ResourceProperties)
           sql = dbEngine.updateDatabase(resourceId, oldResourceId, {
             ...dbProps,
             MasterOwner: secretValues.username,
           })
           break
-        case RdsSqlResource.ROLE:
-          const updateEvent =
-            event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
+        }
+        case RdsSqlResource.ROLE: {
+          const updateEvent = event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
           sql = await dbEngine.updateRole(
             resourceId,
             oldResourceId,
@@ -224,6 +211,7 @@ export const handler = async (
             toRoleEngineProps(updateEvent.OldResourceProperties)
           )
           break
+        }
         case RdsSqlResource.SCHEMA:
           sql = dbEngine.updateSchema(
             resourceId,
@@ -238,7 +226,7 @@ export const handler = async (
             toSqlEngineProps(event.ResourceProperties)
           )
           break
-        case RdsSqlResource.IAM_GRANT:
+        case RdsSqlResource.IAM_GRANT: {
           const iamUpdateEvent =
             event as CloudFormationCustomResourceUpdateEvent<ResourceProperties>
           const newIam = toIamGrantEngineProps(event.ResourceProperties)
@@ -250,6 +238,7 @@ export const handler = async (
             oldIam.ResourceArn
           )
           break
+        }
         case RdsSqlResource.PARAMETER_PASSWORD:
           await handleParameterPassword(event.ResourceProperties)
           sql = undefined // No SQL to execute
@@ -263,24 +252,19 @@ export const handler = async (
           sql = dbEngine.deleteDatabase(resourceId, secretValues.username)
           break
         case RdsSqlResource.ROLE:
-          sql = await dbEngine.deleteRole(
-            resourceId,
-            toRoleEngineProps(event.ResourceProperties)
-          )
+          sql = await dbEngine.deleteRole(resourceId, toRoleEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.SCHEMA:
-          sql = dbEngine.deleteSchema(
-            resourceId,
-            toSchemaEngineProps(event.ResourceProperties)
-          )
+          sql = dbEngine.deleteSchema(resourceId, toSchemaEngineProps(event.ResourceProperties))
           break
         case RdsSqlResource.SQL:
           sql = dbEngine.deleteSql(resourceId, toSqlEngineProps(event.ResourceProperties))
           break
-        case RdsSqlResource.IAM_GRANT:
+        case RdsSqlResource.IAM_GRANT: {
           const delIam = toIamGrantEngineProps(event.ResourceProperties)
           sql = dbEngine.deleteIamGrant(delIam.RoleName, delIam.ResourceArn)
           break
+        }
         case RdsSqlResource.PARAMETER_PASSWORD:
           await deleteParameterPassword(event.ResourceProperties)
           break
@@ -324,7 +308,7 @@ export const handler = async (
     }
   }
 
-  let response: CustomResourceResponse = {}
+  const response: CustomResourceResponse = {}
   // Except for the SQL resource, return the new resource id. This
   // will cause a delete to be sent for the old resource.
   if (resourceId) {
@@ -369,9 +353,7 @@ async function handleParameterPassword(props: any): Promise<void> {
   const parameterName = props.ParameterName
 
   // Get the secret
-  const secretData = await secrets_client.send(
-    new GetSecretValueCommand({ SecretId: secretArn })
-  )
+  const secretData = await secrets_client.send(new GetSecretValueCommand({ SecretId: secretArn }))
 
   if (!secretData.SecretString) throw "No secret string for parameter"
   const secretObj = JSON.parse(secretData.SecretString)

@@ -30,9 +30,7 @@ describe("MySQL Engine", () => {
 
   describe("Role", () => {
     it("should throw error when creating a role without password ARN", async () => {
-      await expect(engine.createRole("testrole", {})).rejects.toThrow(
-        "No PasswordArn provided"
-      )
+      await expect(engine.createRole("testrole", {})).rejects.toThrow("No PasswordArn provided")
     })
 
     it("should generate correct SQL for renaming a role", async () => {
@@ -81,15 +79,13 @@ describe("MySQL Engine", () => {
 
       // Check for revoke statement for the old database
       const revokeStatement = sql.find(
-        (statement) =>
-          statement.includes("REVOKE ALL PRIVILEGES") && statement.includes("`olddb`")
+        (statement) => statement.includes("REVOKE ALL PRIVILEGES") && statement.includes("`olddb`")
       )
       expect(revokeStatement).toBeDefined()
 
       // Check for grant statement for the new database
       const grantStatement = sql.find(
-        (statement) =>
-          statement.includes("GRANT ALL PRIVILEGES") && statement.includes("`newdb`")
+        (statement) => statement.includes("GRANT ALL PRIVILEGES") && statement.includes("`newdb`")
       )
       expect(grantStatement).toBeDefined()
     })
@@ -107,9 +103,7 @@ describe("MySQL Engine", () => {
           "CREATE USER IF NOT EXISTS 'siteuser'@'%' IDENTIFIED BY 'test-password'"
         )
         expect(sql).toContain("ALTER USER 'siteuser'@'%' WITH MAX_USER_CONNECTIONS 5")
-        expect(
-          sql.findIndex((statement) => statement.includes("CREATE USER"))
-        ).toBeLessThan(
+        expect(sql.findIndex((statement) => statement.includes("CREATE USER"))).toBeLessThan(
           sql.findIndex((statement) => statement.includes("MAX_USER_CONNECTIONS"))
         )
         expect(sql[sql.length - 1]).toBe("FLUSH PRIVILEGES")
@@ -134,9 +128,7 @@ describe("MySQL Engine", () => {
           PasswordArn: "arn:aws:secretsmanager:region:account:secret:name",
         })
 
-        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(
-          false
-        )
+        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(false)
       })
 
       it("should apply a reduced connection limit on update", async () => {
@@ -156,9 +148,7 @@ describe("MySQL Engine", () => {
         )
 
         expect(sql).toContain("ALTER USER 'siteuser'@'%' WITH MAX_USER_CONNECTIONS 3")
-        expect(
-          sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS 10"))
-        ).toBe(false)
+        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS 10"))).toBe(false)
       })
 
       it("should reapply the connection limit after a rename recreates the user", async () => {
@@ -177,9 +167,7 @@ describe("MySQL Engine", () => {
         )
 
         const createAt = sql.findIndex((statement) => statement.includes("CREATE USER"))
-        const alterAt = sql.findIndex((statement) =>
-          statement.includes("MAX_USER_CONNECTIONS")
-        )
+        const alterAt = sql.findIndex((statement) => statement.includes("MAX_USER_CONNECTIONS"))
         expect(alterAt).toBeGreaterThan(createAt)
         expect(sql[alterAt]).toBe("ALTER USER 'newuser'@'%' WITH MAX_USER_CONNECTIONS 5")
       })
@@ -199,9 +187,7 @@ describe("MySQL Engine", () => {
           }
         )
 
-        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(
-          false
-        )
+        expect(sql.some((statement) => statement.includes("MAX_USER_CONNECTIONS"))).toBe(false)
       })
 
       it("should reject a negative connection limit", async () => {
@@ -248,9 +234,7 @@ describe("MySQL Engine", () => {
         expect(sql[0]).toContain(
           "CREATE USER IF NOT EXISTS 'passworduser'@'%' IDENTIFIED BY 'test-password'"
         )
-        expect(sql[1]).toContain(
-          "GRANT ALL PRIVILEGES ON `testdb`.* TO 'passworduser'@'%'"
-        )
+        expect(sql[1]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'passworduser'@'%'")
         expect(sql[2]).toBe("FLUSH PRIVILEGES")
       })
 
@@ -265,12 +249,7 @@ describe("MySQL Engine", () => {
           DatabaseName: "testdb",
         }
 
-        const sql = await engine.updateRole(
-          "switchuser",
-          "switchuser",
-          newProps,
-          oldProps
-        )
+        const sql = await engine.updateRole("switchuser", "switchuser", newProps, oldProps)
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toContain("DROP USER IF EXISTS 'switchuser'@'%'")
@@ -294,18 +273,11 @@ describe("MySQL Engine", () => {
           DatabaseName: "testdb",
         }
 
-        const sql = await engine.updateRole(
-          "switchuser",
-          "switchuser",
-          newProps,
-          oldProps
-        )
+        const sql = await engine.updateRole("switchuser", "switchuser", newProps, oldProps)
 
         expect(Array.isArray(sql)).toBe(true)
         expect(sql[0]).toContain("DROP USER IF EXISTS 'switchuser'@'%'")
-        expect(sql[1]).toContain(
-          "CREATE USER 'switchuser'@'%' IDENTIFIED BY 'new-password'"
-        )
+        expect(sql[1]).toContain("CREATE USER 'switchuser'@'%' IDENTIFIED BY 'new-password'")
         expect(sql[2]).toContain("GRANT ALL PRIVILEGES ON `testdb`.* TO 'switchuser'@'%'")
         expect(sql[3]).toBe("FLUSH PRIVILEGES")
       })
@@ -318,9 +290,7 @@ describe("MySQL Engine", () => {
     })
 
     it("should throw an error when trying to update a schema", () => {
-      expect(() => engine.updateSchema("newschema", "oldschema", {})).toThrow(
-        "not supported"
-      )
+      expect(() => engine.updateSchema("newschema", "oldschema", {})).toThrow("not supported")
     })
 
     it("should throw an error when trying to delete a schema", () => {

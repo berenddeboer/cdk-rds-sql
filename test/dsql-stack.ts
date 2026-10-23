@@ -1,11 +1,11 @@
-import { Duration, Stack, StackProps } from "aws-cdk-lib"
+import { Duration, Stack, type StackProps } from "aws-cdk-lib"
 import * as dsql from "aws-cdk-lib/aws-dsql"
 import * as iam from "aws-cdk-lib/aws-iam"
 import { Runtime } from "aws-cdk-lib/aws-lambda"
 import * as lambda from "aws-cdk-lib/aws-lambda-nodejs"
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs"
-import { Construct } from "constructs"
-import { Provider, Role, Schema, Sql, IamGrant } from "./../src/index"
+import type { Construct } from "constructs"
+import { IamGrant, Provider, Role, Schema, Sql } from "./../src/index"
 
 export interface TestDsqlStackProps extends StackProps {
   /**
@@ -103,9 +103,7 @@ export class TestDsqlStack extends Stack {
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: ["dsql:DbConnect"],
-          resources: [
-            `arn:aws:dsql:${region}:${Stack.of(this).account}:cluster/${clusterId}`,
-          ],
+          resources: [`arn:aws:dsql:${region}:${Stack.of(this).account}:cluster/${clusterId}`],
         }),
       ],
     })

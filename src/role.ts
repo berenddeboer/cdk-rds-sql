@@ -1,13 +1,13 @@
 import { CustomResource, RemovalPolicy, Stack } from "aws-cdk-lib"
 import * as iam from "aws-cdk-lib/aws-iam"
-import * as kms from "aws-cdk-lib/aws-kms"
-import { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
-import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
+import type * as kms from "aws-cdk-lib/aws-kms"
+import type { IDatabaseCluster, IDatabaseInstance } from "aws-cdk-lib/aws-rds"
+import { type ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager"
 import * as ssm from "aws-cdk-lib/aws-ssm"
 import { Construct } from "constructs"
-import { IDatabase } from "./database"
+import type { IDatabase } from "./database"
 import { RdsSqlResource } from "./enum"
-import { IProvider, DatabaseEngine } from "./provider"
+import { DatabaseEngine, type IProvider } from "./provider"
 import { Role as CustomResourceRole } from "./role.custom-resource"
 
 export interface RoleProps {
@@ -154,9 +154,7 @@ class Parameters extends Construct {
 
       const paramArn = `arn:${Stack.of(this).partition}:ssm:${Stack.of(this).region}:${
         Stack.of(this).account
-      }:parameter${
-        passwordParameterName.startsWith("/") ? "" : "/"
-      }${passwordParameterName}`
+      }:parameter${passwordParameterName.startsWith("/") ? "" : "/"}${passwordParameterName}`
 
       props.provider.handler.addToRolePolicy(
         new iam.PolicyStatement({
@@ -209,8 +207,7 @@ export class Role extends Construct {
     super(scope, id)
 
     // Skip secret creation for DSQL (always uses IAM auth) or when enableIamAuth is true
-    const useIamAuth =
-      props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
+    const useIamAuth = props.enableIamAuth || props.provider.engine === DatabaseEngine.DSQL
     let passwordSyncTrigger: Record<string, unknown> | undefined
     let passwordSecret: Secret | undefined
 
@@ -240,9 +237,7 @@ export class Role extends Construct {
         ? (props.provider.cluster as IDatabaseCluster).clusterIdentifier
         : (props.provider.cluster as IDatabaseInstance).instanceIdentifier
 
-      const databaseName = props.database
-        ? props.database.databaseName
-        : props.databaseName
+      const databaseName = props.database ? props.database.databaseName : props.databaseName
       // Create secret only for password auth (not IAM auth)
       if (!useIamAuth) {
         const identifierKey = isCluster ? "dbClusterIdentifier" : "dbInstanceIdentifier"

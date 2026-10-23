@@ -15,9 +15,7 @@ jest.mock("./engine.mysql")
 jest.mock("./engine.postgresql")
 
 const MockedMysqlEngine = MysqlEngine as jest.MockedClass<typeof MysqlEngine>
-const MockedPostgresqlEngine = PostgresqlEngine as jest.MockedClass<
-  typeof PostgresqlEngine
->
+const MockedPostgresqlEngine = PostgresqlEngine as jest.MockedClass<typeof PostgresqlEngine>
 
 describe("Handler CloudFormation Property Conversion", () => {
   let mockMysqlEngine: jest.Mocked<MysqlEngine>

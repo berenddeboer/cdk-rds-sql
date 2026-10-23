@@ -1,10 +1,10 @@
-import * as fs from "fs"
-import * as os from "os"
-import * as path from "path"
 import * as cdk from "aws-cdk-lib"
 import { Template } from "aws-cdk-lib/assertions"
 import * as ec2 from "aws-cdk-lib/aws-ec2"
 import * as rds from "aws-cdk-lib/aws-rds"
+import * as fs from "fs"
+import * as os from "os"
+import * as path from "path"
 import { Provider } from "../src/provider"
 
 /**
