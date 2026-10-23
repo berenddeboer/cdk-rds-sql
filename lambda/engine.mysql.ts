@@ -52,6 +52,8 @@ export class MysqlEngine extends AbstractEngine {
       )
     }
 
+    appendMaxUserConnections(sql, resourceId, props.MaxUserConnections)
+
     sql.push("FLUSH PRIVILEGES")
     return sql
   }
@@ -128,6 +130,8 @@ export class MysqlEngine extends AbstractEngine {
         `GRANT ALL PRIVILEGES ON \`${props.DatabaseName}\`.* TO '${resourceId}'@'%'`
       )
     }
+
+    appendMaxUserConnections(sql, resourceId, props.MaxUserConnections)
 
     if (sql.length > 0) {
       sql.push("FLUSH PRIVILEGES")
@@ -246,4 +250,27 @@ export class MysqlEngine extends AbstractEngine {
       await connection.end()
     }
   }
+}
+
+/**
+ * Append the proven MariaDB/MySQL connection cap. Unset means no clause.
+ * 0 is valid and means the server default (unlimited unless the global
+ * max_user_connections is set).
+ */
+function appendMaxUserConnections(
+  sql: string[],
+  resourceId: string,
+  maxUserConnections: number | undefined
+): void {
+  if (maxUserConnections === undefined) {
+    return
+  }
+  if (!Number.isInteger(maxUserConnections) || maxUserConnections < 0) {
+    throw new Error(
+      `MaxUserConnections must be a non-negative integer, got ${maxUserConnections}`
+    )
+  }
+  sql.push(
+    `ALTER USER '${resourceId}'@'%' WITH MAX_USER_CONNECTIONS ${maxUserConnections}`
+  )
 }

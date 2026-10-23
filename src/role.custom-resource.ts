@@ -46,6 +46,13 @@ export interface RoleProps {
    * @default false - use password authentication
    */
   readonly enableIamAuth?: boolean
+
+  /**
+   * Maximum simultaneous connections for this MySQL/MariaDB user.
+   *
+   * @default undefined - no connection limit is applied
+   */
+  readonly maxUserConnections?: number
 }
 
 export class Role extends CustomResource {
@@ -62,6 +69,9 @@ export class Role extends CustomResource {
         PasswordArn: props.passwordArn,
         DatabaseName: props.database ? props.database.databaseName : props.databaseName,
         EnableIamAuth: props.enableIamAuth,
+        ...(props.maxUserConnections !== undefined
+          ? { MaxUserConnections: props.maxUserConnections }
+          : {}),
       },
     })
     this.node.addDependency(props.provider)

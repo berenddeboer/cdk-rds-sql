@@ -11,6 +11,7 @@ export interface EngineRoleProperties {
   readonly PasswordArn?: string
   readonly DatabaseName?: string
   readonly EnableIamAuth?: boolean
+  readonly MaxUserConnections?: number
 }
 
 export interface EngineSchemaProperties {
@@ -47,6 +48,8 @@ export interface RoleProperties extends CommonProperties {
   readonly PasswordArn?: string
   readonly DatabaseName?: string
   readonly EnableIamAuth?: string // CloudFormation passes boolean as string
+  /** CloudFormation may pass the number as a string. */
+  readonly MaxUserConnections?: string | number
 }
 
 export interface SchemaProperties extends CommonProperties, EngineSchemaProperties {

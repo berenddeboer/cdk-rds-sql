@@ -47,14 +47,31 @@ function toDatabaseEngineProps(props: ResourceProperties): EngineDatabasePropert
   return props
 }
 
+function parseMaxUserConnections(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined
+  }
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return value
+  }
+  if (typeof value === "string" && /^(0|[1-9]\d*)$/.test(value)) {
+    return Number(value)
+  }
+  throw new Error(
+    `MaxUserConnections must be a non-negative integer, got ${String(value)}`
+  )
+}
+
 function toRoleEngineProps(props: ResourceProperties): EngineRoleProperties {
   if (props.Resource !== RdsSqlResource.ROLE) {
     throw new Error(`Expected ROLE resource, got ${props.Resource}`)
   }
-  // Convert string 'true'/'false' to boolean for EnableIamAuth
+  // Convert string 'true'/'false' to boolean for EnableIamAuth.
+  // CloudFormation stringifies custom resource numbers; accept either form.
   return {
     ...props,
     EnableIamAuth: props.EnableIamAuth === "true" || props.EnableIamAuth === "1",
+    MaxUserConnections: parseMaxUserConnections(props.MaxUserConnections),
   }
 }
 

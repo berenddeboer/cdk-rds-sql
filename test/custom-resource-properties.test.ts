@@ -234,6 +234,120 @@ describe("Custom Resource Properties", () => {
       })
     })
 
+    test("mysql role custom resource includes maxUserConnections only when set", () => {
+      const mysqlStack = new cdk.Stack(app, "MysqlRoleStack", {
+        env: {
+          account: "123456789012",
+          region: "us-east-1",
+        },
+      })
+      const mysqlVpc = new ec2.Vpc(mysqlStack, "Vpc", {
+        subnetConfiguration: [
+          {
+            cidrMask: 28,
+            name: "rds",
+            subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          },
+        ],
+      })
+      const instance = new rds.DatabaseInstance(mysqlStack, "Instance", {
+        vpc: mysqlVpc,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
+        engine: rds.DatabaseInstanceEngine.mariaDb({
+          version: rds.MariaDbEngineVersion.VER_11_4_3,
+        }),
+        credentials: rds.Credentials.fromGeneratedSecret("admin"),
+        instanceType: ec2.InstanceType.of(
+          ec2.InstanceClass.BURSTABLE3,
+          ec2.InstanceSize.MICRO
+        ),
+      })
+      const mysqlProvider = new Provider(mysqlStack, "Provider", {
+        vpc: mysqlVpc,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
+        cluster: instance,
+        secret: instance.secret!,
+      })
+
+      new Role(mysqlStack, "LimitedRole", {
+        provider: mysqlProvider,
+        roleName: "limited_role",
+        databaseName: "test_db",
+        maxUserConnections: 5,
+      })
+      new Role(mysqlStack, "ZeroRole", {
+        provider: mysqlProvider,
+        roleName: "zero_role",
+        databaseName: "test_db",
+        maxUserConnections: 0,
+      })
+      new Role(mysqlStack, "PlainRole", {
+        provider: mysqlProvider,
+        roleName: "plain_role",
+        databaseName: "test_db",
+      })
+
+      const template = Template.fromStack(mysqlStack)
+      template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
+        Resource: "role",
+        ResourceId: "limited_role",
+        DatabaseName: "test_db",
+        EnableIamAuth: false,
+        MaxUserConnections: 5,
+      })
+      template.hasResourceProperties("AWS::CloudFormation::CustomResource", {
+        Resource: "role",
+        ResourceId: "zero_role",
+        MaxUserConnections: 0,
+      })
+
+      const plain = template.findResources("AWS::CloudFormation::CustomResource", {
+        Properties: {
+          Resource: "role",
+          ResourceId: "plain_role",
+        },
+      })
+      const resource = Object.values(plain)[0]
+      expect(resource).toBeDefined()
+      expect(resource?.Properties.MaxUserConnections).toBeUndefined()
+    })
+
+    test("postgres role rejects maxUserConnections", () => {
+      expect(() => {
+        new Role(stack, "LimitedRole", {
+          provider,
+          roleName: "limited_role",
+          databaseName: "test_db",
+          maxUserConnections: 5,
+        })
+      }).toThrow("only supported for MySQL/MariaDB")
+    })
+
+    test("mysql role rejects a non-integer maxUserConnections", () => {
+      const mysqlProvider = Provider.fromProviderAttributes(
+        stack,
+        "MysqlProviderInvalid",
+        {
+          functionName: "mysql-provider-invalid",
+          engine: DatabaseEngine.MYSQL,
+          cluster,
+        }
+      )
+
+      expect(() => {
+        new Role(stack, "InvalidRole", {
+          provider: mysqlProvider,
+          roleName: "invalid_role",
+          databaseName: "test_db",
+          maxUserConnections: 1.5,
+        })
+      }).toThrow("non-negative integer")
+    })
+
     test("role properties remain consistent across builds", () => {
       new Role(stack, "TestRole", {
         provider: provider,
@@ -506,6 +620,16 @@ describe("Custom Resource Properties", () => {
         vpc: dsqlVpc,
         cluster: dsqlCluster,
       })
+    })
+
+    test("DSQL role rejects maxUserConnections", () => {
+      expect(() => {
+        new Role(dsqlStack, "LimitedDsqlRole", {
+          provider: dsqlProvider,
+          roleName: "dsql_role",
+          maxUserConnections: 5,
+        })
+      }).toThrow("only supported for MySQL/MariaDB")
     })
 
     test("DSQL role creation does not include SecretArn", () => {
