@@ -314,7 +314,8 @@
             "dotnet"
           ]
         }
-      ]
+      ],
+      "condition": "dotnet --list-sdks 2>/dev/null | grep -q ."
     },
     "package:js": {
       "name": "package:js",

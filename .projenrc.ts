@@ -213,6 +213,15 @@ project.addTask("typecheck", {
 // Hook these tasks into the build process
 project.tasks.tryFind("pre-compile")?.spawn(buildHandler)
 project.tasks.tryFind("compile")?.spawn(copyHandler)
+
+// Local `projen build` packages every language. Pre-commit runs that build, and
+// most machines have no .NET SDK. Skip the NuGet pack unless `dotnet --list-sdks`
+// prints a version. CI still invokes `package:dotnet` after setup-dotnet.
+const packageDotnet = project.tasks.tryFind("package:dotnet")
+if (!packageDotnet) {
+  throw new Error("Expected package:dotnet task")
+}
+packageDotnet.addCondition("dotnet --list-sdks 2>/dev/null | grep -q .")
 // Node16 preserves dynamic import(), which needs VM module support inside Jest.
 for (const task of ["test", "test:watch", "test:update"]) {
   // Unit tests synthesize stacks that load the prebuilt handler asset.
@@ -242,7 +251,57 @@ class NpmTrustedPublishing extends Component {
 }
 new NpmTrustedPublishing(project)
 
-const dependabot = project.github?.addDependabot()
+const githubProject = project.github
+if (!githubProject) {
+  throw new Error("Expected GitHub workflows to be enabled")
+}
+
+// Same jactionlint step as hk.pkl, with hk/jactionlint/shellcheck versions from mise.toml.
+// pull_request (not pull_request_target) also runs for Dependabot and other bot PRs, with a
+// read-only token, and checks out the PR so workflow edits are linted rather than executed.
+const workflowChecks = new github.GithubWorkflow(githubProject, "workflow-checks", {
+  limitConcurrency: true,
+  concurrencyOptions: {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression, not a JS template
+    group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
+    cancelInProgress: true,
+  },
+})
+workflowChecks.on({
+  pullRequest: {},
+})
+workflowChecks.addJob("jactionlint", {
+  runsOn: ["ubuntu-latest"],
+  timeoutMinutes: 10,
+  permissions: {
+    contents: github.workflows.JobPermission.READ,
+  },
+  steps: [
+    {
+      name: "Checkout",
+      uses: github.ActionRefs.ACTIONS_CHECKOUT,
+      with: {
+        // Projen does not kebab-case keys under `with`.
+        "persist-credentials": false,
+      },
+    },
+    {
+      name: "Install pinned workflow tools",
+      // jdx/mise-action v5.2.2. Tool versions come from mise.toml, not this pin.
+      uses: "jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550",
+      with: {
+        cache: false,
+        install_args: "hk jactionlint shellcheck",
+      },
+    },
+    {
+      name: "jactionlint",
+      run: "hk check --all --step jactionlint",
+    },
+  ],
+})
+
+const dependabot = githubProject.addDependabot()
 if (dependabot) {
   dependabot.config.updates = [
     {

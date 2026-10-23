@@ -60,5 +60,6 @@ junit.xml
 /dist/
 !/projenrc/tsconfig.json
 .jsii
+!/.github/workflows/workflow-checks.yml
 !/.github/dependabot.yml
 !/.projenrc.ts

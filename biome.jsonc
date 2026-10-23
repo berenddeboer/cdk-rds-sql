@@ -19,6 +19,7 @@
       "!.github/workflows/build.yml",
       "!.github/workflows/pull-request-lint.yml",
       "!.github/workflows/release.yml",
+      "!.github/workflows/workflow-checks.yml",
       "!.gitignore",
       "!.mergify.yml",
       "!.projen/deps.json",
