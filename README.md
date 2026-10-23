@@ -23,6 +23,15 @@ environments, and works in isolated subnets.
 
      npm i cdk-rds-sql
 
+For .NET (available from the first NuGet release):
+
+```sh
+dotnet add package BerenddeBoer.CdkRdsSql
+```
+
+The .NET namespace is `BerenddeBoer.CdkRdsSql`. Node.js is also required
+when using the .NET bindings.
+
 # Usage
 
 ## Provider
