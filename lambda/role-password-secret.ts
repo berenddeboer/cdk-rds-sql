@@ -32,13 +32,16 @@ export function readRolePasswordSecret(
     startingDelay,
     maxDelay,
     timeMultiple,
+    delayFirstAttempt: false,
     jitter: "full",
     retry: (error: unknown, failedAttempts: number) => {
       if (!isAccessDenied(error)) return false
       if (!getRemainingTimeInMillis) return true
 
       // Check the worst-case delay before jitter and leave time for the next
-      // request. Returning false preserves the last denial.
+      // request. Match exponential-backoff's skipped first delay: after one
+      // failure the retry waits startingDelay (exponent 0) before jitter.
+      // Returning false preserves the last denial.
       const nextDelay = Math.min(maxDelay, startingDelay * timeMultiple ** (failedAttempts - 1))
       return getRemainingTimeInMillis() > nextDelay + retryRequestBudget
     },
