@@ -105,9 +105,9 @@ export const handler = async (
   log(event)
 
   const requestType = event.RequestType
-  const resource: RdsSqlResource = event.ResourceProperties.Resource
-  const resourceId = event.ResourceProperties.ResourceId ?? ""
-  const databaseName = event.ResourceProperties.DatabaseName
+  const props = event.ResourceProperties
+  const { Resource: resource, DatabaseName: databaseName } = props
+  const resourceId = props.ResourceId ?? ""
 
   if (!Object.values(RdsSqlResource).includes(resource)) {
     throw `Resource type '${resource}' not recognised.`
@@ -202,7 +202,7 @@ export const handler = async (
   let sql: string | string[] | undefined
   switch (requestType) {
     case "Create": {
-      switch (event.ResourceProperties.Resource) {
+      switch (resource) {
         case RdsSqlResource.DATABASE:
           sql = dbEngine.createDatabase(resourceId, toDatabaseEngineProps(event.ResourceProperties))
           break
@@ -221,14 +221,14 @@ export const handler = async (
           break
         }
         case RdsSqlResource.PARAMETER_PASSWORD:
-          await handleParameterPassword(event.ResourceProperties, getRemainingTimeInMillis)
+          await handleParameterPassword(props, getRemainingTimeInMillis)
           break
       }
       break
     }
     case "Update": {
       const oldResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId
-      switch (event.ResourceProperties.Resource) {
+      switch (resource) {
         case RdsSqlResource.DATABASE: {
           const dbProps = toDatabaseEngineProps(event.ResourceProperties)
           sql = dbEngine.updateDatabase(resourceId, oldResourceId, {
@@ -275,7 +275,7 @@ export const handler = async (
           break
         }
         case RdsSqlResource.PARAMETER_PASSWORD:
-          await handleParameterPassword(event.ResourceProperties, getRemainingTimeInMillis)
+          await handleParameterPassword(props, getRemainingTimeInMillis)
           sql = undefined // No SQL to execute
           break
       }

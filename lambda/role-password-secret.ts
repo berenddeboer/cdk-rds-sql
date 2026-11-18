@@ -10,6 +10,15 @@ const maxDelay = 5000
 const timeMultiple = 2
 const retryRequestBudget = 10_000
 
+function isAccessDenied(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AccessDeniedException"
+  )
+}
+
 export function readRolePasswordSecret(
   client: SecretsManagerClient,
   arn: string,
@@ -17,7 +26,7 @@ export function readRolePasswordSecret(
 ): Promise<GetSecretValueCommandOutput> {
   const command = new GetSecretValueCommand({ SecretId: arn })
   // Newly granted permissions can take time to propagate even after CloudFormation
-  // finishes updating the IAM policy. Cap total backoff at 32.5 seconds.
+  // finishes updating the IAM policy. Bound the retry count and delay.
   return backOff(() => client.send(command), {
     numOfAttempts: 10,
     startingDelay,
@@ -25,14 +34,7 @@ export function readRolePasswordSecret(
     timeMultiple,
     jitter: "full",
     retry: (error: unknown, failedAttempts: number) => {
-      if (
-        typeof error !== "object" ||
-        error === null ||
-        !("name" in error) ||
-        error.name !== "AccessDeniedException"
-      ) {
-        return false
-      }
+      if (!isAccessDenied(error)) return false
       if (!getRemainingTimeInMillis) return true
 
       // Check the worst-case delay before jitter and leave time for the next

@@ -7,6 +7,7 @@ export class EngineFactory {
   static createEngine(engine: string, getRemainingTimeInMillis?: () => number): AbstractEngine {
     switch (engine.toLowerCase()) {
       case "dsql":
+        // DSQL uses IAM authentication and never reads role passwords.
         return new DsqlEngine()
       case "postgres":
       case "postgresql":

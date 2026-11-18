@@ -147,6 +147,12 @@ value is a JSON like:
 
 You can access the secret via `role.secret`.
 
+The provider briefly retries role-secret `AccessDeniedException` errors to allow
+new IAM grants to propagate, including when copying the password to SSM. A
+persistent denial still fails the deployment after the retry window. If it
+persists, check that the provider's Lambda execution role can read the secret
+and, when a customer-managed KMS key is used, decrypt it.
+
 Instead of `databaseName` you can also specify `database` to reference
 an existing database. The role will not be created until the database
 has been created.

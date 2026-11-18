@@ -1,14 +1,16 @@
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import { AddTagsToResourceCommand, SSMClient } from "@aws-sdk/client-ssm"
 import { RdsSqlResource } from "../src/enum"
+import { MysqlEngine } from "./engine.mysql"
 import { PostgresqlEngine } from "./engine.postgresql"
 import { handler } from "./handler"
-import { createRequest } from "./util"
+import { createRequest, updateRequest } from "./util"
 
 const masterArn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:master"
 const passwordArn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:role"
 const parameterName = "/test/password"
 const roleSecretRead = jest.fn<Promise<{ SecretString: string }>, []>()
+let engine: "postgresql" | "mysql"
 
 function accessDenied() {
   return Object.assign(new Error("Cannot read role secret"), { name: "AccessDeniedException" })
@@ -17,11 +19,12 @@ function accessDenied() {
 beforeEach(() => {
   jest.useFakeTimers()
   roleSecretRead.mockReset()
+  engine = "postgresql"
   jest.spyOn(SecretsManagerClient.prototype, "send").mockImplementation(async (command) => {
     if (command instanceof GetSecretValueCommand) {
       switch (command.input.SecretId) {
         case masterArn:
-          return { SecretString: JSON.stringify({ engine: "postgresql" }) }
+          return { SecretString: JSON.stringify({ engine }) }
         case passwordArn:
           return roleSecretRead()
       }
@@ -29,6 +32,8 @@ beforeEach(() => {
     throw new Error("Unexpected Secrets Manager command")
   })
   jest.spyOn(PostgresqlEngine.prototype, "executeSQL").mockResolvedValue(undefined)
+  jest.spyOn(MysqlEngine.prototype, "prepare").mockResolvedValue(undefined)
+  jest.spyOn(MysqlEngine.prototype, "executeSQL").mockResolvedValue(undefined)
   jest.spyOn(SSMClient.prototype, "send").mockImplementation(async () => ({}))
 })
 
@@ -37,32 +42,39 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (resource) => {
-  function create(timeoutMs?: number) {
-    const deadline = timeoutMs === undefined ? undefined : Date.now() + timeoutMs
-    return handler(
-      createRequest(resource, "testrole", {
-        SecretArn: masterArn,
-        PasswordArn: passwordArn,
-        ParameterName: parameterName,
-      }),
-      deadline === undefined ? undefined : { getRemainingTimeInMillis: () => deadline - Date.now() }
-    )
-  }
+function invoke(resource: RdsSqlResource, timeoutMs?: number, requestType = "Create") {
+  const deadline = timeoutMs === undefined ? undefined : Date.now() + timeoutMs
+  const props = { SecretArn: masterArn, PasswordArn: passwordArn, ParameterName: parameterName }
+  const event =
+    requestType === "Update"
+      ? updateRequest(resource, "testrole", "testrole", props)
+      : createRequest(resource, "testrole", props)
+  return handler(
+    event,
+    deadline === undefined ? undefined : { getRemainingTimeInMillis: () => deadline - Date.now() }
+  )
+}
 
-  test("uses the password after a transient access denial", async () => {
+describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (resource) => {
+  test.each(["Create", "Update"])("%s retries a transient denial", async (requestType) => {
     roleSecretRead
       .mockRejectedValueOnce(accessDenied())
       .mockResolvedValueOnce({ SecretString: JSON.stringify({ password: "role-password" }) })
 
-    const result = expect(create(15_000)).resolves.toEqual({ PhysicalResourceId: "testrole" })
+    const result = expect(invoke(resource, 15_000, requestType)).resolves.toEqual({
+      PhysicalResourceId: "testrole",
+    })
     await jest.runAllTimersAsync()
     await result
 
     expect(roleSecretRead).toHaveBeenCalledTimes(2)
     if (resource === RdsSqlResource.ROLE) {
       expect(PostgresqlEngine.prototype.executeSQL).toHaveBeenCalledWith(
-        expect.arrayContaining(["create role testrole with login password 'role-password'"]),
+        expect.arrayContaining([
+          requestType === "Create"
+            ? "create role testrole with login password 'role-password'"
+            : "alter role testrole with password 'role-password'",
+        ]),
         expect.anything()
       )
     } else {
@@ -91,7 +103,7 @@ describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (r
       throw roleSecretRead.mock.calls.length === 10 ? lastDenial : accessDenied()
     })
 
-    const result = expect(create()).rejects.toBe(lastDenial)
+    const result = expect(invoke(resource)).rejects.toBe(lastDenial)
     await jest.runAllTimersAsync()
     await result
 
@@ -107,7 +119,7 @@ describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (r
     })
     roleSecretRead.mockRejectedValue(notFound)
 
-    const result = expect(create()).rejects.toBe(notFound)
+    const result = expect(invoke(resource)).rejects.toBe(notFound)
     await jest.runAllTimersAsync()
     await result
 
@@ -126,7 +138,7 @@ describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (r
       .mockRejectedValueOnce(accessDenied())
       .mockRejectedValue(lastDenial)
 
-    const result = expect(create(15_000)).rejects.toBe(lastDenial)
+    const result = expect(invoke(resource, 15_000)).rejects.toBe(lastDenial)
     await jest.runAllTimersAsync()
     await result
 
@@ -135,4 +147,16 @@ describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (r
     expect(PostgresqlEngine.prototype.executeSQL).not.toHaveBeenCalled()
     expect(SSMClient.prototype.send).not.toHaveBeenCalled()
   })
+})
+
+test("MySQL role creation also stops retrying when the Lambda deadline is close", async () => {
+  engine = "mysql"
+  const denial = accessDenied()
+  roleSecretRead.mockRejectedValue(denial)
+
+  const result = expect(invoke(RdsSqlResource.ROLE, 10_500)).rejects.toBe(denial)
+  await Promise.all([result, jest.runAllTimersAsync()])
+
+  expect(roleSecretRead).toHaveBeenCalledTimes(1)
+  expect(MysqlEngine.prototype.executeSQL).not.toHaveBeenCalled()
 })
