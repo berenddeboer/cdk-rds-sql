@@ -4,18 +4,19 @@ import { MysqlEngine } from "./engine.mysql"
 import { PostgresqlEngine } from "./engine.postgresql"
 
 export class EngineFactory {
-  static createEngine(engine: string): AbstractEngine {
+  static createEngine(engine: string, getRemainingTimeInMillis?: () => number): AbstractEngine {
     switch (engine.toLowerCase()) {
       case "dsql":
+        // DSQL uses IAM authentication and never reads role passwords.
         return new DsqlEngine()
       case "postgres":
       case "postgresql":
       case "aurora-postgresql":
-        return new PostgresqlEngine()
+        return new PostgresqlEngine(getRemainingTimeInMillis)
       case "mysql":
       case "mariadb":
       case "aurora-mysql":
-        return new MysqlEngine()
+        return new MysqlEngine(getRemainingTimeInMillis)
       default:
         throw new Error(`Unsupported database engine: ${engine}`)
     }
