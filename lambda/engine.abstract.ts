@@ -1,5 +1,6 @@
-import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
+import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager"
 import type { ConnectionOptions } from "tls"
+import { readRolePasswordSecret } from "./role-password-secret"
 import type {
   EngineDatabaseProperties,
   EngineRoleProperties,
@@ -19,7 +20,7 @@ export interface EngineConnectionConfig {
 export abstract class AbstractEngine {
   protected log: (message?: any, ...optionalParams: any[]) => void
 
-  constructor() {
+  constructor(private readonly getRemainingTimeInMillis?: () => number) {
     this.log =
       process.env.LOGGER === "true"
         ? console.debug
@@ -78,7 +79,7 @@ export abstract class AbstractEngine {
   abstract executeSQL(sql: string | string[], config: EngineConnectionConfig): Promise<any>
 
   /**
-   * Parse password field from secret. Returns void on error or if no password field exists.
+   * Parse the password field from the secret, if present.
    */
   protected async getPassword(arn: string): Promise<string | void> {
     if (!arn) return
@@ -88,10 +89,7 @@ export abstract class AbstractEngine {
         requestTimeout: 10000,
       },
     })
-    const command = new GetSecretValueCommand({
-      SecretId: arn,
-    })
-    const secret = await secrets_client.send(command)
+    const secret = await readRolePasswordSecret(secrets_client, arn, this.getRemainingTimeInMillis)
     if (secret.SecretString) {
       const json = JSON.parse(secret.SecretString)
       return json.password

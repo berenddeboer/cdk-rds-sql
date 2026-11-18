@@ -13,12 +13,14 @@ import type {
   CloudFormationCustomResourceCreateEvent,
   CloudFormationCustomResourceDeleteEvent,
   CloudFormationCustomResourceUpdateEvent,
+  Context,
 } from "aws-lambda"
 import * as crypto from "crypto"
 import { backOff } from "exponential-backoff"
 import { RdsSqlResource } from "../src/enum"
 import type { EngineConnectionConfig } from "./engine.abstract"
 import { EngineFactory } from "./engine.factory"
+import { readRolePasswordSecret } from "./role-password-secret"
 import type {
   CustomResourceResponse,
   EngineDatabaseProperties,
@@ -26,6 +28,7 @@ import type {
   EngineRoleProperties,
   EngineSchemaProperties,
   EngineSqlProperties,
+  ParameterPasswordProperties,
   ResourceProperties,
 } from "./types"
 
@@ -96,7 +99,8 @@ export const handler = async (
   event:
     | CloudFormationCustomResourceCreateEvent<ResourceProperties>
     | CloudFormationCustomResourceUpdateEvent<ResourceProperties>
-    | CloudFormationCustomResourceDeleteEvent<ResourceProperties>
+    | CloudFormationCustomResourceDeleteEvent<ResourceProperties>,
+  context?: Pick<Context, "getRemainingTimeInMillis">
 ): Promise<CustomResourceResponse> => {
   log(event)
 
@@ -162,7 +166,8 @@ export const handler = async (
     engine = secretValues.engine || "postgresql" // Default to postgresql if not specified
   }
 
-  const dbEngine = EngineFactory.createEngine(engine)
+  const getRemainingTimeInMillis = context?.getRemainingTimeInMillis.bind(context)
+  const dbEngine = EngineFactory.createEngine(engine, getRemainingTimeInMillis)
 
   let database: string
   if (engine === "dsql") {
@@ -197,7 +202,7 @@ export const handler = async (
   let sql: string | string[] | undefined
   switch (requestType) {
     case "Create": {
-      switch (resource) {
+      switch (event.ResourceProperties.Resource) {
         case RdsSqlResource.DATABASE:
           sql = dbEngine.createDatabase(resourceId, toDatabaseEngineProps(event.ResourceProperties))
           break
@@ -216,14 +221,14 @@ export const handler = async (
           break
         }
         case RdsSqlResource.PARAMETER_PASSWORD:
-          await handleParameterPassword(event.ResourceProperties)
+          await handleParameterPassword(event.ResourceProperties, getRemainingTimeInMillis)
           break
       }
       break
     }
     case "Update": {
       const oldResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId
-      switch (resource) {
+      switch (event.ResourceProperties.Resource) {
         case RdsSqlResource.DATABASE: {
           const dbProps = toDatabaseEngineProps(event.ResourceProperties)
           sql = dbEngine.updateDatabase(resourceId, oldResourceId, {
@@ -270,7 +275,7 @@ export const handler = async (
           break
         }
         case RdsSqlResource.PARAMETER_PASSWORD:
-          await handleParameterPassword(event.ResourceProperties)
+          await handleParameterPassword(event.ResourceProperties, getRemainingTimeInMillis)
           sql = undefined // No SQL to execute
           break
       }
@@ -360,12 +365,18 @@ const errorFilter = (error: any, nextAttemptNumber: number) => {
 /**
  * Copy password generated in secret to our password parameter.
  */
-async function handleParameterPassword(props: any): Promise<void> {
+async function handleParameterPassword(
+  props: ParameterPasswordProperties,
+  getRemainingTimeInMillis?: () => number
+): Promise<void> {
   const secretArn = props.PasswordArn
   const parameterName = props.ParameterName
 
-  // Get the secret
-  const secretData = await secrets_client.send(new GetSecretValueCommand({ SecretId: secretArn }))
+  const secretData = await readRolePasswordSecret(
+    secrets_client,
+    secretArn,
+    getRemainingTimeInMillis
+  )
 
   if (!secretData.SecretString) throw "No secret string for parameter"
   const secretObj = JSON.parse(secretData.SecretString)
