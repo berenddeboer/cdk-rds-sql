@@ -9,7 +9,7 @@ import { createRequest, updateRequest } from "./util"
 const masterArn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:master"
 const passwordArn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:role"
 const parameterName = "/test/password"
-const roleSecretRead = jest.fn<Promise<{ SecretString: string }>, []>()
+const roleSecretRead = jest.fn<Promise<{ SecretString: string }>, [AbortSignal | undefined]>()
 let engine: "postgresql" | "mysql"
 
 function accessDenied() {
@@ -20,17 +20,21 @@ beforeEach(() => {
   jest.useFakeTimers()
   roleSecretRead.mockReset()
   engine = "postgresql"
-  jest.spyOn(SecretsManagerClient.prototype, "send").mockImplementation(async (command) => {
-    if (command instanceof GetSecretValueCommand) {
-      switch (command.input.SecretId) {
-        case masterArn:
-          return { SecretString: JSON.stringify({ engine }) }
-        case passwordArn:
-          return roleSecretRead()
+  jest
+    .spyOn(SecretsManagerClient.prototype, "send")
+    .mockImplementation(async (command, options) => {
+      if (command instanceof GetSecretValueCommand) {
+        switch (command.input.SecretId) {
+          case masterArn:
+            return { SecretString: JSON.stringify({ engine }) }
+          case passwordArn: {
+            const signal = options?.abortSignal
+            return roleSecretRead(signal instanceof AbortSignal ? signal : undefined)
+          }
+        }
       }
-    }
-    throw new Error("Unexpected Secrets Manager command")
-  })
+      throw new Error("Unexpected Secrets Manager command")
+    })
   jest.spyOn(PostgresqlEngine.prototype, "executeSQL").mockResolvedValue(undefined)
   jest.spyOn(MysqlEngine.prototype, "prepare").mockResolvedValue(undefined)
   jest.spyOn(MysqlEngine.prototype, "executeSQL").mockResolvedValue(undefined)
@@ -147,6 +151,31 @@ describe.each([RdsSqlResource.ROLE, RdsSqlResource.PARAMETER_PASSWORD])("%s", (r
     expect(PostgresqlEngine.prototype.executeSQL).not.toHaveBeenCalled()
     expect(SSMClient.prototype.send).not.toHaveBeenCalled()
   })
+
+  test("aborts a stalled retry and rethrows the last denial", async () => {
+    jest.spyOn(Math, "random").mockReturnValue(0.99999)
+    const start = Date.now()
+    const denial = accessDenied()
+    const abort = jest.fn()
+    roleSecretRead.mockRejectedValueOnce(denial).mockImplementationOnce(
+      (signal) =>
+        new Promise((_, reject) => {
+          signal?.addEventListener("abort", () => {
+            abort()
+            reject(signal.reason)
+          })
+        })
+    )
+
+    const result = expect(invoke(resource, 15_000)).rejects.toBe(denial)
+    await Promise.all([result, jest.runAllTimersAsync()])
+
+    expect(abort).toHaveBeenCalledTimes(1)
+    expect(roleSecretRead).toHaveBeenCalledTimes(2)
+    expect(Date.now() - start).toBe(10_500)
+    expect(PostgresqlEngine.prototype.executeSQL).not.toHaveBeenCalled()
+    expect(SSMClient.prototype.send).not.toHaveBeenCalled()
+  })
 })
 
 test("MySQL role creation also stops retrying when the Lambda deadline is close", async () => {
@@ -154,7 +183,7 @@ test("MySQL role creation also stops retrying when the Lambda deadline is close"
   const denial = accessDenied()
   roleSecretRead.mockRejectedValue(denial)
 
-  const result = expect(invoke(RdsSqlResource.ROLE, 10_500)).rejects.toBe(denial)
+  const result = expect(invoke(RdsSqlResource.ROLE, 10_750)).rejects.toBe(denial)
   await Promise.all([result, jest.runAllTimersAsync()])
 
   expect(roleSecretRead).toHaveBeenCalledTimes(1)
